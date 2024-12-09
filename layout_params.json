@@ -1,0 +1,10 @@
+{
+  "spring_constant": 1.5,
+  "spring_length": 0.3,
+  "global_edge_repulsion": 1.15,
+  "edge_vertex_repulsion": 10.5,
+  "charge_constant_e": 5.8,
+  "charge_constant_v": 20.2,
+  "external_constant": 0.0,
+  "central_force_constant": 0.0
+}

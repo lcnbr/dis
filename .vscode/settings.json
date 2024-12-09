@@ -1,0 +1,6 @@
+{
+    "wolfram.systemKernel": "WolframKernel",
+    "wolfram.notebook.kernelEnabled": true,
+    "wolfram.lsp.semanticTokens": true,
+    "wolfram.notebook.rendering.imageScalingFactor": 1.2
+}

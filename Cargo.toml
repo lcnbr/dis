@@ -1,0 +1,113 @@
+[package]
+name = "dis"
+version = "0.1.0"
+edition = "2021"
+authors = ["Lucien Huber <mail@lucien.ch>"]
+categories = ["science"]
+description = "An implementation of the Local Unitarity method for computing differential collider cross-sections."
+
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "double_triangle"
+path = "src/double_triangle.rs"
+[[bin]]
+name = "self_energy"
+path = "src/self_energy.rs"
+
+[[bin]]
+name = "four_gluon"
+path = "src/four_gluon.rs"
+
+
+[profile.dev-optim]
+inherits = "dev"
+opt-level = 2
+#lto=true
+
+[profile.bench]
+lto = "fat"
+opt-level = 3
+
+
+[profile.release]
+lto = "fat"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+
+[dependencies]
+# These will be patched
+symbolica = { version = "0.13.0" }
+spenso = { version = "0.4.0", features = ["shadowing"] }
+gammalooprs = { path = "../branch/gammaloop", default-features = false }
+momtrop = { git = "https://github.com/alphal00p/momtrop", features = ["log"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "*"
+bincode = { version = "2.0.0-rc.3", features = ["serde"] }
+clap = "2.34"
+color-eyre = { version = "^0.3", default-features = false }
+eyre = "^0.4"
+f128 = { git = "https://github.com/benruijl/f128" }
+lorentz_vector = { git = "https://github.com/benruijl/lorentz_vector", branch = "hyperdual", features = [
+    "serde_support",
+    "hyperdual_support",
+    "f128_support",
+] }
+hyperdual = { git = "https://gitlab.com/benruijl/hyperdual" }
+rand = { version = "0.8", features = ["small_rng"] }
+rayon = "1.5"
+tabled = "0.7"
+enum_dispatch = "*"
+git-version = "0.3"
+colored = "*"
+libc = "0.2.0"
+statrs = "0.16.0"
+smallvec = { version = "1.7", features = ["const_generics", "serde"] }
+itertools = "0.8"
+smartstring = { version = "*", features = ["serde"] }
+log = "*"
+env_logger = "*"
+# pyo3-log = "0.11.0"
+nalgebra = "0.32.3"
+rug = { version = "1.22.0", features = ["serde"] }
+clarabel = "0"
+petgraph = "0.6.4"
+indexmap = "2.2.2"
+vectorize = "0.2.0"
+ahash = { version = "0.8.8", features = ["serde"] }
+# num = { version = "0.4.1", features = ["serde"] }
+pprof = { version = "0.13.0", features = ["criterion", "flamegraph"] }
+derive_more = "0.99.17"
+serde_json = "1.0.115"
+ctrlc = "3.4.4"
+constcat = "0.5.0"
+ref-ops = "0.2.5"
+delegate = "0.12.0"
+typed-index-collections = { version = "3.1.0", features = [
+    "serde",
+    "serde-alloc",
+] }
+gat-lending-iterator = "0.1.5"
+# gxhash = "3.4.1"
+thiserror = "1.0.63"
+serde_repr = "0.1.19"
+compensated-summation = "0.3.0"
+uuid = { version = "1.10.0", features = ["serde", "v4"] }
+serde_with = "3.9.0"
+insta = { version = "1.40.0", features = ["ron", "toml"] }
+bitvec = { version = "1.0.1", features = ["serde"] }
+pathfinding = "4.11.0"
+brotli = "7.0.0"
+cgmath = "0.18.0"
+argmin = "0.10.0"
+by_address = "1.2.1"
+
+
+[patch.crates-io]
+symbolica = { git = "https://github.com/benruijl/symbolica" }
+# spenso = { path = "../../alphal00p/spenso" }
+spenso = { git = "https://github.com/alphal00p/spenso", branch = "master" }
