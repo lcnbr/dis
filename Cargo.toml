@@ -43,7 +43,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # These will be patched
 symbolica = { version = "0.13.0" }
 spenso = { version = "0.4.0", features = ["shadowing"] }
-gammalooprs = { path = "../branch/gammaloop", default-features = false }
+gammalooprs = { git = "https://github.com/alphal00p/gammaloop",rev = "a19a574c2d77c359132d6e1426f5d66003af1d22",default-features = false }
 momtrop = { git = "https://github.com/alphal00p/momtrop", features = ["log"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "*"
@@ -108,6 +108,6 @@ by_address = "1.2.1"
 
 
 [patch.crates-io]
-symbolica = { git = "https://github.com/benruijl/symbolica" }
+symbolica = { git="https://github.com/alphal00p/symbolica",branch = "main" }
 # spenso = { path = "../../alphal00p/spenso" }
-spenso = { git = "https://github.com/alphal00p/spenso", branch = "master" }
+spenso = { git = "https://github.com/alphal00p/spenso", rev = "1db1cadef4482b6a70c300d413efa19a76dca489" }
