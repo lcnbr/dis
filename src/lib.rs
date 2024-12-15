@@ -14,7 +14,7 @@ use _gammaloop::{
     momentum::{Sign, SignOrZero},
     numerator::{AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
 };
-use ahash::AHashMap;
+use ahash::{AHashMap, AHashSet};
 use indexmap::IndexMap;
 use log::debug;
 use serde::{Deserialize, Serialize};
@@ -31,12 +31,13 @@ use spenso::{
     },
 };
 use symbolica::{
-    atom::{Atom, AtomCore, AtomView, FunctionBuilder, Symbol},
+    atom::{Atom, AtomCore, AtomView, FunctionAttribute, FunctionBuilder, Symbol},
     coefficient::Coefficient,
+    domains::{integer::Z, rational::Q, Ring, SelfRing},
     fun,
     id::{MatchSettings, Pattern, PatternOrMap, Replacement},
-    state::{FunctionAttribute, State},
     symb,
+    tensors::matrix::Matrix,
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -62,7 +63,6 @@ impl IFCuts {
 
     pub fn to_mathematica_file(&self, graph: &DisGraph, filename: &str) {}
 }
-
 impl Embedding {
     pub fn windings_in_field(&self, n: u32) -> Vec<u32> {
         self.windings
@@ -372,9 +372,9 @@ const DIS_SYMBOLS: LazyLock<DisSymbols> = LazyLock::new(|| DisSymbols {
     cut_mom: symb!("p"),
     photon_mom: symb!("q"),
     emr_mom: symb!("Q"),
-    loop_mom: symb!("l"),
+    loop_mom: symb!("k"),
     dim: symb!("dim"),
-    dot: State::get_symbol_with_attributes(
+    dot: Symbol::new_with_attributes(
         "dot",
         &[FunctionAttribute::Symmetric, FunctionAttribute::Linear],
     )
@@ -450,6 +450,7 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
             "Applied feynman rules:\n\tcolor:{}\n\tcolorless:{}",
             state.color, state.colorless
         );
+        println!("from dis success");
         Numerator { state }
     }
 }
@@ -503,41 +504,6 @@ pub fn numerator_dis_apply(num: &mut Atom) {
     num.replace_all_multiple_repeat_mut(&replacements)
 }
 
-// impl HedgeGraph<(usize, crate::graph::Edge, bool), (usize, crate::graph::Vertex)> {
-//     pub fn dis_graph(mut self) -> HedgeGraph<DisEdge, DisVertex> {
-//         let (basis, tree) = self.cycle_basis();
-//         self.align_to_tree_underlying(&tree);
-
-//         let lmbsymb = symb!("k");
-//         self.map(
-//             |(bare_vertex_id, bare_vertex)| DisVertex {
-//                 bare_vertex_id,
-//                 bare_vertex,
-//             },
-//             |e, d| {
-//                 let mut mom_e = Atom::new_num(0);
-//                 for (i, c) in basis.iter().enumerate() {
-//                     if let EdgeId::Paired { source, .. } = e {
-//                         if c.filter.includes(&source) {
-//                             mom_e = mom_e + fun!(lmbsymb, i as i32)
-//                         }
-//                     }
-//                 }
-//                 d.and_then(|(bare_edge_id, bare_edge, marked)| {
-//                     Some(DisEdge {
-//                         bare_edge,
-//                         bare_edge_id,
-//                         marked,
-//                         momentum: mom_e,
-//                     })
-//                 })
-//             },
-//         )
-//     }
-
-//     // pub fn propagators()
-// }
-
 pub struct DisGraph {
     graph: HedgeGraph<DisEdge, DisVertex>,
     marked_electron_edge: (EdgeId, usize),
@@ -549,7 +515,7 @@ pub struct DisGraph {
 
 impl DisGraph {
     pub fn full_dis_filter_split(&self) -> IFCuts {
-        Embeddings::classify(
+        let mut i = Embeddings::classify(
             OrientedCut::all_initial_state_cuts(&self.graph),
             self.basis.clone(),
             |c| {
@@ -563,7 +529,9 @@ impl DisGraph {
             },
             true,
         )
-        .if_split(&self.graph, &|e| e.marked)
+        .if_split(&self.graph, &|e| e.marked);
+        i.remove_empty();
+        i
     }
 
     pub fn from_bare(bare: &BareGraph) -> DisGraph {
@@ -601,13 +569,17 @@ impl DisGraph {
             h.node_id(Hedge(0)).clone()
         };
 
+        println!("finding basis");
+
         let (basis, tree) = h
             .paton_cycle_basis(&h.full_graph(), &node, included_hedge)
             .unwrap();
+
+        println!("aligning tree");
         h.align_to_tree_underlying(&tree);
 
-        // println!("{}", h.base_dot());
-        // println!("{}", h.dot(&tree.tree));
+        println!("{}", h.base_dot());
+        println!("{}", h.dot(&tree.tree));
 
         let mut seen_pdg22 = None;
         let mut seen_pdg11 = None;
@@ -770,19 +742,24 @@ impl DisGraph {
     }
 
     pub fn emr_to_lmb_and_cut(&self, cut: &OrientedCut) -> Vec<Replacement> {
-        let (all_rest, solved_for) = self.cut_constraint(cut);
-
-        let pattern = &solved_for.to_pattern();
-        let rhs = &all_rest.to_pattern();
+        let photon_momenta = fun!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
+        let mut reps = vec![Replacement::new(
+            photon_momenta.to_pattern(),
+            Atom::new_var(DIS_SYMBOLS.photon_mom).to_pattern(),
+        )];
+        if let Some((all_rest, solved_for)) = self.cut_constraint(cut) {
+            reps.push(Replacement::new(
+                solved_for.to_pattern(),
+                all_rest.to_pattern(),
+            ));
+        }
 
         let mut emr_to_lmb_cut = AHashMap::new();
         for (e, d) in self.graph.iter_egdes(&self.graph.full_graph()) {
             let data = d.data.unwrap();
             emr_to_lmb_cut.insert(
                 fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
-                data.momentum
-                    .replace_all(pattern, rhs, None, None)
-                    .to_pattern(),
+                data.momentum.replace_all_multiple(&reps).to_pattern(),
             );
         }
 
@@ -792,114 +769,56 @@ impl DisGraph {
             .collect()
     }
 
-    pub fn cut_constraint(&self, cut: &OrientedCut) -> (Atom, Atom) {
+    pub fn cut_constraint(&self, cut: &OrientedCut) -> Option<(Atom, Atom)> {
         let mut sum = Atom::new_num(0);
 
-        let mut total = Atom::new_var(DIS_SYMBOLS.cut_mom);
-        let electron_momenta = fun!(DIS_SYMBOLS.loop_mom, self.marked_electron_edge.1 as i32);
-        // println!("p_e {}", electron_momenta);
-
+        // let mut total = Atom::new_var(DIS_SYMBOLS.cut_mom);
+        // let electron_momenta = fun!(DIS_SYMBOLS.loop_mom, self.marked_electron_edge.1 as i32);
         let photon_momenta = fun!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
-        // println!("q:{}", photon_momenta);
-
-        if let EdgeId::Paired { source, sink } = self.marked_electron_edge.0 {
-            match cut.relative_orientation(source) {
-                Orientation::Default => {
-                    total = total + &electron_momenta;
-                }
-                Orientation::Reversed => {
-                    total = total - &electron_momenta;
-                }
-                _ => {}
-            }
-        }
 
         for (o, cut_edge) in cut.iter_edges_relative(&self.graph) {
-            // println!(
-            //     "{}{}{}",
-            //     SignOrZero::from(o),
-            //     cut_edge.as_ref().data.unwrap().bare_edge_id,
-            //     SignOrZero::from(o) * cut_edge.as_ref().data.unwrap().momentum.clone()
-            // );
-            sum = sum + SignOrZero::from(o) * cut_edge.as_ref().data.unwrap().momentum.clone();
-        }
-
-        let mut var = None;
-        let mut all_rest = Atom::new_num(0);
-
-        if let AtomView::Add(a) = sum.expand().as_view() {
-            for e in a.iter() {
-                if var.is_none() {
-                    match e {
-                        AtomView::Mul(m) => {
-                            let mut iter = m.iter();
-                            if let AtomView::Fun(v) = iter.next().unwrap() {
-                                if photon_momenta.as_view() == v.as_view()
-                                    || electron_momenta.as_view() == v.as_view()
-                                {
-                                    all_rest = all_rest + e;
-                                } else {
-                                    var = Some(e.to_owned());
-                                }
-                            } else {
-                                panic!("{}", e)
-                            }
-                        }
-                        AtomView::Fun(f) => {
-                            if photon_momenta.as_view() == f.as_view()
-                                || electron_momenta.as_view() == f.as_view()
-                            {
-                                all_rest = all_rest + e;
-                            } else {
-                                var = Some(e.to_owned());
-                            }
-                        }
-                        _ => {
-                            panic!("{}", e)
-                        }
-                    }
-                } else {
-                    all_rest = all_rest + e;
-                }
+            if cut_edge
+                .data
+                .as_ref()
+                .unwrap()
+                .bare_edge
+                .particle
+                .pdg_code
+                .abs()
+                != 11
+            {
+                sum = sum + SignOrZero::from(o) * cut_edge.as_ref().data.unwrap().momentum.clone();
             }
         }
+        sum = sum - Atom::new_var(DIS_SYMBOLS.cut_mom);
+        sum = sum
+            .replace_all_multiple(&[Replacement::new(
+                photon_momenta.to_pattern(),
+                Atom::new_var(DIS_SYMBOLS.photon_mom).to_pattern(),
+            )])
+            .expand();
 
-        all_rest = total - all_rest;
+        let loop_mom_pat = fun!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
 
-        let (solved_for, coef) = match var.as_ref().unwrap().as_view() {
-            AtomView::Mul(a) => {
-                let mut solved = None;
-                let mut coef = None;
+        println!("{sum}");
+        let solving_var = sum
+            .expand()
+            .pattern_match(&loop_mom_pat, None, None)
+            .next_detailed()?
+            .target
+            .to_owned();
 
-                for i in a.iter() {
-                    match i {
-                        AtomView::Num(a) => match a.get_coeff_view().to_owned() {
-                            symbolica::coefficient::Coefficient::Rational(a) => {
-                                coef = Some(Coefficient::Rational(a.inv()));
-                            }
-                            _ => panic!("str"),
-                        },
-                        AtomView::Fun(f) => {
-                            solved = Some(f.as_view().to_owned());
-                        }
-                        _ => panic!("str"),
-                    }
-                }
-                (solved.unwrap(), Atom::new_num(coef.unwrap()))
-            }
-            AtomView::Fun(f) => (f.as_view().to_owned(), Atom::new_num(1)),
-            _ => {
-                panic!("should be a function or mul")
-            }
-        };
+        let solution = <Atom as AtomCore>::solve_linear_system::<u8, Atom, Atom>(
+            &[sum],
+            &[solving_var.clone()],
+        )
+        .unwrap()[0]
+            .clone();
 
-        // println!("coef:{coef}");
+        println!("solution: {}", solution);
+        println!("solving_var: {}", solving_var);
 
-        // println!("all_rest: {}", (&all_rest * &coef).expand());
-        // println!("solved_for: {}", solved_for);
-        //
-        // invcoef!
-        (all_rest * coef, solved_for)
+        Some((solution, solving_var))
     }
 }
 
@@ -943,7 +862,165 @@ pub struct DenominatorDis {
 
 impl DenominatorDis {
     pub fn partial_fraction(&self) -> Vec<DenominatorDis> {
+        let mut props = self.props.clone();
+
+        let mut sum = Atom::new_num(0);
+        let mut vars = vec![];
+
+        for (i, (p, _)) in self.props.iter().enumerate() {
+            vars.push(fun!(symb!("alpha"), i as i32));
+            sum = sum + p.to_expression() * vars.last().unwrap();
+        }
+        sum = sum.expand();
+        let x_ = symb!("x_");
+        let y_ = symb!("y_");
+
+        let loop_mom_dot_pat =
+            fun!(DIS_SYMBOLS.dot, fun!(DIS_SYMBOLS.loop_mom, x_), y_).to_pattern();
+
+        let mut iter = sum.pattern_match(&loop_mom_dot_pat, None, None);
+
+        let mut matches = AHashSet::new();
+        while let Some(m) = iter.next_detailed() {
+            matches.insert(m.target.to_owned());
+        }
+        let mut system = vec![];
+        for m in &matches {
+            let coef = sum.coefficient(m);
+            // println!("coef:{coef}");
+            system.push(coef);
+        }
+
+        let (m, b) = Atom::system_to_matrix::<u8, _, _>(&system, &vars).unwrap();
+        let old_col = m.ncols() as u32;
+        let mut aug = m.augment(&b).unwrap();
+        aug.gaussian_elimination(old_col, false).unwrap() as usize;
+        aug.back_substitution(old_col);
+
+        let mut pivot = vec![];
+        for (i, r) in aug.row_iter().enumerate() {
+            for (j, c) in r.iter().enumerate() {
+                if c.is_one() {
+                    pivot.push(j);
+                    break;
+                }
+            }
+        }
+        for (a, &b) in pivot.iter().enumerate() {
+            vars.swap(a, b);
+            aug.swap_cols(a as u32, b as u32);
+            props.swap_indices(a, b);
+        }
+
+        let rank = pivot.len() as u32;
+        let n = (aug.ncols() - 1) as u32;
+        let field = aug.field().clone();
+        let mut x_mat = Matrix::new(rank, n - rank, field.clone());
+
+        let mut b_mat = Matrix::new(rank, 1, field.clone());
+
+        for i in 0..rank {
+            for j in 0..(n - rank) {
+                x_mat[(i, j)] = aug[(i, j + rank)].clone();
+            }
+        }
+
+        for i in 0..rank {
+            b_mat[(i, 0)] = aug[(i, n)].clone();
+        }
+
+        let mut var_mat = Matrix::new(n - rank, 1, field.clone());
+        if n > rank {
+            var_mat[(0, 0)] = field.one();
+        }
+
+        let sol = (&b_mat - &(&x_mat * &var_mat)).into_vector().into_vec();
+
+        let mut sol_reps = vec![];
+        let mut coeffs = vec![];
+        for i in 0..=(n - rank) {
+            let so = sol[i as usize].to_expression();
+            coeffs.push(so.clone());
+            let var = &vars[i as usize];
+            sol_reps.push(Replacement::new(var.to_pattern(), so.to_pattern()));
+        }
+
+        if n > rank {
+            let indep = (n.checked_sub(rank).unwrap() + 1) as usize;
+
+            coeffs.push(Atom::new_num(1));
+
+            sol_reps.push(Replacement::new(
+                vars[indep].to_pattern(),
+                Atom::new_num(1).to_pattern(),
+            ));
+            for i in n - rank + 2..n {
+                coeffs.push(Atom::Zero);
+                sol_reps.push(Replacement::new(
+                    vars[i as usize].to_pattern(),
+                    Atom::new_num(0).to_pattern(),
+                ));
+            }
+        }
+
+        let coef = sum.replace_all_multiple(&sol_reps).expand();
+        // let println!("coef:{coef}");
+
+        let mut denoms = vec![];
+
+        let mut all_zero = true;
+        for (i, c) in coeffs.iter().enumerate() {
+            if !c.is_zero() {
+                all_zero = false;
+                let prefactor = c / &coef;
+
+                let mut propsnew = IndexMap::new();
+                for (j, (k, v)) in props.iter().enumerate() {
+                    if i != j {
+                        propsnew.insert(k.clone(), *v);
+                    } else {
+                        if *v > 1 {
+                            propsnew.insert(k.clone(), v - 1);
+                        }
+                    }
+                }
+
+                denoms.push(DenominatorDis {
+                    props: propsnew,
+                    prefactor,
+                });
+            }
+        }
+
+        if all_zero {
+            return vec![DenominatorDis {
+                props: self.props.clone(),
+                prefactor: self.prefactor.clone(),
+            }];
+        }
+
+        let mut sum = self.to_expression();
+        for d in &denoms {
+            sum = sum - d.to_expression();
+        }
+
+        let iszero = sum
+            .as_view()
+            .to_rational_polynomial::<_, _, u8>(&Q, &Z, None);
+
+        println!("iszero{}", iszero);
+
         let mut partials = vec![];
+        // for v in vars {
+        //     println!("{v}");
+        // }
+
+        // println!("{aug}");
+        //
+        for p in &denoms {
+            partials.extend(p.partial_fraction());
+        }
+
         partials
     }
 
@@ -956,19 +1033,30 @@ impl DenominatorDis {
     }
 
     pub fn to_atom(&self) -> Atom {
-        let mut atom = Atom::new_num(1);
+        let mut atom = self.prefactor.clone();
+
+        for (p, n) in self.props.iter() {
+            atom = atom * p.to_atom().pow(Atom::new_num(-(*n as i32)));
+        }
+
         atom
     }
 
     pub fn to_expression(&self) -> Atom {
-        let mut atom = Atom::new_num(1);
+        let mut atom = self.prefactor.clone();
+
+        for (p, n) in self.props.iter() {
+            atom = atom * p.to_expression().pow(Atom::new_num(-(*n as i32)));
+        }
+
         atom
     }
 
     pub fn new(prop_iter: impl IntoIterator<Item = Prop>) -> Self {
         let mut props = IndexMap::new();
         for p in prop_iter {
-            *props.entry(p).or_insert(1) += 1;
+            println!("p:{}", p.to_atom());
+            *props.entry(p).or_insert(0) += 1;
         }
 
         Self {
@@ -1003,13 +1091,19 @@ impl Prop {
     }
 
     pub fn to_atom(&self) -> Atom {
-        let mut atom = Atom::new_num(1);
-        atom
+        fun!(
+            DIS_SYMBOLS.prop,
+            self.mass.clone().unwrap_or(Atom::Zero),
+            self.momentum.clone()
+        )
     }
 
     pub fn to_expression(&self) -> Atom {
-        let mut atom = Atom::new_num(1);
-        atom
+        fun!(
+            DIS_SYMBOLS.dot,
+            self.momentum.clone(),
+            self.momentum.clone()
+        ) - (self.mass.clone().unwrap_or(Atom::Zero)).pow(Atom::new_num(2))
     }
 }
 

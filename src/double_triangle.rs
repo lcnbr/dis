@@ -45,11 +45,10 @@ fn main() {
     )
     .unwrap();
 
+    println!("from_bare");
     let dis_graph = DisGraph::from_bare(&bare_graph);
 
     let ifsplit = dis_graph.full_dis_filter_split();
-
-    let params = LayoutParams::default();
 
     let fancy_settings = FancySettings {
         label_shift: 0.06,
@@ -57,6 +56,9 @@ fn main() {
         arrow_shift: 0.06,
     };
     let file = std::fs::File::open("layout_params.json").unwrap();
+    let params = serde_json::from_reader::<_, LayoutParams>(file).unwrap();
+
+    let file = std::fs::File::open("layout_iters.json").unwrap();
     let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
     let mut layouts: Vec<(
         String,

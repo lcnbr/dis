@@ -50,7 +50,7 @@ fn main() {
 
     let params = serde_json::from_reader::<_, LayoutParams>(reader).unwrap();
 
-    let file = std::fs::File::open("layout_params.json").unwrap();
+    let file = std::fs::File::open("layout_iters.json").unwrap();
     let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
     let fancy_settings = FancySettings {
         label_shift: 0.06,
@@ -68,8 +68,8 @@ fn main() {
 
         let first_initial = &cuts[0][0];
 
-        let denom = dis_graph.denominator(first_initial);
-        let num: Vec<_> = dis_graph
+        let _denom = dis_graph.denominator(first_initial);
+        let _num: Vec<_> = dis_graph
             .numerator(first_initial)
             .iter()
             .map(|a| a.expand())
