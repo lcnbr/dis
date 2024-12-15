@@ -1,7 +1,4 @@
-use std::{
-    fs::File,
-    io::{BufReader, BufWriter},
-};
+use std::{fs::File, io::BufReader};
 
 use _gammaloop::graph::{
     half_edge::layout::{FancySettings, LayoutParams},
@@ -9,9 +6,8 @@ use _gammaloop::graph::{
 };
 use dis::{dis_cut_layout, load_generic_model, write_layout, DisGraph};
 use symbolica::{
-    atom::Atom,
+    atom::{Atom, AtomCore},
     domains::{integer::Z, rational::Q},
-    symb,
 };
 
 fn main() {
@@ -54,6 +50,8 @@ fn main() {
 
     let params = serde_json::from_reader::<_, LayoutParams>(reader).unwrap();
 
+    let file = std::fs::File::open("layout_params.json").unwrap();
+    let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
     let fancy_settings = FancySettings {
         label_shift: 0.06,
         arrow_angle_percentage: Some(0.7),
@@ -133,17 +131,23 @@ fn main() {
         //     num[1].printer(symbolica::printer::PrintOptions::mathematica())
         // );
 
-        let first_initial_layout =
-            dis_cut_layout(&first_initial, &dis_graph, &params, Some(&fancy_settings));
+        let first_initial_layout = dis_cut_layout(
+            &first_initial,
+            &dis_graph,
+            params,
+            layout_iters,
+            Some(&fancy_settings),
+            20.,
+        );
 
         let layout_emb_i = cuts[0]
             .iter()
-            .map(|c| dis_cut_layout(c, &dis_graph, &params, None))
+            .map(|c| dis_cut_layout(c, &dis_graph, params, layout_iters, None, 20.))
             .collect();
 
         let layout_emb_f = cuts[1]
             .iter()
-            .map(|c| dis_cut_layout(c, &dis_graph, &params, None))
+            .map(|c| dis_cut_layout(c, &dis_graph, params, layout_iters, None, 20.))
             .collect();
 
         layouts.push((

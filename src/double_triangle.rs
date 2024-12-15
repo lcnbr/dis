@@ -1,40 +1,12 @@
-use std::{collections::BTreeMap, fs};
-
 use _gammaloop::graph::{
-    half_edge::{
-        drawing::Decoration,
-        layout::{FancySettings, LayoutEdge, LayoutParams, LayoutVertex, PositionalHedgeGraph},
-        InvolutiveMapping,
-    },
-    BareGraph, Edge, Vertex,
+    half_edge::layout::{FancySettings, LayoutParams},
+    BareGraph,
 };
-use ahash::AHashMap;
-use dis::{dis_cut_layout, write_layout, DisGraph, DisVertex, Embeddings};
-use spenso::{
-    shadowing::ETS,
-    structure::{
-        representation::{Rep, RepName},
-        slot::IsAbstractSlot,
-    },
-    symbolica_utils::SerializableAtom,
-};
-use symbolica::{
-    atom::{Atom, AtomView, FunctionBuilder, Symbol},
-    coefficient::Coefficient,
-    domains::{integer::Z, rational::Q},
-    fun,
-    id::{MatchSettings, Pattern, PatternOrMap, Replacement},
-    state::{FunctionAttribute, State},
-    symb,
-};
+use dis::{dis_cut_layout, write_layout, DisGraph, LayoutIters};
 
-use _gammaloop::{
-    graph::half_edge::{
-        subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
-        EdgeId, Hedge, HedgeGraph, Orientation,
-    },
-    momentum::{Sign, SignOrZero, Signature},
-    numerator::GlobalPrefactor,
+use symbolica::{
+    atom::{Atom, AtomCore},
+    domains::{integer::Z, rational::Q},
 };
 
 use dis::load_generic_model;
@@ -75,12 +47,14 @@ fn main() {
     let ifsplit = dis_graph.full_dis_filter_split();
 
     let params = LayoutParams::default();
+
     let fancy_settings = FancySettings {
         label_shift: 0.06,
         arrow_angle_percentage: Some(0.7),
         arrow_shift: 0.06,
     };
-
+    let file = std::fs::File::open("layout_params.json").unwrap();
+    let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
     let mut layouts = Vec::new();
     let mut routings_integrand = Vec::new();
 
@@ -152,17 +126,23 @@ fn main() {
         //     num[1].printer(symbolica::printer::PrintOptions::mathematica())
         // );
 
-        let first_initial_layout =
-            dis_cut_layout(&first_initial, &dis_graph, &params, Some(&fancy_settings));
+        let first_initial_layout = dis_cut_layout(
+            &first_initial,
+            &dis_graph,
+            params,
+            layout_iters,
+            Some(&fancy_settings),
+            20.,
+        );
 
         let layout_emb_i = cuts[0]
             .iter()
-            .map(|c| dis_cut_layout(c, &dis_graph, &params, None))
+            .map(|c| dis_cut_layout(c, &dis_graph, params, layout_iters, None, 20.))
             .collect();
 
         let layout_emb_f = cuts[1]
             .iter()
-            .map(|c| dis_cut_layout(c, &dis_graph, &params, None))
+            .map(|c| dis_cut_layout(c, &dis_graph, params, layout_iters, None, 20.))
             .collect();
 
         layouts.push((

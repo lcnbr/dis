@@ -545,8 +545,196 @@ pub struct DisGraph {
 }
 
 impl DisGraph {
-    pub fn numerator(&self, cut: &OrientedCut, total: Symbol) -> Vec<Atom> {
-        let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut, total);
+    pub fn from_bare(bare: &BareGraph) -> DisGraph {
+        let mut h = bare.hedge_representation.clone();
+
+        let mut elec_node = None;
+
+        if let Some((elec, d)) = h.iter_egdes(&h.full_filter()).find(|(e, n)| {
+            if bare.edges[**n.as_ref().data.unwrap()]
+                .particle
+                .pdg_code
+                .abs()
+                == 11
+            {
+                true
+            } else {
+                false
+            }
+        }) {
+            if let EdgeId::Paired { source, sink } = elec {
+                elec_node = Some(h.node_id(source).clone());
+            }
+        }
+
+        let mut included_hedge = None;
+        let node = if let Some(s) = elec_node {
+            for i in s.hairs.included_iter() {
+                if bare.edges[*h.get_edge_data(i)].particle.pdg_code.abs() == 11 {
+                    included_hedge = Some(i);
+                    break;
+                }
+            }
+            s
+        } else {
+            h.node_id(Hedge(0)).clone()
+        };
+
+        let (basis, tree) = h
+            .paton_cycle_basis(&h.full_graph(), &node, included_hedge)
+            .unwrap();
+        h.align_to_tree_underlying(&tree);
+
+        // println!("{}", h.base_dot());
+        // println!("{}", h.dot(&tree.tree));
+
+        let mut seen_pdg22 = None;
+        let mut seen_pdg11 = None;
+        let lmbsymb = symb!("k");
+        let graph = h.map(
+            |bare_vertex_id| DisVertex {
+                bare_vertex_id,
+                bare_vertex: bare.vertices[bare_vertex_id].clone(),
+            },
+            |e, d| {
+                let mut mom_e = Atom::new_num(0);
+
+                let mut first_cycle = None;
+                let mut only_cycle = true;
+
+                for (i, c) in basis.iter().enumerate() {
+                    if let EdgeId::Paired { source, .. } = e {
+                        if c.filter.includes(&source) {
+                            if first_cycle.is_none() {
+                                first_cycle = Some(i);
+                            } else {
+                                only_cycle = false;
+                            }
+                            mom_e = mom_e + fun!(lmbsymb, i as i32)
+                        }
+                    }
+                }
+                d.and_then(|bare_edge_id| {
+                    let bare_edge = bare.edges[bare_edge_id].clone();
+
+                    let marked = if only_cycle {
+                        if let Some(i) = first_cycle {
+                            match bare_edge.particle.pdg_code.abs() {
+                                11 => {
+                                    if seen_pdg11.is_some() {
+                                        false
+                                    } else {
+                                        seen_pdg11 = Some((e, i));
+                                        true
+                                    }
+                                }
+                                22 => {
+                                    if seen_pdg22.is_some() {
+                                        false
+                                    } else {
+                                        seen_pdg22 = Some((e, i));
+                                        true
+                                    }
+                                }
+                                _ => false,
+                            }
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    };
+
+                    Some(DisEdge {
+                        bare_edge,
+                        bare_edge_id,
+                        marked,
+                        momentum: mom_e,
+                    })
+                })
+            },
+        );
+
+        let mut outer_graph = graph.empty_filter();
+
+        for (i, e) in graph.iter_egdes(&graph.full_filter()) {
+            match i {
+                EdgeId::Paired { source, sink } => {
+                    if e.data.as_ref().unwrap().bare_edge.particle.pdg_code.abs() == 11 {
+                        outer_graph.set(source.0, true);
+                        for i in graph.node_id(sink).included_iter() {
+                            outer_graph.set(i.0, true);
+                        }
+                        outer_graph.set(sink.0, true);
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        let inner_graph = outer_graph.complement(&graph);
+
+        let mink = Rep::new_self_dual("mink").unwrap();
+        let mu = mink.new_slot(4, 3).to_atom();
+        let nu = mink.new_slot(4, 2).to_atom();
+        let metric = fun!(ETS.metric, mu, nu);
+        let p = symb!("p");
+        let phat2 = Atom::new_var(symb!("phat")).pow(&Atom::new_num(2));
+        let pp = fun!(p, mu) * fun!(p, nu);
+        let diminv = Atom::parse("1/(2-D)").unwrap();
+
+        let w1_proj = GlobalPrefactor {
+            color: Atom::new_num(1),
+            colorless: &diminv * (&metric - &pp / &phat2),
+        };
+
+        let w2_proj = GlobalPrefactor {
+            color: Atom::new_num(1),
+            colorless: (diminv * (metric - &pp / &phat2) + &pp / &phat2) / &phat2,
+        };
+
+        let mut w1 = _gammaloop::numerator::Numerator::default()
+            .from_dis_graph(bare, &graph, &inner_graph, Some(&w1_proj))
+            .color_simplify()
+            .gamma_simplify()
+            .get_single_atom()
+            .unwrap()
+            .0;
+
+        let mut w2 = _gammaloop::numerator::Numerator::default()
+            .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
+            .color_simplify()
+            .gamma_simplify()
+            .get_single_atom()
+            .unwrap()
+            .0;
+
+        numerator_dis_apply(&mut w1);
+        numerator_dis_apply(&mut w2);
+
+        let mut props = vec![];
+        for (j, e) in graph.iter_egdes(&inner_graph) {
+            let edge = &e.data.as_ref().unwrap().bare_edge;
+            let i = e.data.as_ref().unwrap().bare_edge_id;
+            if matches!(j, EdgeId::Paired { .. }) {
+                let mass = edge.particle.mass.expression.clone();
+                let emr_mom = fun!(DIS_SYMBOLS.emr_mom, i as i32);
+                props.push(Prop::new(mass, emr_mom));
+                // denominator = denominator * fun!(denomsymb, mass, emr_mom);
+            };
+        }
+
+        DisGraph {
+            graph,
+            numerator: vec![w1.expand(), w2.expand()],
+            denominator: DenominatorDis::new(props),
+            lmb_photon: seen_pdg22.unwrap(),
+            marked_electron_edge: seen_pdg11.unwrap(),
+            basis,
+        }
+    }
+    pub fn numerator(&self, cut: &OrientedCut) -> Vec<Atom> {
+        let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
 
         self.numerator
             .iter()
@@ -554,14 +742,14 @@ impl DisGraph {
             .collect()
     }
 
-    pub fn denominator(&self, cut: &OrientedCut, total: Symbol) -> DenominatorDis {
-        let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut, total);
+    pub fn denominator(&self, cut: &OrientedCut) -> DenominatorDis {
+        let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
         self.denominator
             .map_all(&|a| a.replace_all_multiple(&emr_to_lmb_cut).expand())
     }
 
-    pub fn emr_to_lmb_and_cut(&self, cut: &OrientedCut, total: Symbol) -> Vec<Replacement> {
-        let (all_rest, solved_for) = self.cut_constraint(cut, total);
+    pub fn emr_to_lmb_and_cut(&self, cut: &OrientedCut) -> Vec<Replacement> {
+        let (all_rest, solved_for) = self.cut_constraint(cut);
 
         let pattern = &solved_for.to_pattern();
         let rhs = &all_rest.to_pattern();
@@ -570,7 +758,7 @@ impl DisGraph {
         for (e, d) in self.graph.iter_egdes(&self.graph.full_graph()) {
             let data = d.data.unwrap();
             emr_to_lmb_cut.insert(
-                fun!(symb!("Q"), data.bare_edge_id as i32),
+                fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
                 data.momentum
                     .replace_all(pattern, rhs, None, None)
                     .to_pattern(),
@@ -583,14 +771,14 @@ impl DisGraph {
             .collect()
     }
 
-    pub fn cut_constraint(&self, cut: &OrientedCut, total: Symbol) -> (Atom, Atom) {
+    pub fn cut_constraint(&self, cut: &OrientedCut) -> (Atom, Atom) {
         let mut sum = Atom::new_num(0);
 
-        let mut total = Atom::new_var(total);
-        let electron_momenta = fun!(symb!("k"), self.marked_electron_edge.1 as i32);
+        let mut total = Atom::new_var(DIS_SYMBOLS.cut_mom);
+        let electron_momenta = fun!(DIS_SYMBOLS.loop_mom, self.marked_electron_edge.1 as i32);
         // println!("p_e {}", electron_momenta);
 
-        let photon_momenta = fun!(symb!("k"), self.lmb_photon.1 as i32);
+        let photon_momenta = fun!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
         // println!("q:{}", photon_momenta);
 
         if let EdgeId::Paired { source, sink } = self.marked_electron_edge.0 {
@@ -688,6 +876,8 @@ impl DisGraph {
 
         // println!("all_rest: {}", (&all_rest * &coef).expand());
         // println!("solved_for: {}", solved_for);
+        //
+        // invcoef!
         (all_rest * coef, solved_for)
     }
 }
@@ -759,7 +949,7 @@ impl Prop {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct LayoutIters {
     n_iters: u64,
     temp: f64,
