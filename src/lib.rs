@@ -3,6 +3,7 @@ use std::{collections::BTreeMap, path::Path, sync::LazyLock};
 use _gammaloop::{
     graph::{
         half_edge::{
+            drawing::Decoration,
             layout::{FancySettings, LayoutParams, PositionalHedgeGraph},
             subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
             EdgeId, Hedge, HedgeGraph, Orientation,
@@ -58,6 +59,8 @@ impl IFCuts {
     pub fn remove_empty(&mut self) {
         self.cuts.retain(|_, v| !v[0].is_empty() & !v[1].is_empty());
     }
+
+    pub fn to_mathematica_file(&self, graph: &DisGraph, filename: &str) {}
 }
 
 impl Embedding {
@@ -545,6 +548,24 @@ pub struct DisGraph {
 }
 
 impl DisGraph {
+    pub fn full_dis_filter_split(&self) -> IFCuts {
+        Embeddings::classify(
+            OrientedCut::all_initial_state_cuts(&self.graph),
+            self.basis.clone(),
+            |c| {
+                // if c.cut.count_ones() == 1 {
+                //     let e = c.cut.iter_ones().next().unwrap();
+                //     d.edges[e].particle.pdg_code.abs() != 22
+                // } else {
+                //     false
+                // }
+                true
+            },
+            true,
+        )
+        .if_split(&self.graph, &|e| e.marked)
+    }
+
     pub fn from_bare(bare: &BareGraph) -> DisGraph {
         let mut h = bare.hedge_representation.clone();
 
@@ -890,6 +911,16 @@ pub struct DisEdge {
     momentum: Atom,
 }
 
+impl DisEdge {
+    pub fn decoration(&self) -> Decoration {
+        self.bare_edge.particle.decoration()
+    }
+
+    pub fn label(&self) -> String {
+        self.momentum.to_string()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DisVertex {
     pub bare_vertex_id: usize,
@@ -911,6 +942,29 @@ pub struct DenominatorDis {
 }
 
 impl DenominatorDis {
+    pub fn partial_fraction(&self) -> Vec<DenominatorDis> {
+        let mut partials = vec![];
+        partials
+    }
+
+    pub fn is_dotted(&self) -> bool {
+        self.props.iter().any(|(_, p)| *p > 1)
+    }
+
+    pub fn to_mathematica_integrand(&self) -> Option<MathematicaIntegrand> {
+        None
+    }
+
+    pub fn to_atom(&self) -> Atom {
+        let mut atom = Atom::new_num(1);
+        atom
+    }
+
+    pub fn to_expression(&self) -> Atom {
+        let mut atom = Atom::new_num(1);
+        atom
+    }
+
     pub fn new(prop_iter: impl IntoIterator<Item = Prop>) -> Self {
         let mut props = IndexMap::new();
         for p in prop_iter {
@@ -946,6 +1000,16 @@ impl Prop {
             mass: self.mass.as_ref().map(f),
             momentum: f(&self.momentum),
         }
+    }
+
+    pub fn to_atom(&self) -> Atom {
+        let mut atom = Atom::new_num(1);
+        atom
+    }
+
+    pub fn to_expression(&self) -> Atom {
+        let mut atom = Atom::new_num(1);
+        atom
     }
 }
 
@@ -983,4 +1047,21 @@ pub fn dis_cut_layout<'a>(
     } else {
         pos
     }
+}
+
+pub fn write_layout(
+    layouts: &[(
+        String,
+        String,
+        Vec<PositionalHedgeGraph<(&DisEdge, Orientation), &DisVertex>>,
+    )],
+    filename: &str,
+) {
+    std::fs::write(
+        filename,
+        PositionalHedgeGraph::cetz_impl_collection(&layouts, &|(e, o)| e.label(), &|(e, o)| {
+            e.decoration()
+        }),
+    )
+    .unwrap();
 }

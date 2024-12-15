@@ -4,7 +4,7 @@ use _gammaloop::graph::{
     half_edge::layout::{FancySettings, LayoutParams},
     BareGraph,
 };
-use dis::{dis_cut_layout, load_generic_model, write_layout, DisGraph};
+use dis::{dis_cut_layout, load_generic_model, write_layout, DisGraph, LayoutIters};
 use symbolica::{
     atom::{Atom, AtomCore},
     domains::{integer::Z, rational::Q},
@@ -132,7 +132,7 @@ fn main() {
         // );
 
         let first_initial_layout = dis_cut_layout(
-            &first_initial,
+            first_initial.clone(),
             &dis_graph,
             params,
             layout_iters,
@@ -142,12 +142,12 @@ fn main() {
 
         let layout_emb_i = cuts[0]
             .iter()
-            .map(|c| dis_cut_layout(c, &dis_graph, params, layout_iters, None, 20.))
+            .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
             .collect();
 
         let layout_emb_f = cuts[1]
             .iter()
-            .map(|c| dis_cut_layout(c, &dis_graph, params, layout_iters, None, 20.))
+            .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
             .collect();
 
         layouts.push((

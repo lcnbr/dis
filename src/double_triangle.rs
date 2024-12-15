@@ -1,8 +1,11 @@
 use _gammaloop::graph::{
-    half_edge::layout::{FancySettings, LayoutParams},
+    half_edge::{
+        layout::{FancySettings, LayoutEdge, LayoutParams, LayoutVertex},
+        HedgeGraph, Orientation,
+    },
     BareGraph,
 };
-use dis::{dis_cut_layout, write_layout, DisGraph, LayoutIters};
+use dis::{dis_cut_layout, write_layout, DisEdge, DisGraph, DisVertex, LayoutIters};
 
 use symbolica::{
     atom::{Atom, AtomCore},
@@ -55,7 +58,11 @@ fn main() {
     };
     let file = std::fs::File::open("layout_params.json").unwrap();
     let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
-    let mut layouts = Vec::new();
+    let mut layouts: Vec<(
+        String,
+        String,
+        Vec<HedgeGraph<LayoutEdge<(&DisEdge, Orientation)>, LayoutVertex<&DisVertex>>>,
+    )> = Vec::new();
     let mut routings_integrand = Vec::new();
 
     for (i, (e, cuts)) in ifsplit.cuts.iter().enumerate() {
@@ -109,7 +116,7 @@ fn main() {
 
         println!("is_zero{}", iszero);
         // let denom = dis_graph.denominator_partial_fraction(first_initial);
-        let num: Vec<_> = dis_graph
+        let _num: Vec<_> = dis_graph
             .numerator(first_initial)
             .iter()
             .map(|a| a.expand())
@@ -127,7 +134,7 @@ fn main() {
         // );
 
         let first_initial_layout = dis_cut_layout(
-            &first_initial,
+            first_initial.clone(),
             &dis_graph,
             params,
             layout_iters,
@@ -135,14 +142,14 @@ fn main() {
             20.,
         );
 
-        let layout_emb_i = cuts[0]
+        let layout_emb_i: Vec<_> = cuts[0]
             .iter()
-            .map(|c| dis_cut_layout(c, &dis_graph, params, layout_iters, None, 20.))
+            .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
             .collect();
 
         let layout_emb_f = cuts[1]
             .iter()
-            .map(|c| dis_cut_layout(c, &dis_graph, params, layout_iters, None, 20.))
+            .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
             .collect();
 
         layouts.push((

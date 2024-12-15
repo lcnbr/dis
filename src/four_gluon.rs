@@ -54,9 +54,9 @@ fn main() {
     let file = File::open("layout_params.json").unwrap();
     let reader = BufReader::new(file);
 
-    let params = serde_json::from_reader::<_, LayoutParams>(reader).unwrap();
+    let _params = serde_json::from_reader::<_, LayoutParams>(reader).unwrap();
 
-    let fancy_settings = FancySettings {
+    let _fancy_settings = FancySettings {
         label_shift: 0.06,
         arrow_angle_percentage: Some(0.7),
         arrow_shift: 0.06,
@@ -71,7 +71,7 @@ fn main() {
         let first_initial = &cuts[0][0];
 
         let denom = dis_graph.denominator(first_initial);
-        let num: Vec<_> = dis_graph
+        let _num: Vec<_> = dis_graph
             .numerator(first_initial)
             .iter()
             .map(|a| a.expand())
