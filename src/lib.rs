@@ -6,7 +6,7 @@ use _gammaloop::{
             drawing::Decoration,
             layout::{FancySettings, LayoutParams, PositionalHedgeGraph},
             subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
-            EdgeId, Hedge, HedgeGraph, Orientation,
+            EdgeId, Flow, Hedge, HedgeGraph, Orientation,
         },
         BareGraph, Edge, Vertex,
     },
@@ -519,13 +519,53 @@ impl DisGraph {
             OrientedCut::all_initial_state_cuts(&self.graph),
             self.basis.clone(),
             |c| {
-                // if c.cut.count_ones() == 1 {
-                //     let e = c.cut.iter_ones().next().unwrap();
-                //     d.edges[e].particle.pdg_code.abs() != 22
-                // } else {
-                //     false
-                // }
-                true
+                let contains_electron = self
+                    .graph
+                    .iter_egdes(c)
+                    .filter(|(e, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 11)
+                    .count();
+                let alligned_electron = self.graph.iter_egdes(c).all(|(e, d)| {
+                    if let EdgeId::Split {
+                        source,
+                        sink,
+                        split,
+                    } = e
+                    {
+                        match split {
+                            Flow::Sink => false,
+                            Flow::Source => true,
+                        }
+                    } else {
+                        false
+                    }
+                });
+                let contains_photon = self
+                    .graph
+                    .iter_egdes(c)
+                    .any(|(e, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 22);
+
+                let mut complement = c.reference.complement(&self.graph);
+
+                for i in self.graph.full_filter().included_iter() {
+                    if self
+                        .graph
+                        .get_edge_data(i)
+                        .bare_edge
+                        .particle
+                        .pdg_code
+                        .abs()
+                        == 11
+                    {
+                        complement.set(i.0, false);
+                    }
+                }
+
+                let electron_disconnects = !self.graph.is_connected(&complement);
+
+                contains_electron == 1
+                    && !contains_photon
+                    && alligned_electron
+                    && !electron_disconnects
             },
             true,
         )
@@ -972,7 +1012,7 @@ impl DenominatorDis {
         for (i, c) in coeffs.iter().enumerate() {
             if !c.is_zero() {
                 all_zero = false;
-                let prefactor = c / &coef;
+                let prefactor = &self.prefactor * c / &coef;
 
                 let mut propsnew = IndexMap::new();
                 for (j, (k, v)) in props.iter().enumerate() {
@@ -1008,15 +1048,10 @@ impl DenominatorDis {
             .as_view()
             .to_rational_polynomial::<_, _, u8>(&Q, &Z, None);
 
-        println!("iszero{}", iszero);
+        assert!(iszero.is_zero());
 
         let mut partials = vec![];
-        // for v in vars {
-        //     println!("{v}");
-        // }
 
-        // println!("{aug}");
-        //
         for p in &denoms {
             partials.extend(p.partial_fraction());
         }
