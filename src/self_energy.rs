@@ -85,14 +85,14 @@ fn main() {
         );
 
         let mut sum = Atom::new_num(0);
-        // for d in &denoms {
-        //     d.to_mathematica_integrand();
+        for d in &denoms {
+            d.to_mathematica_integrand();
 
-        //     if d.is_dotted() {
-        //         println!("Dotted");
-        //     }
-        //     sum = sum + d.to_atom();
-        // }
+            if d.is_dotted() {
+                println!("Dotted");
+            }
+            sum = sum + d.to_atom();
+        }
         // println!(
         //     "Partial fractioned denom:\n{}",
         //     sum.printer(symbolica::printer::PrintOptions {
@@ -112,7 +112,7 @@ fn main() {
         //     })
         // );
 
-        let mut sum = Atom::new_num(0);
+        // let mut sum = Atom::new_num(0);
 
         // let iszero = (denom.to_expression() - sum).expand();
 
@@ -171,12 +171,27 @@ fn main() {
         layouts.push((
             format!("embedding{}i", i + 1),
             format!(
-                "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```",
+                "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
                 i + 1,
                 e.windings,
                 denom
                     .to_atom()
-                    .printer(symbolica::printer::PrintOptions::mathematica())
+                    .printer(symbolica::printer::PrintOptions::mathematica()),
+                sum.printer(symbolica::printer::PrintOptions {
+                    terms_on_new_line: true,
+                    color_top_level_sum: false,
+                    color_builtin_symbols: false,
+                    print_finite_field: true,
+                    symmetric_representation_for_finite_field: false,
+                    explicit_rational_polynomial: false,
+                    number_thousands_separator: None,
+                    multiplication_operator: ' ',
+                    double_star_for_exponentiation: false,
+                    square_brackets_for_function: true,
+                    num_exp_as_superscript: false,
+                    latex: false,
+                    precision: None,
+                })
             ),
             layout_emb_i,
         ));
@@ -201,5 +216,5 @@ fn main() {
         ));
     }
     write_layout(&layouts, "self_energy_embeddings.typ");
-    write_layout(&routings_integrand, "self_energy_integrands.typ");
+    // write_layout(&routings_integrand, "self_energy_integrands.typ");
 }

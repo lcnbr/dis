@@ -96,18 +96,6 @@ fn main() {
             })
         );
 
-        let mut sum = Atom::new_num(0);
-        for d in &denoms {
-            sum = sum + d.to_expression();
-        }
-
-        let iszero = (denom.to_expression() - sum).expand();
-
-        let iszero = iszero
-            .as_view()
-            .to_rational_polynomial::<_, _, u8>(&Q, &Z, None);
-
-        println!("is_zero{}", iszero);
         // let denom = dis_graph.denominator_partial_fraction(first_initial);
         let _num: Vec<_> = dis_graph
             .numerator(first_initial)
@@ -157,12 +145,27 @@ fn main() {
         layouts.push((
             format!("embedding{}i", i + 1),
             format!(
-                "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```",
+                "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
                 i + 1,
                 e.windings,
                 denom
                     .to_atom()
-                    .printer(symbolica::printer::PrintOptions::mathematica())
+                    .printer(symbolica::printer::PrintOptions::mathematica()),
+                sum.printer(symbolica::printer::PrintOptions {
+                    terms_on_new_line: true,
+                    color_top_level_sum: false,
+                    color_builtin_symbols: false,
+                    print_finite_field: true,
+                    symmetric_representation_for_finite_field: false,
+                    explicit_rational_polynomial: false,
+                    number_thousands_separator: None,
+                    multiplication_operator: ' ',
+                    double_star_for_exponentiation: false,
+                    square_brackets_for_function: true,
+                    num_exp_as_superscript: false,
+                    latex: false,
+                    precision: None,
+                })
             ),
             layout_emb_i,
         ));
@@ -187,7 +190,7 @@ fn main() {
         ));
     }
     write_layout(&layouts, "double_triangle_embeddings.typ");
-    write_layout(&routings_integrand, "double_triangle_integrands.typ");
+    // write_layout(&routings_integrand, "double_triangle_integrands.typ");
 }
 
 #[cfg(test)]
