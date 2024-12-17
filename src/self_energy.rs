@@ -76,7 +76,7 @@ fn main() {
             .collect();
 
         let denom = dis_graph.denominator(first_initial);
-        // let denoms = denom.partial_fraction();
+        let denoms = denom.partial_fraction();
         println!(
             "Denominator:{} ",
             denom

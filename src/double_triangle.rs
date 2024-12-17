@@ -1,11 +1,8 @@
 use _gammaloop::graph::{
-    half_edge::{
-        layout::{FancySettings, LayoutEdge, LayoutParams, LayoutVertex},
-        HedgeGraph, Orientation,
-    },
+    half_edge::layout::{FancySettings, LayoutParams},
     BareGraph,
 };
-use dis::{dis_cut_layout, write_layout, DisEdge, DisGraph, DisVertex, LayoutIters};
+use dis::{dis_cut_layout, write_layout, DisGraph, LayoutIters};
 
 use symbolica::{
     atom::{Atom, AtomCore},

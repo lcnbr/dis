@@ -6,7 +6,7 @@ use _gammaloop::{
             drawing::Decoration,
             layout::{FancySettings, LayoutParams, PositionalHedgeGraph},
             subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
-            EdgeId, Flow, Hedge, HedgeGraph, Orientation,
+            EdgeId, Hedge, HedgeGraph, Orientation,
         },
         BareGraph, Edge, Vertex,
     },
@@ -31,11 +31,10 @@ use spenso::{
     },
 };
 use symbolica::{
-    atom::{Atom, AtomCore, AtomView, FunctionAttribute, FunctionBuilder, Symbol},
-    coefficient::Coefficient,
+    atom::{Atom, AtomCore, FunctionAttribute, Symbol},
     domains::{integer::Z, rational::Q, Ring, SelfRing},
     fun,
-    id::{MatchSettings, Pattern, PatternOrMap, Replacement},
+    id::{Pattern, PatternOrMap, Replacement},
     symb,
     tensors::matrix::Matrix,
 };
@@ -209,7 +208,7 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
         prefactor: Option<&GlobalPrefactor>,
     ) -> Numerator<AppliedFeynmanRule> {
         let mut vatoms = Vec::new();
-        for (n, v) in graph.iter_node_data(subgraph) {
+        for (_, v) in graph.iter_node_data(subgraph) {
             if let Some(a) = v.bare_vertex.colorless_vertex_rule(bare) {
                 vatoms.push(a);
             }
@@ -265,8 +264,6 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
 }
 
 pub fn numerator_dis_apply(num: &mut Atom) {
-    let f_ = symb!("f_");
-    let g_ = symb!("g_");
     let a_ = Atom::new_var(symb!("a_"));
     let b_ = Atom::new_var(symb!("b_"));
     let c_ = Atom::new_var(symb!("c_"));
@@ -331,7 +328,7 @@ impl DisGraph {
                 let contains_electron = self
                     .graph
                     .iter_egdes(c)
-                    .filter(|(e, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 11)
+                    .filter(|(_, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 11)
                     .count();
                 let alligned_electron = c.iter_edges_relative(&self.graph).all(|(o, d)| {
                     if d.data.as_ref().unwrap().bare_edge.particle.pdg_code.abs() == 11 {
@@ -347,7 +344,7 @@ impl DisGraph {
                 let contains_photon = self
                     .graph
                     .iter_egdes(c)
-                    .any(|(e, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 22);
+                    .any(|(_, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 22);
 
                 let mut complement = c.reference.complement(&self.graph);
 
@@ -384,7 +381,7 @@ impl DisGraph {
 
         let mut elec_node = None;
 
-        if let Some((elec, d)) = h.iter_egdes(&h.full_filter()).find(|(e, n)| {
+        if let Some((elec, _)) = h.iter_egdes(&h.full_filter()).find(|(_, n)| {
             if bare.edges[**n.as_ref().data.unwrap()]
                 .particle
                 .pdg_code
@@ -396,7 +393,7 @@ impl DisGraph {
                 false
             }
         }) {
-            if let EdgeId::Paired { source, sink } = elec {
+            if let EdgeId::Paired { source, .. } = elec {
                 elec_node = Some(h.node_id(source).clone());
             }
         }
@@ -603,7 +600,7 @@ impl DisGraph {
         }
 
         let mut emr_to_lmb_cut = AHashMap::new();
-        for (e, d) in self.graph.iter_egdes(&self.graph.full_graph()) {
+        for (_, d) in self.graph.iter_egdes(&self.graph.full_graph()) {
             let data = d.data.unwrap();
             emr_to_lmb_cut.insert(
                 fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
@@ -737,7 +734,7 @@ impl DenominatorDis {
         let mut system = vec![];
         for m in &matches {
             let coef = sum.coefficient(m);
-            // println!("coef:{coef}");
+            println!("coef:{coef}");
             system.push(coef);
         }
 
@@ -748,7 +745,7 @@ impl DenominatorDis {
         aug.back_substitution(old_col);
 
         let mut pivot = vec![];
-        for (i, r) in aug.row_iter().enumerate() {
+        for r in aug.row_iter() {
             for (j, c) in r.iter().enumerate() {
                 if c.is_one() {
                     pivot.push(j);
@@ -779,42 +776,41 @@ impl DenominatorDis {
             b_mat[(i, 0)] = aug[(i, n)].clone();
         }
 
-        let mut var_mat = Matrix::new(n - rank, 1, field.clone());
+        let mut var_indep_mat = Matrix::new(n - rank, 1, field.clone());
         if n > rank {
-            var_mat[(0, 0)] = field.one();
+            var_indep_mat[(0, 0)] = field.one();
         }
 
-        let sol = (&b_mat - &(&x_mat * &var_mat)).into_vector().into_vec();
+        let sol = (&b_mat - &(&x_mat * &var_indep_mat))
+            .into_vector()
+            .into_vec();
 
         let mut sol_reps = vec![];
         let mut coeffs = vec![];
-        for i in 0..=(n - rank) {
+
+        let (deps, indeps) = vars.split_at(rank as usize);
+
+        for (i, d) in deps.iter().enumerate() {
             let so = sol[i as usize].to_expression();
             coeffs.push(so.clone());
-            let var = &vars[i as usize];
-            sol_reps.push(Replacement::new(var.to_pattern(), so.to_pattern()));
+            sol_reps.push(Replacement::new(d.to_pattern(), so.to_pattern()));
         }
 
-        if n > rank {
-            let indep = (n.checked_sub(rank).unwrap() + 1) as usize;
+        let mut iter = indeps.iter();
 
-            coeffs.push(Atom::new_num(1));
+        if let Some(i) = iter.next() {
+            let so = Atom::new_num(1);
+            coeffs.push(so.clone());
+            sol_reps.push(Replacement::new(i.to_pattern(), so.to_pattern()));
+        }
 
-            sol_reps.push(Replacement::new(
-                vars[indep].to_pattern(),
-                Atom::new_num(1).to_pattern(),
-            ));
-            for i in n - rank + 2..n {
-                coeffs.push(Atom::Zero);
-                sol_reps.push(Replacement::new(
-                    vars[i as usize].to_pattern(),
-                    Atom::new_num(0).to_pattern(),
-                ));
-            }
+        for i in iter {
+            let so = Atom::new_num(0);
+            coeffs.push(so.clone());
+            sol_reps.push(Replacement::new(i.to_pattern(), so.to_pattern()));
         }
 
         let coef = sum.replace_all_multiple(&sol_reps).expand();
-        // let println!("coef:{coef}");
 
         let mut denoms = vec![];
 
@@ -834,7 +830,6 @@ impl DenominatorDis {
                         }
                     }
                 }
-
                 denoms.push(DenominatorDis {
                     props: propsnew,
                     prefactor,
@@ -1002,7 +997,7 @@ pub fn write_layout<'a>(
         filename,
         PositionalHedgeGraph::cetz_impl_collection(
             &layouts,
-            &|(e, o, a)| {
+            &|(_, o, a)| {
                 format!(
                     "{}",
                     (SignOrZero::from(*o) * a.expand())
@@ -1010,7 +1005,7 @@ pub fn write_layout<'a>(
                         .printer(symbolica::printer::PrintOptions::mathematica())
                 )
             },
-            &|(e, o, a)| e.decoration(),
+            &|(e, _, _)| e.decoration(),
         ),
     )
     .unwrap();
