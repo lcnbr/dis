@@ -76,7 +76,7 @@ fn main() {
             .collect();
 
         let denom = dis_graph.denominator(first_initial);
-        let denoms = denom.partial_fraction();
+        // let denoms = denom.partial_fraction();
         println!(
             "Denominator:{} ",
             denom
@@ -85,42 +85,42 @@ fn main() {
         );
 
         let mut sum = Atom::new_num(0);
-        for d in &denoms {
-            d.to_mathematica_integrand();
+        // for d in &denoms {
+        //     d.to_mathematica_integrand();
 
-            if d.is_dotted() {
-                println!("Dotted");
-            }
-            sum = sum + d.to_atom();
-        }
-        println!(
-            "Partial fractioned denom:\n{}",
-            sum.printer(symbolica::printer::PrintOptions {
-                terms_on_new_line: true,
-                color_top_level_sum: false,
-                color_builtin_symbols: false,
-                print_finite_field: true,
-                symmetric_representation_for_finite_field: false,
-                explicit_rational_polynomial: false,
-                number_thousands_separator: None,
-                multiplication_operator: ' ',
-                double_star_for_exponentiation: false,
-                square_brackets_for_function: true,
-                num_exp_as_superscript: false,
-                latex: false,
-                precision: None,
-            })
-        );
+        //     if d.is_dotted() {
+        //         println!("Dotted");
+        //     }
+        //     sum = sum + d.to_atom();
+        // }
+        // println!(
+        //     "Partial fractioned denom:\n{}",
+        //     sum.printer(symbolica::printer::PrintOptions {
+        //         terms_on_new_line: true,
+        //         color_top_level_sum: false,
+        //         color_builtin_symbols: false,
+        //         print_finite_field: true,
+        //         symmetric_representation_for_finite_field: false,
+        //         explicit_rational_polynomial: false,
+        //         number_thousands_separator: None,
+        //         multiplication_operator: ' ',
+        //         double_star_for_exponentiation: false,
+        //         square_brackets_for_function: true,
+        //         num_exp_as_superscript: false,
+        //         latex: false,
+        //         precision: None,
+        //     })
+        // );
 
         let mut sum = Atom::new_num(0);
 
-        let iszero = (denom.to_expression() - sum).expand();
+        // let iszero = (denom.to_expression() - sum).expand();
 
-        let iszero = iszero
-            .as_view()
-            .to_rational_polynomial::<_, _, u8>(&Q, &Z, None);
+        // let iszero = iszero
+        // .as_view()
+        // .to_rational_polynomial::<_, _, u8>(&Q, &Z, None);
 
-        println!("is_zero{}", iszero);
+        // println!("is_zero{}", iszero);
         // println!(
         //     "W1:{} ",
         //     num[0].printer(symbolica::printer::PrintOptions::mathematica())
@@ -142,17 +142,42 @@ fn main() {
 
         let layout_emb_i = cuts[0]
             .iter()
-            .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
+            .map(|c| {
+                dis_cut_layout(
+                    c.clone(),
+                    &dis_graph,
+                    params,
+                    layout_iters,
+                    Some(&fancy_settings),
+                    20.,
+                )
+            })
             .collect();
 
         let layout_emb_f = cuts[1]
             .iter()
-            .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
+            .map(|c| {
+                dis_cut_layout(
+                    c.clone(),
+                    &dis_graph,
+                    params,
+                    layout_iters,
+                    Some(&fancy_settings),
+                    20.,
+                )
+            })
             .collect();
 
         layouts.push((
             format!("embedding{}i", i + 1),
-            format!("= embedding {} {:?} \n == initial", i + 1, e.windings),
+            format!(
+                "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```",
+                i + 1,
+                e.windings,
+                denom
+                    .to_atom()
+                    .printer(symbolica::printer::PrintOptions::mathematica())
+            ),
             layout_emb_i,
         ));
 

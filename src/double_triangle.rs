@@ -50,21 +50,15 @@ fn main() {
 
     let ifsplit = dis_graph.full_dis_filter_split();
 
-    let fancy_settings = FancySettings {
-        label_shift: 0.06,
-        arrow_angle_percentage: Some(0.7),
-        arrow_shift: 0.06,
-    };
+    let file = std::fs::File::open("fancy_settings.json").unwrap();
+    let fancy_settings = serde_json::from_reader::<_, FancySettings>(file).unwrap();
+
     let file = std::fs::File::open("layout_params.json").unwrap();
     let params = serde_json::from_reader::<_, LayoutParams>(file).unwrap();
 
     let file = std::fs::File::open("layout_iters.json").unwrap();
     let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
-    let mut layouts: Vec<(
-        String,
-        String,
-        Vec<HedgeGraph<LayoutEdge<(&DisEdge, Orientation)>, LayoutVertex<&DisVertex>>>,
-    )> = Vec::new();
+    let mut layouts: Vec<_> = Vec::new();
     let mut routings_integrand = Vec::new();
 
     for (i, (e, cuts)) in ifsplit.cuts.iter().enumerate() {
@@ -146,7 +140,16 @@ fn main() {
 
         let layout_emb_i: Vec<_> = cuts[0]
             .iter()
-            .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
+            .map(|c| {
+                dis_cut_layout(
+                    c.clone(),
+                    &dis_graph,
+                    params,
+                    layout_iters,
+                    Some(&fancy_settings),
+                    20.,
+                )
+            })
             .collect();
 
         let layout_emb_f = cuts[1]
@@ -156,7 +159,14 @@ fn main() {
 
         layouts.push((
             format!("embedding{}i", i + 1),
-            format!("= embedding {} {:?}\n == initial", i + 1, e.windings),
+            format!(
+                "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```",
+                i + 1,
+                e.windings,
+                denom
+                    .to_atom()
+                    .printer(symbolica::printer::PrintOptions::mathematica())
+            ),
             layout_emb_i,
         ));
 

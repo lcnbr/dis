@@ -166,197 +166,6 @@ pub trait ToDisGraph {
     fn to_dis_graph(&self) -> DisGraph;
 }
 
-impl ToDisGraph for BareGraph {
-    fn to_dis_graph(&self) -> DisGraph {
-        let mut h = self.hedge_representation.clone();
-
-        let mut elec_node = None;
-
-        if let Some((elec, d)) = h.iter_egdes(&h.full_filter()).find(|(e, n)| {
-            if self.edges[**n.as_ref().data.unwrap()]
-                .particle
-                .pdg_code
-                .abs()
-                == 11
-            {
-                true
-            } else {
-                false
-            }
-        }) {
-            if let EdgeId::Paired { source, sink } = elec {
-                elec_node = Some(h.node_id(source).clone());
-            }
-        }
-
-        let mut included_hedge = None;
-        let node = if let Some(s) = elec_node {
-            for i in s.hairs.included_iter() {
-                if self.edges[*h.get_edge_data(i)].particle.pdg_code.abs() == 11 {
-                    included_hedge = Some(i);
-                    break;
-                }
-            }
-            s
-        } else {
-            h.node_id(Hedge(0)).clone()
-        };
-
-        let (basis, tree) = h
-            .paton_cycle_basis(&h.full_graph(), &node, included_hedge)
-            .unwrap();
-        h.align_to_tree_underlying(&tree);
-
-        // println!("{}", h.base_dot());
-        // println!("{}", h.dot(&tree.tree));
-
-        let mut seen_pdg22 = None;
-        let mut seen_pdg11 = None;
-        let lmbsymb = symb!("k");
-        let graph = h.map(
-            |bare_vertex_id| DisVertex {
-                bare_vertex_id,
-                bare_vertex: self.vertices[bare_vertex_id].clone(),
-            },
-            |e, d| {
-                let mut mom_e = Atom::new_num(0);
-
-                let mut first_cycle = None;
-                let mut only_cycle = true;
-
-                for (i, c) in basis.iter().enumerate() {
-                    if let EdgeId::Paired { source, .. } = e {
-                        if c.filter.includes(&source) {
-                            if first_cycle.is_none() {
-                                first_cycle = Some(i);
-                            } else {
-                                only_cycle = false;
-                            }
-                            mom_e = mom_e + fun!(lmbsymb, i as i32)
-                        }
-                    }
-                }
-                d.and_then(|bare_edge_id| {
-                    let bare_edge = self.edges[bare_edge_id].clone();
-
-                    let marked = if only_cycle {
-                        if let Some(i) = first_cycle {
-                            match bare_edge.particle.pdg_code.abs() {
-                                11 => {
-                                    if seen_pdg11.is_some() {
-                                        false
-                                    } else {
-                                        seen_pdg11 = Some((e, i));
-                                        true
-                                    }
-                                }
-                                22 => {
-                                    if seen_pdg22.is_some() {
-                                        false
-                                    } else {
-                                        seen_pdg22 = Some((e, i));
-                                        true
-                                    }
-                                }
-                                _ => false,
-                            }
-                        } else {
-                            false
-                        }
-                    } else {
-                        false
-                    };
-
-                    Some(DisEdge {
-                        bare_edge,
-                        bare_edge_id,
-                        marked,
-                        momentum: mom_e,
-                    })
-                })
-            },
-        );
-
-        let mut outer_graph = graph.empty_filter();
-
-        for (i, e) in graph.iter_egdes(&graph.full_filter()) {
-            match i {
-                EdgeId::Paired { source, sink } => {
-                    if e.data.as_ref().unwrap().bare_edge.particle.pdg_code.abs() == 11 {
-                        outer_graph.set(source.0, true);
-                        for i in graph.node_id(sink).included_iter() {
-                            outer_graph.set(i.0, true);
-                        }
-                        outer_graph.set(sink.0, true);
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        let inner_graph = outer_graph.complement(&graph);
-
-        let mink = Rep::new_self_dual("mink").unwrap();
-        let mu = mink.new_slot(4, 3).to_atom();
-        let nu = mink.new_slot(4, 2).to_atom();
-        let metric = fun!(ETS.metric, mu, nu);
-        let p = symb!("p");
-        let phat2 = Atom::new_var(symb!("phat")).pow(&Atom::new_num(2));
-        let pp = fun!(p, mu) * fun!(p, nu);
-        let diminv = Atom::parse("1/(2-D)").unwrap();
-
-        let w1_proj = GlobalPrefactor {
-            color: Atom::new_num(1),
-            colorless: &diminv * (&metric - &pp / &phat2),
-        };
-
-        let w2_proj = GlobalPrefactor {
-            color: Atom::new_num(1),
-            colorless: (diminv * (metric - &pp / &phat2) + &pp / &phat2) / &phat2,
-        };
-
-        let mut w1 = _gammaloop::numerator::Numerator::default()
-            .from_dis_graph(self, &graph, &inner_graph, Some(&w1_proj))
-            .color_simplify()
-            .gamma_simplify()
-            .get_single_atom()
-            .unwrap()
-            .0;
-
-        let mut w2 = _gammaloop::numerator::Numerator::default()
-            .from_dis_graph(self, &graph, &inner_graph, Some(&w2_proj))
-            .color_simplify()
-            .gamma_simplify()
-            .get_single_atom()
-            .unwrap()
-            .0;
-
-        numerator_dis_apply(&mut w1);
-        numerator_dis_apply(&mut w2);
-
-        let mut props = vec![];
-        for (j, e) in graph.iter_egdes(&inner_graph) {
-            let edge = &e.data.as_ref().unwrap().bare_edge;
-            let i = e.data.as_ref().unwrap().bare_edge_id;
-            if matches!(j, EdgeId::Paired { .. }) {
-                let mass = edge.particle.mass.expression.clone();
-                let emr_mom = fun!(DIS_SYMBOLS.emr_mom, i as i32);
-                props.push(Prop::new(mass, emr_mom));
-                // denominator = denominator * fun!(denomsymb, mass, emr_mom);
-            };
-        }
-
-        DisGraph {
-            graph,
-            numerator: vec![w1.expand(), w2.expand()],
-            denominator: DenominatorDis::new(props),
-            lmb_photon: seen_pdg22.unwrap(),
-            marked_electron_edge: seen_pdg11.unwrap(),
-            basis,
-        }
-    }
-}
-
 pub struct DisSymbols {
     pub prop: Symbol,
     pub cut_mom: Symbol,
@@ -524,19 +333,15 @@ impl DisGraph {
                     .iter_egdes(c)
                     .filter(|(e, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 11)
                     .count();
-                let alligned_electron = self.graph.iter_egdes(c).all(|(e, d)| {
-                    if let EdgeId::Split {
-                        source,
-                        sink,
-                        split,
-                    } = e
-                    {
-                        match split {
-                            Flow::Sink => false,
-                            Flow::Source => true,
+                let alligned_electron = c.iter_edges_relative(&self.graph).all(|(o, d)| {
+                    if d.data.as_ref().unwrap().bare_edge.particle.pdg_code.abs() == 11 {
+                        match (o, d.orientation) {
+                            (Orientation::Default, Orientation::Default) => true,
+                            (Orientation::Reversed, Orientation::Reversed) => true,
+                            _ => false,
                         }
                     } else {
-                        false
+                        true
                     }
                 });
                 let contains_photon = self
@@ -678,11 +483,14 @@ impl DisGraph {
                         false
                     };
 
+                    let emr_mom = fun!(DIS_SYMBOLS.emr_mom, bare_edge_id as i32);
+
                     Some(DisEdge {
                         bare_edge,
                         bare_edge_id,
                         marked,
-                        momentum: mom_e,
+                        lmb_momentum: mom_e,
+                        emr_momentum: emr_mom,
                     })
                 })
             },
@@ -714,7 +522,7 @@ impl DisGraph {
         let p = symb!("p");
         let phat2 = Atom::new_var(symb!("phat")).pow(&Atom::new_num(2));
         let pp = fun!(p, mu) * fun!(p, nu);
-        let diminv = Atom::parse("1/(2-D)").unwrap();
+        let diminv = Atom::parse("1/(2-dim)").unwrap();
 
         let w1_proj = GlobalPrefactor {
             color: Atom::new_num(1),
@@ -799,7 +607,7 @@ impl DisGraph {
             let data = d.data.unwrap();
             emr_to_lmb_cut.insert(
                 fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
-                data.momentum.replace_all_multiple(&reps).to_pattern(),
+                data.lmb_momentum.replace_all_multiple(&reps).to_pattern(),
             );
         }
 
@@ -827,7 +635,8 @@ impl DisGraph {
                 .abs()
                 != 11
             {
-                sum = sum + SignOrZero::from(o) * cut_edge.as_ref().data.unwrap().momentum.clone();
+                sum = sum
+                    + SignOrZero::from(o) * cut_edge.as_ref().data.unwrap().lmb_momentum.clone();
             }
         }
         sum = sum - Atom::new_var(DIS_SYMBOLS.cut_mom);
@@ -867,7 +676,8 @@ pub struct DisEdge {
     pub bare_edge_id: usize,
     pub bare_edge: Edge,
     marked: bool,
-    momentum: Atom,
+    lmb_momentum: Atom,
+    emr_momentum: Atom,
 }
 
 impl DisEdge {
@@ -876,7 +686,7 @@ impl DisEdge {
     }
 
     pub fn label(&self) -> String {
-        self.momentum.to_string()
+        self.lmb_momentum.to_string()
     }
 }
 
@@ -1156,7 +966,8 @@ pub fn dis_cut_layout<'a>(
     iter_params: LayoutIters,
     settings: Option<&FancySettings>,
     edge_len: f64,
-) -> PositionalHedgeGraph<(&'a DisEdge, Orientation), &'a DisVertex> {
+) -> PositionalHedgeGraph<(&'a DisEdge, Orientation, Atom), &'a DisVertex> {
+    let c = graph.emr_to_lmb_and_cut(&cut);
     // let layout_graph = graph.graph.map_edges_ref(f)
 
     // let file = std::fs::File::open("layout_params.json").unwrap();
@@ -1168,6 +979,7 @@ pub fn dis_cut_layout<'a>(
         iter_params.n_iters,
         iter_params.temp,
         edge_len,
+        &|e| e.emr_momentum.replace_all_multiple(&c),
     );
 
     if let Some(settings) = settings {
@@ -1178,19 +990,28 @@ pub fn dis_cut_layout<'a>(
     }
 }
 
-pub fn write_layout(
+pub fn write_layout<'a>(
     layouts: &[(
         String,
         String,
-        Vec<PositionalHedgeGraph<(&DisEdge, Orientation), &DisVertex>>,
+        Vec<PositionalHedgeGraph<(&'a DisEdge, Orientation, Atom), &'a DisVertex>>,
     )],
     filename: &str,
 ) {
     std::fs::write(
         filename,
-        PositionalHedgeGraph::cetz_impl_collection(&layouts, &|(e, o)| e.label(), &|(e, o)| {
-            e.decoration()
-        }),
+        PositionalHedgeGraph::cetz_impl_collection(
+            &layouts,
+            &|(e, o, a)| {
+                format!(
+                    "{}",
+                    (SignOrZero::from(*o) * a.expand())
+                        .expand()
+                        .printer(symbolica::printer::PrintOptions::mathematica())
+                )
+            },
+            &|(e, o, a)| e.decoration(),
+        ),
     )
     .unwrap();
 }
