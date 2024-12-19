@@ -1,23 +1,29 @@
-use std::{collections::BTreeMap, path::Path, sync::LazyLock};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::Path,
+    sync::LazyLock,
+};
 
 use _gammaloop::{
     graph::{
         half_edge::{
             drawing::Decoration,
-            layout::{FancySettings, LayoutParams, PositionalHedgeGraph},
+            layout::{FancySettings, LayoutIters, LayoutParams, PositionalHedgeGraph},
             subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
-            EdgeId, Hedge, HedgeGraph, Orientation,
+            EdgeData, EdgeId, Hedge, HedgeGraph, HedgeGraphBuilder, Orientation, TraversalTree,
         },
         BareGraph, Edge, Vertex,
     },
     model::{normalise_complex, Model},
-    momentum::{Sign, SignOrZero},
+    momentum::{Sign, SignOrZero, Signature},
     numerator::{AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
 };
 use ahash::{AHashMap, AHashSet};
-use indexmap::IndexMap;
+use bitvec::vec::BitVec;
+use indexmap::{IndexMap, IndexSet};
+use itertools::Itertools;
 use log::debug;
-use serde::{Deserialize, Serialize};
+use ref_ops::RefMutNot;
 use spenso::{
     arithmetic::ScalarMul,
     contraction::Contract,
@@ -31,8 +37,13 @@ use spenso::{
     },
 };
 use symbolica::{
-    atom::{Atom, AtomCore, FunctionAttribute, Symbol},
-    domains::{integer::Z, rational::Q, Ring, SelfRing},
+    atom::{Atom, AtomCore, AtomView, FunctionAttribute, Symbol},
+    coefficient::ConvertToRing,
+    domains::{
+        integer::{Integer, Z},
+        rational::{FractionField, Rational, Q},
+        Ring, SelfRing,
+    },
     fun,
     id::{Pattern, PatternOrMap, Replacement},
     symb,
@@ -167,6 +178,8 @@ pub trait ToDisGraph {
 
 pub struct DisSymbols {
     pub prop: Symbol,
+    pub internal_mom: Symbol,
+    pub external_mom: Symbol,
     pub cut_mom: Symbol,
     pub photon_mom: Symbol,
     pub emr_mom: Symbol,
@@ -182,6 +195,8 @@ const DIS_SYMBOLS: LazyLock<DisSymbols> = LazyLock::new(|| DisSymbols {
     emr_mom: symb!("Q"),
     loop_mom: symb!("k"),
     dim: symb!("dim"),
+    internal_mom: symb!("l"),
+    external_mom: symb!("p"),
     dot: Symbol::new_with_attributes(
         "dot",
         &[FunctionAttribute::Symmetric, FunctionAttribute::Linear],
@@ -701,6 +716,178 @@ pub struct MathematicaIntegrand {
     numerators: Vec<Atom>,
 }
 
+pub struct TopologyEdge {
+    pub edgeid: usize,
+    pub signature: Signature,
+    pub propagator: Prop,
+    pub power: u8,
+}
+
+pub struct Topology {
+    graph: HedgeGraph<TopologyEdge, ()>,
+}
+
+pub struct LmbSignature {
+    signs: Signature,
+    prefactor: Rational,
+}
+
+pub struct EdgeSignatures {
+    pub edge_signatures: Vec<LmbSignature>,
+    pub basis: Vec<Atom>,
+}
+
+impl EdgeSignatures {
+    pub fn basis_size(&self) -> usize {
+        self.basis.len()
+    }
+
+    pub fn from_momenta(momenta: &[Atom]) -> Self {
+        let mut basis = IndexSet::new();
+
+        let loop_mom_pat = fun!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
+
+        for p in momenta {
+            let mut matches = p.pattern_match(&loop_mom_pat, None, None);
+
+            while let Some(m) = matches.next_detailed() {
+                basis.insert(m.target.to_owned());
+            }
+        }
+
+        let mut edge_signatures = vec![];
+
+        for (i, p) in momenta.iter().enumerate() {
+            let mut coef = None;
+            let mut signature = vec![];
+            for (j, b) in basis.iter().enumerate() {
+                let coef_atom = p.expand().coefficient(b);
+
+                if coef_atom.is_zero() {
+                } else if let AtomView::Num(n) = coef_atom.as_view() {
+                    let new_coef = Q.element_from_coefficient_view(n.get_coeff_view());
+
+                    if new_coef > Q.zero() {
+                        signature.push(1i8);
+                    } else {
+                        signature.push(-1);
+                    }
+                    if let Some(c) = coef {
+                        if c != new_coef {
+                            panic!("Inconsistent coefficients");
+                        }
+                    } else {
+                        coef = Some(new_coef.abs())
+                    }
+                }
+                {
+                    panic!("should be num")
+                }
+            }
+
+            edge_signatures.push(LmbSignature {
+                signs: Signature::from_iter(signature),
+                prefactor: coef.unwrap(),
+            });
+        }
+
+        EdgeSignatures {
+            edge_signatures,
+            basis: basis.into_iter().collect(),
+        }
+    }
+}
+
+impl Topology {
+    pub fn new(mut denom: DenominatorDis) -> Self {
+        let momenta = denom
+            .props
+            .keys()
+            .map(|p| p.momentum.clone())
+            .collect::<Vec<_>>();
+        let signatures = EdgeSignatures::from_momenta(&momenta);
+
+        let mut graph = HedgeGraphBuilder::new();
+        let v = graph.add_node(());
+
+        let unique_signatures = IndexMap::new();
+
+        for (i, s) in signatures.edge_signatures.iter().enumerate() {
+            unique_signatures.entry(s.signs.clone()).or_insert(i);
+        }
+
+        let mut current_edgenum = 0;
+
+        let mut not_seen = !BitVec::empty(denom.props.len());
+        let (skeleton, mut signature_cut) = if unique_signatures.len() == 1 {
+            let (s, i) = unique_signatures.iter().next().unwrap();
+            not_seen.set(*i, false);
+
+            let (prop, pow) = denom.props.get_index(*i).unwrap();
+
+            // let prefactor = if *pow > 1 {
+            //     fun!(DIS_SYMBOLS.internal_mom, 0).npow(1 - *pow as i32)
+            // } else {
+            //     Atom::new_num(1)
+            // };
+            let mut graph = HedgeGraphBuilder::new();
+            let v = graph.add_node(());
+
+            graph.add_edge(
+                v,
+                v,
+                TopologyEdge {
+                    edgeid: 0,
+                    signature: s.clone(),
+                    propagator: prop.clone(),
+                    power: *pow,
+                },
+                false,
+            );
+
+            let graph = graph.build();
+
+            let mut cut_map = AHashMap::new();
+
+            for (i, c) in graph.iter_egdes(&graph.full_filter()) {
+                let s = c.data.unwrap().signature;
+                if let EdgeId::Paired { source, sink } = i {
+                    cut_map.insert(s.clone(), source);
+                }
+            }
+
+            (graph, cut_map)
+        } else {
+            unimplemented!()
+        };
+
+        for i in not_seen.iter_ones() {
+            let signature = &signatures.edge_signatures[i];
+            let (prop, pow) = denom.props.get_index(i).unwrap();
+
+            let hedge = signature_cut.get(&signature.signs).unwrap();
+
+            current_edgenum += 1;
+            skeleton
+                .split_edge(
+                    *hedge,
+                    EdgeData::new(
+                        TopologyEdge {
+                            edgeid: current_edgenum,
+                            signature: signature.signs.clone(),
+                            propagator: prop.clone(),
+                            power: *pow,
+                        },
+                        Orientation::Undirected,
+                    ),
+                )
+                .unwrap()
+        }
+
+        return Topology { graph: skeleton };
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct DenominatorDis {
     props: IndexMap<Prop, u8>,
@@ -708,6 +895,22 @@ pub struct DenominatorDis {
 }
 
 impl DenominatorDis {
+    pub fn topology(&self) -> Topology {
+        let edge_signatures = EdgeSignatures::from_momenta(
+            &self
+                .props
+                .keys()
+                .map(|p| p.momentum.clone())
+                .collect::<Vec<_>>(),
+        );
+
+        let mut skeleton = Topology::from_edge_signatures(edge_signatures);
+
+        skeleton
+    }
+
+    pub fn to_signature(self) -> EdgeSignatures {}
+
     pub fn partial_fraction(&self) -> Vec<DenominatorDis> {
         let mut props = self.props.clone();
 
@@ -947,13 +1150,6 @@ impl Prop {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-pub struct LayoutIters {
-    n_iters: u64,
-    temp: f64,
-    seed: u64,
-}
-
 pub fn dis_cut_layout<'a>(
     cut: OrientedCut,
     graph: &'a DisGraph,
@@ -967,15 +1163,9 @@ pub fn dis_cut_layout<'a>(
 
     // let file = std::fs::File::open("layout_params.json").unwrap();
     // let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
-    let mut pos = cut.layout(
-        &graph.graph,
-        params,
-        iter_params.seed,
-        iter_params.n_iters,
-        iter_params.temp,
-        edge_len,
-        &|e| e.emr_momentum.replace_all_multiple(&c),
-    );
+    let mut pos = cut.layout(&graph.graph, params, iter_params, edge_len, &|e| {
+        e.emr_momentum.replace_all_multiple(&c)
+    });
 
     if let Some(settings) = settings {
         pos.to_fancy(settings);

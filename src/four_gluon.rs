@@ -4,7 +4,7 @@ use _gammaloop::graph::{
     half_edge::layout::{FancySettings, LayoutParams},
     BareGraph,
 };
-use dis::{load_generic_model, write_layout, DisGraph};
+use dis::{load_generic_model, DisGraph};
 use symbolica::atom::AtomCore;
 
 fn main() {

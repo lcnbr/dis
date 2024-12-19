@@ -1,13 +1,10 @@
 use _gammaloop::graph::{
-    half_edge::layout::{FancySettings, LayoutParams},
+    half_edge::layout::{FancySettings, LayoutIters, LayoutParams},
     BareGraph,
 };
-use dis::{dis_cut_layout, write_layout, DisGraph, LayoutIters};
+use dis::{dis_cut_layout, write_layout, DisGraph};
 
-use symbolica::{
-    atom::{Atom, AtomCore},
-    domains::{integer::Z, rational::Q},
-};
+use symbolica::atom::{Atom, AtomCore};
 
 use dis::load_generic_model;
 
