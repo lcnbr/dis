@@ -71,7 +71,16 @@ fn main() {
 
         let mut sum = Atom::new_num(0);
         for d in &denoms {
-            print!("topology: {}", d.topology().graph.base_dot());
+            let topo = d.topology().graph;
+            print!(
+                "topology: {}",
+                topo.dot_impl(
+                    &topo.full_filter(),
+                    "".into(),
+                    &|e| Some(format!("label=\"{}\"", e.propagator.momentum)),
+                    &|_| None
+                )
+            );
             d.to_mathematica_integrand();
             sum = sum + d.to_atom();
         }

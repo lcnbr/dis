@@ -18,6 +18,7 @@ use _gammaloop::{
     model::{normalise_complex, Model},
     momentum::{Sign, SignOrZero, Signature},
     numerator::{AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
+    utils::DAY,
 };
 use ahash::{AHashMap, AHashSet};
 use bitvec::vec::BitVec;
@@ -835,8 +836,11 @@ impl Topology {
 
             let (mut p, pow) = denom.props.pop().unwrap();
 
-            p.rescale(s.prefactor.clone());
+            println!("{}", p.to_atom());
 
+            p.rescale(s.overall_sign * s.prefactor.inv());
+
+            println!("rescaled:{}", p.to_atom());
             props.insert(p, pow);
 
             println!("signature:{}", s.signs);
@@ -848,7 +852,7 @@ impl Topology {
         let mut current_edgenum = 0;
         let mut ext_edgenum = 0;
 
-        let mut not_seen = !BitVec::empty(denom.props.len());
+        let mut not_seen = !BitVec::empty(props.len());
         let (mut skeleton, mut signature_cut) = if unique_signatures.len() == 1 {
             let (s, i) = unique_signatures.iter().next().unwrap();
             not_seen.set(*i, false);
@@ -951,13 +955,22 @@ impl Topology {
             for (n, _) in skeleton.iter_node_data(&full) {
                 let mut sum = Atom::new_num(0);
                 for (i, d) in skeleton.iter_egdes(n) {
-                    if let EdgeId::Split { split, .. } = i {
-                        sum = sum
-                            + SignOrZero::from(split)
-                                * d.as_ref().data.unwrap().propagator.momentum.clone();
+                    match i {
+                        EdgeId::Split { split, .. } => {
+                            sum = sum
+                                + SignOrZero::from(split)
+                                    * d.as_ref().data.unwrap().propagator.momentum.clone();
+                        }
+                        EdgeId::Unpaired { flow, .. } => {
+                            sum = sum
+                                - SignOrZero::from(flow)
+                                    * d.as_ref().data.unwrap().propagator.momentum.clone();
+                        }
+                        _ => {}
                     }
                 }
 
+                sum = sum.expand();
                 if !sum.is_zero() {
                     println!("sum{sum}");
                     new_node_hairs.insert(skeleton.id_from_hairs(n).unwrap(), sum);
@@ -978,7 +991,11 @@ impl Topology {
                             let d = data.take();
                             let mut current_data = d.data.unwrap();
                             let o = d.orientation;
-                            current_data.propagator.momentum = current_data.propagator.momentum
+
+                            let out = &current_data.propagator.momentum + h;
+                            current_data.propagator.momentum = out;
+
+                            *data = EdgeData::new(current_data, o);
                         }
                     } else {
                         skeleton = skeleton
