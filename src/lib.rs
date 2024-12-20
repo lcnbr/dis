@@ -10,7 +10,8 @@ use _gammaloop::{
             drawing::Decoration,
             layout::{FancySettings, LayoutIters, LayoutParams, PositionalHedgeGraph},
             subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
-            EdgeData, EdgeId, Hedge, HedgeGraph, HedgeGraphBuilder, Orientation, TraversalTree,
+            EdgeData, EdgeId, Flow, Hedge, HedgeGraph, HedgeGraphBuilder, InvolutiveMapping,
+            Orientation, TraversalTree,
         },
         BareGraph, Edge, Vertex,
     },
@@ -409,7 +410,7 @@ impl DisGraph {
             }
         }) {
             if let EdgeId::Paired { source, .. } = elec {
-                elec_node = Some(h.node_id(source).clone());
+                elec_node = Some(h.node_hairs(source).clone());
             }
         }
 
@@ -423,7 +424,7 @@ impl DisGraph {
             }
             s
         } else {
-            h.node_id(Hedge(0)).clone()
+            h.node_hairs(Hedge(0)).clone()
         };
 
         println!("finding basis");
@@ -515,7 +516,7 @@ impl DisGraph {
                 EdgeId::Paired { source, sink } => {
                     if e.data.as_ref().unwrap().bare_edge.particle.pdg_code.abs() == 11 {
                         outer_graph.set(source.0, true);
-                        for i in graph.node_id(sink).included_iter() {
+                        for i in graph.node_hairs(sink).included_iter() {
                             outer_graph.set(i.0, true);
                         }
                         outer_graph.set(sink.0, true);
@@ -716,6 +717,7 @@ pub struct MathematicaIntegrand {
     numerators: Vec<Atom>,
 }
 
+#[derive(Debug, Clone)]
 pub struct TopologyEdge {
     pub edgeid: usize,
     pub signature: Signature,
@@ -724,11 +726,12 @@ pub struct TopologyEdge {
 }
 
 pub struct Topology {
-    graph: HedgeGraph<TopologyEdge, ()>,
+    pub graph: HedgeGraph<TopologyEdge, ()>,
 }
 
 pub struct LmbSignature {
     signs: Signature,
+    overall_sign: Sign,
     prefactor: Rational,
 }
 
@@ -772,21 +775,33 @@ impl EdgeSignatures {
                     } else {
                         signature.push(-1);
                     }
-                    if let Some(c) = coef {
-                        if c != new_coef {
+                    if let Some(c) = &coef {
+                        if c != &new_coef {
                             panic!("Inconsistent coefficients");
                         }
                     } else {
                         coef = Some(new_coef.abs())
                     }
-                }
-                {
-                    panic!("should be num")
+                } else {
+                    panic!("should be num::{}", coef_atom)
                 }
             }
 
+            let overall_sign = signature
+                .iter()
+                .find(|i| **i != 0)
+                .map(|i| {
+                    if *i > 0 {
+                        Sign::Positive
+                    } else {
+                        Sign::Negative
+                    }
+                })
+                .unwrap_or(Sign::Positive);
+
             edge_signatures.push(LmbSignature {
-                signs: Signature::from_iter(signature),
+                signs: Signature::from_iter(signature.into_iter().map(|i| overall_sign * i)),
+                overall_sign,
                 prefactor: coef.unwrap(),
             });
         }
@@ -807,23 +822,38 @@ impl Topology {
             .collect::<Vec<_>>();
         let signatures = EdgeSignatures::from_momenta(&momenta);
 
-        let mut graph = HedgeGraphBuilder::new();
-        let v = graph.add_node(());
+        let mut unique_signatures = IndexMap::new();
 
-        let unique_signatures = IndexMap::new();
+        let mut ext_signature = None;
 
-        for (i, s) in signatures.edge_signatures.iter().enumerate() {
+        let mut props = IndexMap::new();
+
+        for (i, s) in signatures.edge_signatures.iter().enumerate().rev() {
+            if ext_signature.is_none() {
+                ext_signature = Some(Signature::from_iter(vec![0i8; s.signs.len()]));
+            }
+
+            let (mut p, pow) = denom.props.pop().unwrap();
+
+            p.rescale(s.prefactor.clone());
+
+            props.insert(p, pow);
+
+            println!("signature:{}", s.signs);
             unique_signatures.entry(s.signs.clone()).or_insert(i);
         }
 
+        let ext_signature = ext_signature.unwrap();
+
         let mut current_edgenum = 0;
+        let mut ext_edgenum = 0;
 
         let mut not_seen = !BitVec::empty(denom.props.len());
-        let (skeleton, mut signature_cut) = if unique_signatures.len() == 1 {
+        let (mut skeleton, mut signature_cut) = if unique_signatures.len() == 1 {
             let (s, i) = unique_signatures.iter().next().unwrap();
             not_seen.set(*i, false);
 
-            let (prop, pow) = denom.props.get_index(*i).unwrap();
+            let (prop, pow) = props.get_index(*i).unwrap();
 
             // let prefactor = if *pow > 1 {
             //     fun!(DIS_SYMBOLS.internal_mom, 0).npow(1 - *pow as i32)
@@ -850,9 +880,9 @@ impl Topology {
             let mut cut_map = AHashMap::new();
 
             for (i, c) in graph.iter_egdes(&graph.full_filter()) {
-                let s = c.data.unwrap().signature;
+                let s = c.data.unwrap().signature.clone();
                 if let EdgeId::Paired { source, sink } = i {
-                    cut_map.insert(s.clone(), source);
+                    cut_map.insert(s, sink);
                 }
             }
 
@@ -863,7 +893,7 @@ impl Topology {
 
         for i in not_seen.iter_ones() {
             let signature = &signatures.edge_signatures[i];
-            let (prop, pow) = denom.props.get_index(i).unwrap();
+            let (prop, pow) = props.get_index(i).unwrap();
 
             let hedge = signature_cut.get(&signature.signs).unwrap();
 
@@ -881,7 +911,113 @@ impl Topology {
                         Orientation::Undirected,
                     ),
                 )
-                .unwrap()
+                .unwrap();
+
+            println!("split:\n{}", skeleton.base_dot());
+            let mut dot = HedgeGraphBuilder::new();
+            let v = dot.add_node(());
+
+            let e = TopologyEdge {
+                edgeid: current_edgenum,
+                signature: signature.signs.clone(),
+                propagator: prop.clone(),
+                power: *pow,
+            };
+
+            dot.add_external_edge(v, e.clone(), Orientation::Undirected, Flow::Source);
+
+            dot.add_external_edge(v, e.clone(), Orientation::Undirected, Flow::Source);
+
+            let dot = dot.build();
+
+            skeleton = skeleton
+                .join(
+                    dot,
+                    |_, b, _, v| {
+                        let b = b.data.unwrap().signature.clone();
+                        let v = v.data.unwrap().signature.clone();
+                        // println!("join{}{}", b, v);
+                        b == v && v != ext_signature
+                    },
+                    |f, b, _, _| (f, b),
+                )
+                .unwrap();
+
+            // println!("join:\n{}", skeleton.base_dot());
+
+            let mut new_node_hairs = AHashMap::new();
+            let full = skeleton.full_filter();
+
+            for (n, _) in skeleton.iter_node_data(&full) {
+                let mut sum = Atom::new_num(0);
+                for (i, d) in skeleton.iter_egdes(n) {
+                    if let EdgeId::Split { split, .. } = i {
+                        sum = sum
+                            + SignOrZero::from(split)
+                                * d.as_ref().data.unwrap().propagator.momentum.clone();
+                    }
+                }
+
+                if !sum.is_zero() {
+                    println!("sum{sum}");
+                    new_node_hairs.insert(skeleton.id_from_hairs(n).unwrap(), sum);
+                }
+            }
+            for (n, h) in new_node_hairs.drain() {
+                if ext_edgenum == 3 {
+                    let ext = skeleton
+                        .hairs_from_id(n)
+                        .hairs
+                        .included_iter()
+                        .find(|i| skeleton.involution.is_identity(*i));
+
+                    if let Some(e) = ext {
+                        if let InvolutiveMapping::Identity { data, underlying } =
+                            &mut skeleton.involution[e]
+                        {
+                            let d = data.take();
+                            let mut current_data = d.data.unwrap();
+                            let o = d.orientation;
+                            current_data.propagator.momentum = current_data.propagator.momentum
+                        }
+                    } else {
+                        skeleton = skeleton
+                            .add_dangling_edge(
+                                n,
+                                TopologyEdge {
+                                    edgeid: ext_edgenum,
+                                    signature: ext_signature.clone(),
+                                    propagator: Prop {
+                                        mass: None,
+                                        momentum: h,
+                                    },
+                                    power: 1,
+                                },
+                                Flow::Source,
+                            )
+                            .unwrap()
+                            .1;
+                    }
+                } else {
+                    skeleton = skeleton
+                        .add_dangling_edge(
+                            n,
+                            TopologyEdge {
+                                edgeid: ext_edgenum,
+                                signature: ext_signature.clone(),
+                                propagator: Prop {
+                                    mass: None,
+                                    momentum: h,
+                                },
+                                power: 1,
+                            },
+                            Flow::Source,
+                        )
+                        .unwrap()
+                        .1;
+                }
+                ext_edgenum += 1;
+            }
         }
 
         return Topology { graph: skeleton };
@@ -896,20 +1032,8 @@ pub struct DenominatorDis {
 
 impl DenominatorDis {
     pub fn topology(&self) -> Topology {
-        let edge_signatures = EdgeSignatures::from_momenta(
-            &self
-                .props
-                .keys()
-                .map(|p| p.momentum.clone())
-                .collect::<Vec<_>>(),
-        );
-
-        let mut skeleton = Topology::from_edge_signatures(edge_signatures);
-
-        skeleton
+        Topology::new(self.clone())
     }
-
-    pub fn to_signature(self) -> EdgeSignatures {}
 
     pub fn partial_fraction(&self) -> Vec<DenominatorDis> {
         let mut props = self.props.clone();
@@ -1122,6 +1246,9 @@ pub struct Prop {
 }
 
 impl Prop {
+    pub fn rescale(&mut self, factor: Rational) {
+        self.momentum = (&self.momentum * factor).expand()
+    }
     pub fn new(mass: Option<Atom>, momentum: Atom) -> Self {
         Self { mass, momentum }
     }
