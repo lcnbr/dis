@@ -82,6 +82,8 @@ fn main() {
                 )
             );
 
+            topo.map_pq_ext();
+
             print!("topology_math: {}", topo.to_math());
             d.to_mathematica_integrand();
             sum = sum + d.to_atom();
@@ -89,6 +91,7 @@ fn main() {
         println!(
             "Partial fractioned denom:\n{}",
             sum.printer(symbolica::printer::PrintOptions {
+                pretty_matrix: true,
                 terms_on_new_line: true,
                 color_top_level_sum: false,
                 color_builtin_symbols: false,
@@ -161,6 +164,7 @@ fn main() {
                     .to_atom()
                     .printer(symbolica::printer::PrintOptions::mathematica()),
                 sum.printer(symbolica::printer::PrintOptions {
+                    pretty_matrix:true,
                     terms_on_new_line: true,
                     color_top_level_sum: false,
                     color_builtin_symbols: false,

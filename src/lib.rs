@@ -1,8 +1,9 @@
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::Display,
+    ops::Neg,
     path::Path,
-    sync::LazyLock,
+    sync::{Arc, LazyLock},
 };
 
 use _gammaloop::{
@@ -45,12 +46,14 @@ use symbolica::{
     domains::{
         integer::{Integer, Z},
         rational::{FractionField, Rational, Q},
+        rational_polynomial::{RationalPolynomial, RationalPolynomialField},
         Ring, SelfRing,
     },
     fun,
     id::{Pattern, PatternOrMap, Replacement},
+    poly::{PositiveExponent, Variable},
     symb,
-    tensors::matrix::Matrix,
+    tensors::matrix::{Matrix, MatrixError},
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -712,7 +715,7 @@ pub struct DisVertex {
 }
 
 pub struct MathematicaIntegrand {
-    pq_to_ext: Vec<(Pattern, PatternOrMap)>,
+    pq_to_ext: Vec<Replacement>,
     ext_to_pq: Vec<(Atom, Atom)>,
     prefactor: Atom,
     topology: HedgeGraph<(usize, Atom), ()>,
@@ -862,75 +865,196 @@ impl ToMathematica for Topology {
     }
 }
 
-impl Topology {
-    pub fn to_mathematica(&self) -> String {
-        let mut out = String::new();
+/// Solve a system that is linear in `vars`, if possible.
+/// Each expression in `system` is understood to yield 0.
+pub fn solve_linear_system<E: PositiveExponent, T1: AtomCore, T2: AtomCore>(
+    system: &[T1],
+    vars: &[T2],
+) -> Result<Vec<Atom>, String> {
+    let system: Vec<_> = system.iter().map(|v| v.as_atom_view()).collect();
 
-        out.push_str("<|\"Neclace\"->{");
+    let vars: Vec<_> = vars
+        .iter()
+        .map(|v| v.as_atom_view().to_owned().into())
+        .collect();
 
-        let mut numbering_map = IndexSet::new();
-        let mut first = true;
-        for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
-            if !first {
-                out.push(',');
-            } else {
-                first = false;
+    solve_linear_system_impl::<E>(&system, &vars)
+}
+
+/// Convert a system of linear equations to a matrix representation, returning the matrix
+/// and the right-hand side.
+pub fn system_to_matrix<E: PositiveExponent, T1: AtomCore, T2: AtomCore>(
+    system: &[T1],
+    vars: &[T2],
+) -> Result<
+    (
+        Matrix<RationalPolynomialField<Z, E>>,
+        Matrix<RationalPolynomialField<Z, E>>,
+    ),
+    String,
+> {
+    let system: Vec<_> = system.iter().map(|v| v.as_atom_view()).collect();
+
+    let vars: Vec<_> = vars
+        .iter()
+        .map(|v| v.as_atom_view().to_owned().into())
+        .collect();
+
+    system_to_matrix_impl::<E>(&system, &vars)
+}
+
+fn system_to_matrix_impl<E: PositiveExponent>(
+    system: &[AtomView],
+    vars: &[Variable],
+) -> Result<
+    (
+        Matrix<RationalPolynomialField<Z, E>>,
+        Matrix<RationalPolynomialField<Z, E>>,
+    ),
+    String,
+> {
+    let mut mat = Vec::with_capacity(system.len() * vars.len());
+    let mut row = vec![RationalPolynomial::<_, E>::new(&Z, Arc::new(vec![])); vars.len()];
+    let mut rhs = vec![RationalPolynomial::<_, E>::new(&Z, Arc::new(vec![])); system.len()];
+
+    for (si, a) in system.iter().enumerate() {
+        let rat: RationalPolynomial<Z, E> = a.to_rational_polynomial(&Q, &Z, None);
+
+        let poly = rat.to_polynomial(&vars, true).unwrap();
+
+        for e in &mut row {
+            *e = RationalPolynomial::<_, E>::new(&Z, poly.variables.clone());
+        }
+
+        // get linear coefficients
+        'next_monomial: for e in poly.into_iter() {
+            if e.exponents.iter().cloned().sum::<E>() > E::one() {
+                Err("Not a linear system")?;
             }
+
+            for (rv, p) in row.iter_mut().zip(e.exponents) {
+                if !p.is_zero() {
+                    *rv = e.coefficient.clone();
+                    continue 'next_monomial;
+                }
+            }
+
+            // constant term
+            rhs[si] = e.coefficient.clone().neg();
+        }
+
+        mat.extend_from_slice(&row);
+    }
+
+    let Some((first, rest)) = mat.split_first_mut() else {
+        return Err("Empty system".to_owned());
+    };
+
+    for _ in 0..2 {
+        for x in &mut *rest {
+            first.unify_variables(x);
+        }
+        for x in &mut rhs {
+            first.unify_variables(x);
+        }
+    }
+
+    let field = RationalPolynomialField::new(Z);
+
+    let m =
+        Matrix::from_linear(mat, system.len() as u32, vars.len() as u32, field.clone()).unwrap();
+    let b = Matrix::new_vec(rhs, field);
+
+    Ok((m, b))
+}
+
+fn solve_linear_system_impl<E: PositiveExponent>(
+    system: &[AtomView],
+    vars: &[Variable],
+) -> Result<Vec<Atom>, String> {
+    let (m, b) = system_to_matrix_impl::<E>(system, vars)?;
+
+    let sol = match m.solve_any(&b) {
+        Ok(sol) => sol,
+        Err(r) => return Err("aaa".to_string()),
+    };
+
+    // replace the temporary variables
+    let mut result = Vec::with_capacity(vars.len());
+
+    for s in sol.into_vector().into_vec() {
+        result.push(s.to_expression());
+    }
+
+    Ok(result)
+}
+
+impl Topology {
+    pub fn map_ext_pq(&self) -> Vec<(Atom, Atom)> {
+        let mut map = Vec::new();
+        let mut numbering_map = IndexSet::new();
+        let extsymb = symb!("p");
+
+        for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
             if let EdgeId::Unpaired { hedge, flow } = e {
                 let (a, _) = numbering_map.insert_full(hedge);
-                out.push_str(&format!("{{{}p[{}]}}", SignOrZero::from(flow), a));
+                let p = fun!(extsymb, a as i32);
+
+                map.push((
+                    p,
+                    SignOrZero::from(flow) * d.data.unwrap().propagator.momentum.clone(),
+                ));
             } else {
                 panic!("ahhhh");
             }
         }
+        map
+    }
 
-        for (n, _) in self.graph.iter_nodes() {
-            out.push_str(", {");
-            let mut first = true;
-            for (e, d) in self.graph.iter_egdes(&n.hairs) {
-                if !first {
-                    out.push(',');
-                } else {
-                    first = false;
-                }
-                match e {
-                    EdgeId::Split {
-                        source,
-                        sink,
-                        split,
-                    } => {
-                        let (a, _) = numbering_map.insert_full(source);
-                        out.push_str(&SignOrZero::from(split).to_string());
-                        out.push_str(&format!("l[{}]", a));
-                    }
-                    EdgeId::Unpaired { hedge, flow } => {
-                        let (a, _) = numbering_map.insert_full(hedge);
-                        out.push_str(&SignOrZero::from(flow).to_string());
-                        out.push_str(&format!("p[{}]", a));
-                    }
-                    _ => {}
-                }
-            }
-            out.push('}');
-        }
-        out.push_str("}, \"masses\"-> <|");
+    pub fn map_pq_ext(&self) -> Vec<Replacement> {
+        let mut numbering_map = IndexSet::new();
+        let extsymb = symb!("p");
 
-        let mut first = true;
+        let mut vars = vec![];
+        let mut eqs = vec![];
+        let pq = vec![
+            Atom::new_var(DIS_SYMBOLS.photon_mom),
+            Atom::new_var(DIS_SYMBOLS.cut_mom),
+        ];
 
-        for (e, d) in self.graph.iter_egdes(&self.graph.full_filter()) {
-            if !first {
-                out.push(',');
+        let mut sol = None;
+
+        for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
+            if let EdgeId::Unpaired { hedge, flow } = e {
+                let (a, _) = numbering_map.insert_full(hedge);
+                let p = SignOrZero::from(flow) * fun!(extsymb, a as i32);
+
+                eqs.push(&d.data.unwrap().propagator.momentum - &p);
+                vars.push(p);
             } else {
-                first = false;
+                panic!("ahhhh");
             }
-            match e {
-                EdgeId::Paired { source, sink } => {}
-                EdgeId::Unpaired { hedge, flow } => {}
-                _ => {}
+
+            if eqs.len() == 2 {
+                let (a, b) = Atom::system_to_matrix::<u8, _, _>(&eqs, &pq).unwrap();
+
+                if let Ok(s) = a.solve_any(&b) {
+                    sol = Some(s);
+                    break;
+                } else {
+                    eqs.pop();
+                    vars.pop();
+                }
             }
         }
-
-        out
+        sol.unwrap()
+            .into_vector()
+            .into_vec()
+            .into_iter()
+            .map(|s| s.to_expression())
+            .zip(pq)
+            .map(|(a, b)| Replacement::new(a.to_pattern(), b.to_pattern()))
+            .collect()
     }
 }
 pub struct LmbSignature {
@@ -1286,9 +1410,10 @@ impl DenominatorDis {
         }
 
         let (m, b) = Atom::system_to_matrix::<u8, _, _>(&system, &vars).unwrap();
+        // m.solve_any(b)
         let old_col = m.ncols() as u32;
         let mut aug = m.augment(&b).unwrap();
-        aug.gaussian_elimination(old_col, false).unwrap() as usize;
+        aug.row_reduce(old_col) as usize;
         aug.back_substitution(old_col);
 
         let mut pivot = vec![];

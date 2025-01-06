@@ -175,6 +175,7 @@ fn main() {
                     .to_atom()
                     .printer(symbolica::printer::PrintOptions::mathematica()),
                 sum.printer(symbolica::printer::PrintOptions {
+                    pretty_matrix:true,
                     terms_on_new_line: true,
                     color_top_level_sum: false,
                     color_builtin_symbols: false,

@@ -41,7 +41,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 
 [dependencies]
 # These will be patched
-symbolica = { version = "0.13.0" }
+symbolica = { version = "0.14.0" }
 spenso = { version = "0.4.0", features = ["shadowing"] }
 # gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "ceea15393e4924279f212a6b2458b2569420536a", default-features = false }
 #
@@ -110,6 +110,6 @@ by_address = "1.2.1"
 
 
 [patch.crates-io]
-spenso = { git = "https://github.com/alphal00p/spenso", rev = "b6a0cd19d225993ac72423aa416e1153475878a4" }
+spenso = { git = "https://github.com/alphal00p/spenso", rev = "e93679f3f77c24017b73cce527087a1bce52bbbf" }
 symbolica = { git = "https://github.com/alphal00p/symbolica", branch = "main" }
 # spenso = { path = "../alphal00p/spenso" }
