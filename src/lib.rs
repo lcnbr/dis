@@ -1,5 +1,6 @@
 use std::{
     collections::{BTreeMap, HashMap},
+    fmt::Display,
     path::Path,
     sync::LazyLock,
 };
@@ -718,6 +719,64 @@ pub struct MathematicaIntegrand {
     numerators: Vec<Atom>,
 }
 
+pub trait ToMathematica {
+    fn to_math(&self) -> String;
+}
+
+impl<K: ToMathematica, V: ToMathematica> ToMathematica for AHashMap<K, V> {
+    fn to_math(&self) -> String {
+        let mut out = String::new();
+        out.push_str("<|");
+        let mut first = true;
+        for (k, v) in self {
+            if !first {
+                out.push(',');
+            } else {
+                first = false;
+            }
+            out.push('"');
+            out.push_str(&k.to_math());
+            out.push('"');
+            out.push_str("->");
+            out.push_str(&v.to_math());
+        }
+        out.push_str("|>");
+        out
+    }
+}
+
+impl ToMathematica for String {
+    fn to_math(&self) -> String {
+        self.clone()
+    }
+}
+
+impl ToMathematica for Atom {
+    fn to_math(&self) -> String {
+        self.printer(symbolica::printer::PrintOptions::mathematica())
+            .to_string()
+    }
+}
+
+impl<E: ToMathematica> ToMathematica for Vec<E> {
+    fn to_math(&self) -> String {
+        let mut out = String::new();
+
+        out.push_str("{");
+        let mut first = true;
+        for v in self {
+            if !first {
+                out.push(',');
+            } else {
+                first = false;
+            }
+            out.push_str(&v.to_math());
+        }
+        out.push('}');
+        out
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TopologyEdge {
     pub edgeid: usize,
@@ -730,6 +789,150 @@ pub struct Topology {
     pub graph: HedgeGraph<TopologyEdge, ()>,
 }
 
+impl ToMathematica for Topology {
+    fn to_math(&self) -> String {
+        let mut map = AHashMap::new();
+
+        let mut numbering_map = IndexSet::new();
+        let mut nodelist = Vec::new();
+
+        for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
+            if let EdgeId::Unpaired { hedge, flow } = e {
+                let (a, _) = numbering_map.insert_full(hedge);
+                nodelist.push(vec![format!("{}p[{}]", SignOrZero::from(flow), a)]);
+            } else {
+                panic!("ahhhh");
+            }
+        }
+        let ext_shift = numbering_map.len();
+
+        for (n, _) in self.graph.iter_nodes() {
+            let mut list = vec![];
+
+            for (e, d) in self.graph.iter_egdes(&n.hairs) {
+                match e {
+                    EdgeId::Split {
+                        source,
+                        sink,
+                        split,
+                    } => {
+                        let (a, _) = numbering_map.insert_full(source);
+                        list.push(format!("{}l[{}]", SignOrZero::from(split), a - ext_shift));
+                    }
+                    EdgeId::Unpaired { hedge, flow } => {
+                        let (a, _) = numbering_map.insert_full(hedge);
+                        list.push(format!("{}p[{}]", SignOrZero::from(flow), a));
+                    }
+                    _ => {}
+                }
+            }
+            nodelist.push(list);
+        }
+        map.insert(String::from("Neclace"), nodelist.to_math());
+
+        let mut massmap = AHashMap::new();
+
+        for (e, d) in self.graph.iter_egdes(&self.graph.full_filter()) {
+            match e {
+                EdgeId::Paired { source, sink } => {
+                    let (a, _) = numbering_map.insert_full(source);
+                    let k = format!("l[{}]", a - ext_shift);
+                    massmap.insert(k, "0".to_string());
+                }
+                EdgeId::Unpaired { hedge, flow } => {
+                    let (a, _) = numbering_map.insert_full(hedge);
+                    let k = format!("p[{a}]");
+                    massmap.insert(
+                        k,
+                        d.data
+                            .unwrap()
+                            .propagator
+                            .mass
+                            .as_ref()
+                            .map_or("0".to_string(), |a| a.to_math()),
+                    );
+                }
+                _ => {}
+            }
+        }
+
+        map.insert(String::from("masses"), massmap.to_math());
+
+        map.to_math()
+    }
+}
+
+impl Topology {
+    pub fn to_mathematica(&self) -> String {
+        let mut out = String::new();
+
+        out.push_str("<|\"Neclace\"->{");
+
+        let mut numbering_map = IndexSet::new();
+        let mut first = true;
+        for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
+            if !first {
+                out.push(',');
+            } else {
+                first = false;
+            }
+            if let EdgeId::Unpaired { hedge, flow } = e {
+                let (a, _) = numbering_map.insert_full(hedge);
+                out.push_str(&format!("{{{}p[{}]}}", SignOrZero::from(flow), a));
+            } else {
+                panic!("ahhhh");
+            }
+        }
+
+        for (n, _) in self.graph.iter_nodes() {
+            out.push_str(", {");
+            let mut first = true;
+            for (e, d) in self.graph.iter_egdes(&n.hairs) {
+                if !first {
+                    out.push(',');
+                } else {
+                    first = false;
+                }
+                match e {
+                    EdgeId::Split {
+                        source,
+                        sink,
+                        split,
+                    } => {
+                        let (a, _) = numbering_map.insert_full(source);
+                        out.push_str(&SignOrZero::from(split).to_string());
+                        out.push_str(&format!("l[{}]", a));
+                    }
+                    EdgeId::Unpaired { hedge, flow } => {
+                        let (a, _) = numbering_map.insert_full(hedge);
+                        out.push_str(&SignOrZero::from(flow).to_string());
+                        out.push_str(&format!("p[{}]", a));
+                    }
+                    _ => {}
+                }
+            }
+            out.push('}');
+        }
+        out.push_str("}, \"masses\"-> <|");
+
+        let mut first = true;
+
+        for (e, d) in self.graph.iter_egdes(&self.graph.full_filter()) {
+            if !first {
+                out.push(',');
+            } else {
+                first = false;
+            }
+            match e {
+                EdgeId::Paired { source, sink } => {}
+                EdgeId::Unpaired { hedge, flow } => {}
+                _ => {}
+            }
+        }
+
+        out
+    }
+}
 pub struct LmbSignature {
     signs: Signature,
     overall_sign: Sign,
@@ -1213,6 +1416,8 @@ impl DenominatorDis {
     }
 
     pub fn to_mathematica_integrand(&self) -> Option<MathematicaIntegrand> {
+        let topology = self.topology();
+
         None
     }
 

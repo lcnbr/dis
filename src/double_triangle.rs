@@ -2,7 +2,7 @@ use _gammaloop::graph::{
     half_edge::layout::{FancySettings, LayoutIters, LayoutParams},
     BareGraph,
 };
-use dis::{dis_cut_layout, write_layout, DisGraph};
+use dis::{dis_cut_layout, write_layout, DisGraph, ToMathematica};
 
 use symbolica::atom::{Atom, AtomCore};
 
@@ -71,16 +71,18 @@ fn main() {
 
         let mut sum = Atom::new_num(0);
         for d in &denoms {
-            let topo = d.topology().graph;
+            let topo = d.topology();
             print!(
                 "topology: {}",
-                topo.dot_impl(
-                    &topo.full_filter(),
+                topo.graph.dot_impl(
+                    &topo.graph.full_filter(),
                     "".into(),
                     &|e| Some(format!("label=\"{}\"", e.propagator.momentum)),
                     &|_| None
                 )
             );
+
+            print!("topology_math: {}", topo.to_math());
             d.to_mathematica_integrand();
             sum = sum + d.to_atom();
         }
@@ -104,17 +106,17 @@ fn main() {
         );
 
         // let denom = dis_graph.denominator_partial_fraction(first_initial);
-        let _num: Vec<_> = dis_graph
+        let num: Vec<_> = dis_graph
             .numerator(first_initial)
             .iter()
             .map(|a| a.expand())
             .collect();
         // let denom = denom.iter().fold(Atom::new_num(1), |acc, a| acc * a);
 
-        // println!(
-        //     "W1:{} ",
-        //     num[0].printer(symbolica::printer::PrintOptions::mathematica())
-        // );
+        println!(
+            "W1:{} ",
+            num[0].printer(symbolica::printer::PrintOptions::mathematica())
+        );
 
         // println!(
         //     "W2:{} ",

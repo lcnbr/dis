@@ -161,7 +161,7 @@
           cargo-insta
           openssl
           diffedit3
-          wolfram-engine
+          # wolfram-engine
           pyright
           gnum4
           typst
