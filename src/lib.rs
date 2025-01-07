@@ -1,6 +1,8 @@
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::Display,
+    fs::File,
+    io::Write,
     ops::Neg,
     path::Path,
     sync::{Arc, LazyLock},
@@ -77,7 +79,31 @@ impl IFCuts {
         self.cuts.retain(|_, v| !v[0].is_empty() & !v[1].is_empty());
     }
 
-    pub fn to_mathematica_file(&self, graph: &DisGraph, filename: &str) {}
+    pub fn to_mathematica_file(&self, graph: &DisGraph, filename: &str) -> std::io::Result<()> {
+        let mut embeddings = vec![];
+
+        for (i, (e, cuts)) in self.cuts.iter().enumerate() {
+            let mut map = AHashMap::new();
+            let first_initial = &cuts[0][0];
+            map.insert("embedding".to_string(), e.windings.to_math());
+            let denom = graph.denominator(first_initial);
+            let numers = graph.numerator(first_initial);
+            let denoms = denom
+                .partial_fraction()
+                .into_iter()
+                .map(|a| MathematicaIntegrand::new(a.topology(), &numers))
+                .collect_vec();
+
+            map.insert("partial_fractions".to_string(), denoms.to_math());
+
+            embeddings.push(map);
+        }
+
+        let mut f = File::create(filename)?;
+        write!(f, "{}", embeddings.to_math())?;
+
+        Ok(())
+    }
 }
 impl Embedding {
     pub fn windings_in_field(&self, n: u32) -> Vec<u32> {
@@ -801,6 +827,12 @@ impl<K: ToMathematica, V: ToMathematica> ToMathematica for AHashMap<K, V> {
 impl ToMathematica for String {
     fn to_math(&self) -> String {
         self.clone()
+    }
+}
+
+impl ToMathematica for i32 {
+    fn to_math(&self) -> String {
+        self.to_string()
     }
 }
 
