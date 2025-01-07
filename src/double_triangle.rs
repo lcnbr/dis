@@ -52,157 +52,160 @@ fn main() {
 
     let file = std::fs::File::open("layout_iters.json").unwrap();
     let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
-    let mut layouts: Vec<_> = Vec::new();
-    let mut routings_integrand = Vec::new();
+    // let mut layouts: Vec<_> = Vec::new();
+    // let mut routings_integrand = Vec::new();
 
-    for (i, (e, cuts)) in ifsplit.cuts.iter().enumerate() {
-        println!("Embedding {}:{:?}", i + 1, e.windings);
+    // for (i, (e, cuts)) in ifsplit.cuts.iter().enumerate() {
+    //     println!("Embedding {}:{:?}", i + 1, e.windings);
 
-        let first_initial = &cuts[0][0];
+    //     let first_initial = &cuts[0][0];
 
-        let denom = dis_graph.denominator(first_initial);
-        let denoms = denom.partial_fraction();
-        println!(
-            "Denominator:{} ",
-            denom
-                .to_atom()
-                .printer(symbolica::printer::PrintOptions::mathematica())
-        );
+    //     let denom = dis_graph.denominator(first_initial);
+    //     let denoms = denom.partial_fraction();
+    //     println!(
+    //         "Denominator:{} ",
+    //         denom
+    //             .to_atom()
+    //             .printer(symbolica::printer::PrintOptions::mathematica())
+    //     );
 
-        let mut sum = Atom::new_num(0);
-        for d in &denoms {
-            let topo = d.topology();
-            print!(
-                "topology: {}",
-                topo.graph.dot_impl(
-                    &topo.graph.full_filter(),
-                    "".into(),
-                    &|e| Some(format!("label=\"{}\"", e.propagator.momentum)),
-                    &|_| None
-                )
-            );
+    //     let mut sum = Atom::new_num(0);
+    //     for d in &denoms {
+    //         let topo = d.topology();
+    //         print!(
+    //             "topology: {}",
+    //             topo.graph.dot_impl(
+    //                 &topo.graph.full_filter(),
+    //                 "".into(),
+    //                 &|e| Some(format!("label=\"{}\"", e.propagator.momentum)),
+    //                 &|_| None
+    //             )
+    //         );
 
-            topo.map_pq_ext();
+    //         topo.map_pq_ext();
 
-            print!("topology_math: {}", topo.to_math());
-            d.to_mathematica_integrand();
-            sum = sum + d.to_atom();
-        }
-        println!(
-            "Partial fractioned denom:\n{}",
-            sum.printer(symbolica::printer::PrintOptions {
-                pretty_matrix: true,
-                terms_on_new_line: true,
-                color_top_level_sum: false,
-                color_builtin_symbols: false,
-                print_finite_field: true,
-                symmetric_representation_for_finite_field: false,
-                explicit_rational_polynomial: false,
-                number_thousands_separator: None,
-                multiplication_operator: ' ',
-                double_star_for_exponentiation: false,
-                square_brackets_for_function: true,
-                num_exp_as_superscript: false,
-                latex: false,
-                precision: None,
-            })
-        );
+    //         print!("topology_math: {}", topo.to_math());
+    //         d.to_mathematica_integrand();
+    //         sum = sum + d.to_atom();
+    //     }
+    //     println!(
+    //         "Partial fractioned denom:\n{}",
+    //         sum.printer(symbolica::printer::PrintOptions {
+    //             pretty_matrix: true,
+    //             terms_on_new_line: true,
+    //             color_top_level_sum: false,
+    //             color_builtin_symbols: false,
+    //             print_finite_field: true,
+    //             symmetric_representation_for_finite_field: false,
+    //             explicit_rational_polynomial: false,
+    //             number_thousands_separator: None,
+    //             multiplication_operator: ' ',
+    //             double_star_for_exponentiation: false,
+    //             square_brackets_for_function: true,
+    //             num_exp_as_superscript: false,
+    //             latex: false,
+    //             precision: None,
+    //         })
+    //     );
 
-        // let denom = dis_graph.denominator_partial_fraction(first_initial);
-        let num: Vec<_> = dis_graph
-            .numerator(first_initial)
-            .iter()
-            .map(|a| a.expand())
-            .collect();
-        // let denom = denom.iter().fold(Atom::new_num(1), |acc, a| acc * a);
+    //     // let denom = dis_graph.denominator_partial_fraction(first_initial);
+    //     let num: Vec<_> = dis_graph
+    //         .numerator(first_initial)
+    //         .iter()
+    //         .map(|a| a.expand())
+    //         .collect();
+    //     // let denom = denom.iter().fold(Atom::new_num(1), |acc, a| acc * a);
 
-        println!(
-            "W1:{} ",
-            num[0].printer(symbolica::printer::PrintOptions::mathematica())
-        );
+    //     println!(
+    //         "W1:{} ",
+    //         num[0].printer(symbolica::printer::PrintOptions::mathematica())
+    //     );
 
-        // println!(
-        //     "W2:{} ",
-        //     num[1].printer(symbolica::printer::PrintOptions::mathematica())
-        // );
+    //     // println!(
+    //     //     "W2:{} ",
+    //     //     num[1].printer(symbolica::printer::PrintOptions::mathematica())
+    //     // );
 
-        let first_initial_layout = dis_cut_layout(
-            first_initial.clone(),
-            &dis_graph,
-            params,
-            layout_iters,
-            Some(&fancy_settings),
-            20.,
-        );
+    //     let first_initial_layout = dis_cut_layout(
+    //         first_initial.clone(),
+    //         &dis_graph,
+    //         params,
+    //         layout_iters,
+    //         Some(&fancy_settings),
+    //         20.,
+    //     );
 
-        let layout_emb_i: Vec<_> = cuts[0]
-            .iter()
-            .map(|c| {
-                dis_cut_layout(
-                    c.clone(),
-                    &dis_graph,
-                    params,
-                    layout_iters,
-                    Some(&fancy_settings),
-                    20.,
-                )
-            })
-            .collect();
+    //     let layout_emb_i: Vec<_> = cuts[0]
+    //         .iter()
+    //         .map(|c| {
+    //             dis_cut_layout(
+    //                 c.clone(),
+    //                 &dis_graph,
+    //                 params,
+    //                 layout_iters,
+    //                 Some(&fancy_settings),
+    //                 20.,
+    //             )
+    //         })
+    //         .collect();
 
-        let layout_emb_f = cuts[1]
-            .iter()
-            .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
-            .collect();
+    //     let layout_emb_f = cuts[1]
+    //         .iter()
+    //         .map(|c| dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.))
+    //         .collect();
 
-        layouts.push((
-            format!("embedding{}i", i + 1),
-            format!(
-                "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
-                i + 1,
-                e.windings,
-                denom
-                    .to_atom()
-                    .printer(symbolica::printer::PrintOptions::mathematica()),
-                sum.printer(symbolica::printer::PrintOptions {
-                    pretty_matrix:true,
-                    terms_on_new_line: true,
-                    color_top_level_sum: false,
-                    color_builtin_symbols: false,
-                    print_finite_field: true,
-                    symmetric_representation_for_finite_field: false,
-                    explicit_rational_polynomial: false,
-                    number_thousands_separator: None,
-                    multiplication_operator: ' ',
-                    double_star_for_exponentiation: false,
-                    square_brackets_for_function: true,
-                    num_exp_as_superscript: false,
-                    latex: false,
-                    precision: None,
-                })
-            ),
-            layout_emb_i,
-        ));
+    //     layouts.push((
+    //         format!("embedding{}i", i + 1),
+    //         format!(
+    //             "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
+    //             i + 1,
+    //             e.windings,
+    //             denom
+    //                 .to_atom()
+    //                 .printer(symbolica::printer::PrintOptions::mathematica()),
+    //             sum.printer(symbolica::printer::PrintOptions {
+    //                 pretty_matrix:true,
+    //                 terms_on_new_line: true,
+    //                 color_top_level_sum: false,
+    //                 color_builtin_symbols: false,
+    //                 print_finite_field: true,
+    //                 symmetric_representation_for_finite_field: false,
+    //                 explicit_rational_polynomial: false,
+    //                 number_thousands_separator: None,
+    //                 multiplication_operator: ' ',
+    //                 double_star_for_exponentiation: false,
+    //                 square_brackets_for_function: true,
+    //                 num_exp_as_superscript: false,
+    //                 latex: false,
+    //                 precision: None,
+    //             })
+    //         ),
+    //         layout_emb_i,
+    //     ));
 
-        layouts.push((
-            format!("embedding{}f", i + 1),
-            format!("== final"),
-            layout_emb_f,
-        ));
+    //     layouts.push((
+    //         format!("embedding{}f", i + 1),
+    //         format!("== final"),
+    //         layout_emb_f,
+    //     ));
 
-        routings_integrand.push((
-            format!("embedding{}i", i + 1),
-            format!(
-                "= embedding {} {:?} initial\nDenominator:\n```mathematica\n{}\n```",
-                i + 1,
-                e.windings,
-                denom
-                    .to_atom()
-                    .printer(symbolica::printer::PrintOptions::mathematica())
-            ),
-            vec![first_initial_layout],
-        ));
-    }
-    write_layout(&layouts, "double_triangle_embeddings.typ");
+    //     routings_integrand.push((
+    //         format!("embedding{}i", i + 1),
+    //         format!(
+    //             "= embedding {} {:?} initial\nDenominator:\n```mathematica\n{}\n```",
+    //             i + 1,
+    //             e.windings,
+    //             denom
+    //                 .to_atom()
+    //                 .printer(symbolica::printer::PrintOptions::mathematica())
+    //         ),
+    //         vec![first_initial_layout],
+    //     ));
+    // }
+    // write_layout(&layouts, "double_triangle_embeddings.typ");
+    ifsplit
+        .to_mathematica_file(&dis_graph, "double_triangle_tes.m")
+        .unwrap();
     // write_layout(&routings_integrand, "double_triangle_integrands.typ");
 }
 

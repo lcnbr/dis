@@ -88,6 +88,9 @@ impl IFCuts {
             map.insert("embedding".to_string(), e.windings.to_math());
             let denom = graph.denominator(first_initial);
             let numers = graph.numerator(first_initial);
+            // for n in &numers {
+            //     println!(":{n}");
+            // }
             let denoms = denom
                 .partial_fraction()
                 .into_iter()
@@ -101,7 +104,6 @@ impl IFCuts {
 
         let mut f = File::create(filename)?;
         write!(f, "{}", embeddings.to_math())?;
-
         Ok(())
     }
 }
@@ -588,11 +590,15 @@ impl DisGraph {
 
         let mut w2 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
-            .color_simplify()
-            .gamma_simplify()
-            .get_single_atom()
-            .unwrap()
-            .0;
+            .color_simplify();
+
+        println!("color simplified:{}", w2.state.colorless);
+
+        let mut w2 = w2.gamma_simplify();
+
+        println!("gamma simplified: {}", w2.state.colorless);
+
+        let mut w2 = w2.get_single_atom().unwrap().0;
 
         numerator_dis_apply(&mut w1);
         numerator_dis_apply(&mut w2);
@@ -623,7 +629,11 @@ impl DisGraph {
 
         self.numerator
             .iter()
-            .map(|a| a.replace_all_multiple(&emr_to_lmb_cut))
+            .map(|a| {
+                let a = a.replace_all_multiple_repeat(&emr_to_lmb_cut);
+
+                a
+            })
             .collect()
     }
 
@@ -649,6 +659,12 @@ impl DisGraph {
         let mut emr_to_lmb_cut = AHashMap::new();
         for (_, d) in self.graph.iter_egdes(&self.graph.full_graph()) {
             let data = d.data.unwrap();
+
+            println!(
+                "{}->{}",
+                fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
+                data.lmb_momentum.replace_all_multiple(&reps)
+            );
             emr_to_lmb_cut.insert(
                 fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
                 data.lmb_momentum.replace_all_multiple(&reps).to_pattern(),
@@ -784,6 +800,10 @@ impl ToMathematica for MathematicaIntegrand {
                 .collect::<AHashMap<_, _>>()
                 .to_math(),
         );
+
+        for n in &self.numerators {
+            println!("num:{n}");
+        }
 
         map.insert(
             "numerators".to_string(),
