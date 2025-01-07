@@ -4,8 +4,7 @@ use _gammaloop::graph::{
     half_edge::layout::{FancySettings, LayoutIters, LayoutParams},
     BareGraph,
 };
-use dis::{dis_cut_layout, load_generic_model, write_layout, DisGraph};
-use symbolica::atom::{Atom, AtomCore};
+use dis::{load_generic_model, DisGraph};
 
 fn main() {
     let model = load_generic_model("sm");
@@ -45,11 +44,11 @@ fn main() {
     let file = File::open("layout_params.json").unwrap();
     let reader = BufReader::new(file);
 
-    let params = serde_json::from_reader::<_, LayoutParams>(reader).unwrap();
+    let _params = serde_json::from_reader::<_, LayoutParams>(reader).unwrap();
 
     let file = std::fs::File::open("layout_iters.json").unwrap();
-    let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
-    let fancy_settings = FancySettings {
+    let _layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
+    let _fancy_settings = FancySettings {
         label_shift: 0.06,
         arrow_angle_percentage: Some(0.7),
         arrow_shift: 0.06,
@@ -58,7 +57,9 @@ fn main() {
     // let mut layouts = Vec::new();
     // let mut routings_integrand = Vec::new();
 
-    ifsplit.to_mathematica_file(&dis_graph, "self_energy_n.m");
+    ifsplit
+        .to_mathematica_file(&dis_graph, "self_energy.m")
+        .unwrap();
 
     // for (i, (e, cuts)) in ifsplit.cuts.iter().enumerate() {
     //     println!("Embedding {}:{:?}", i + 1, e.windings);

@@ -2,9 +2,7 @@ use _gammaloop::graph::{
     half_edge::layout::{FancySettings, LayoutIters, LayoutParams},
     BareGraph,
 };
-use dis::{dis_cut_layout, write_layout, DisGraph, ToMathematica};
-
-use symbolica::atom::{Atom, AtomCore};
+use dis::DisGraph;
 
 use dis::load_generic_model;
 
@@ -45,13 +43,13 @@ fn main() {
     let ifsplit = dis_graph.full_dis_filter_split();
 
     let file = std::fs::File::open("fancy_settings.json").unwrap();
-    let fancy_settings = serde_json::from_reader::<_, FancySettings>(file).unwrap();
+    let _fancy_settings = serde_json::from_reader::<_, FancySettings>(file).unwrap();
 
     let file = std::fs::File::open("layout_params.json").unwrap();
-    let params = serde_json::from_reader::<_, LayoutParams>(file).unwrap();
+    let _params = serde_json::from_reader::<_, LayoutParams>(file).unwrap();
 
     let file = std::fs::File::open("layout_iters.json").unwrap();
-    let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
+    let _layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
     // let mut layouts: Vec<_> = Vec::new();
     // let mut routings_integrand = Vec::new();
 
