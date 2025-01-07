@@ -43,9 +43,8 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # These will be patched
 symbolica = { version = "0.14.0" }
 spenso = { version = "0.4.0", features = ["shadowing"] }
-# gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "ceea15393e4924279f212a6b2458b2569420536a", default-features = false }
-#
-gammalooprs = { path = "../gammaloop", default-features = false }
+gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "296316eaf7f8a6b1085c61693c07b7e4b443021e", default-features = false }
+#gammalooprs = { path = "../gammaloop", default-features = false }
 momtrop = { git = "https://github.com/alphal00p/momtrop", features = ["log"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "*"

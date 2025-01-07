@@ -592,11 +592,11 @@ impl DisGraph {
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
             .color_simplify();
 
-        println!("color simplified:{}", w2.state.colorless);
+        // println!("color simplified:{}", w2.state.colorless);
 
         let mut w2 = w2.gamma_simplify();
 
-        println!("gamma simplified: {}", w2.state.colorless);
+        // println!("gamma simplified: {}", w2.state.colorless);
 
         let mut w2 = w2.get_single_atom().unwrap().0;
 
@@ -660,11 +660,11 @@ impl DisGraph {
         for (_, d) in self.graph.iter_egdes(&self.graph.full_graph()) {
             let data = d.data.unwrap();
 
-            println!(
-                "{}->{}",
-                fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
-                data.lmb_momentum.replace_all_multiple(&reps)
-            );
+            // println!(
+            //     "{}->{}",
+            //     fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
+            //     data.lmb_momentum.replace_all_multiple(&reps)
+            // );
             emr_to_lmb_cut.insert(
                 fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
                 data.lmb_momentum.replace_all_multiple(&reps).to_pattern(),
@@ -792,6 +792,18 @@ impl ToMathematica for MathematicaIntegrand {
 
         map.insert("topology".to_string(), self.topology.to_math());
 
+        println!("//n_ext:{}", self.topology.graph.n_externals());
+
+        println!(
+            "{}",
+            self.topology.graph.dot_impl(
+                &self.topology.graph.full_filter(),
+                "".into(),
+                &|e| Some(format!("label=\"{}\"", e.propagator.momentum)),
+                &|_| None
+            )
+        );
+
         map.insert(
             "ext_to_pq".to_string(),
             self.ext_to_pq
@@ -801,9 +813,9 @@ impl ToMathematica for MathematicaIntegrand {
                 .to_math(),
         );
 
-        for n in &self.numerators {
-            println!("num:{n}");
-        }
+        // for n in &self.numerators {
+        //     println!("num:{n}");
+        // }
 
         map.insert(
             "numerators".to_string(),
@@ -1121,6 +1133,145 @@ impl Topology {
         map
     }
 
+    pub fn dot(&self) -> String {
+        self.graph.dot_impl(
+            &self.graph.full_filter(),
+            "".into(),
+            &|e| Some(format!("label=\"{}\"", e.propagator.momentum)),
+            &|_| None,
+        )
+    }
+
+    pub fn complete_externals(&mut self) {
+        let mut seen_nodes = AHashSet::new();
+        if self.graph.n_externals() < 4 {
+            let mut signatures = vec![];
+
+            for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
+                if let EdgeId::Unpaired { hedge, flow } = e {
+                    let momentum = &d.data.unwrap().propagator.momentum;
+
+                    let p = momentum
+                        .pattern_match(&Atom::new_var(DIS_SYMBOLS.cut_mom).to_pattern(), None, None)
+                        .next()
+                        .is_some();
+                    let q = momentum
+                        .pattern_match(
+                            &Atom::new_var(DIS_SYMBOLS.photon_mom).to_pattern(),
+                            None,
+                            None,
+                        )
+                        .next()
+                        .is_some();
+
+                    signatures.push([p, q]);
+                } else {
+                    panic!("ahhhh");
+                }
+            }
+
+            let mut has_single_p = false;
+            let mut has_single_q = false;
+            let mut has_combined_p_q = false;
+
+            for s in signatures {
+                match s {
+                    [true, true] => has_combined_p_q = true,
+                    [false, true] => has_single_q = true,
+                    [true, false] => has_single_p = true,
+                    _ => {}
+                }
+            }
+
+            let additional_momenta = if has_single_p {
+                Atom::new_var(DIS_SYMBOLS.photon_mom)
+            } else {
+                Atom::new_var(DIS_SYMBOLS.cut_mom)
+            };
+
+            println!("new_mom:{additional_momenta}");
+
+            let mut new_edge = TopologyEdge {
+                edgeid: self.graph.n_externals(),
+                signature: Signature::from_iter(vec![
+                    0i8;
+                    self.graph.cyclotomatic_number(
+                        &self.graph.full_graph()
+                    )
+                ]),
+                power: 1,
+                propagator: Prop {
+                    mass: None,
+                    momentum: additional_momenta.clone(),
+                },
+            };
+
+            let mut first = true;
+
+            while self.graph.n_externals() < 4 {
+                let mut e = None;
+                let node = self
+                    .graph
+                    .id_from_hairs(
+                        self.graph
+                            .iter_nodes()
+                            .find(|(n, _)| {
+                                let nid = self.graph.id_from_hairs(*n).unwrap();
+                                if seen_nodes.insert(nid) {
+                                    self.graph.iter_egdes(*n).any(|(eid, _)| {
+                                        if let EdgeId::Unpaired { hedge, flow } = eid {
+                                            e = Some(hedge);
+                                            true
+                                        } else {
+                                            false
+                                        }
+                                    })
+                                } else {
+                                    false
+                                }
+                            })
+                            .unwrap()
+                            .0,
+                    )
+                    .unwrap();
+
+                let mut flow = None;
+
+                {
+                    if let InvolutiveMapping::Identity { data, underlying } =
+                        &mut self.graph.involution[e.unwrap()]
+                    {
+                        let mut a = data.take();
+                        if first {
+                            flow = Some(a.orientation);
+                        } else {
+                            flow = Some(a.orientation.reverse());
+                        }
+                        let mut d = a.data.take().unwrap();
+
+                        if first {
+                            d.propagator.momentum = d.propagator.momentum - &additional_momenta;
+                        } else {
+                            d.propagator.momentum = d.propagator.momentum - &additional_momenta;
+                        }
+
+                        *data = EdgeData::new(d, a.orientation);
+                    }
+                }
+
+                self.graph = self
+                    .graph
+                    .clone()
+                    .add_dangling_edge(node, new_edge.clone(), flow.unwrap())
+                    .unwrap()
+                    .1;
+                if first {
+                    first = false;
+                }
+            }
+        }
+    }
+
     pub fn map_pq_ext(&self) -> Vec<Replacement> {
         let mut numbering_map = IndexSet::new();
         let extsymb = symb!("p");
@@ -1134,7 +1285,11 @@ impl Topology {
 
         let mut sol = None;
 
+        println!("{}", self.dot());
+
         for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
+            println!("loop");
+
             if let EdgeId::Unpaired { hedge, flow } = e {
                 let (a, _) = numbering_map.insert_full(hedge);
                 let p = SignOrZero::from(flow) * fun!(extsymb, a as i32);
@@ -1146,25 +1301,72 @@ impl Topology {
             }
 
             if eqs.len() == 2 {
+                for e in &eqs {
+                    println!("eq:{}", e);
+                }
+
                 let (a, b) = Atom::system_to_matrix::<u8, _, _>(&eqs, &pq).unwrap();
 
                 if let Ok(s) = a.solve_any(&b) {
                     sol = Some(s);
                     break;
                 } else {
+                    println!("retrying");
                     eqs.pop();
                     vars.pop();
                 }
             }
         }
-        sol.unwrap()
+        let mut reps: Vec<_> = sol
+            .unwrap()
             .into_vector()
             .into_vec()
             .into_iter()
             .map(|s| s.to_expression())
             .zip(pq)
             .map(|(a, b)| Replacement::new(a.to_pattern(), b.to_pattern()))
-            .collect()
+            .collect();
+
+        let mut lmb_map = AHashMap::new();
+
+        let mut numbering_map = IndexSet::new();
+        for (n, _) in self.graph.iter_nodes() {
+            for (e, d) in self.graph.iter_egdes(&n.hairs) {
+                match e {
+                    EdgeId::Split {
+                        source,
+                        sink,
+                        split,
+                    } => {
+                        let (a, new) = numbering_map.insert_full(source);
+                        if new {
+                            let mut lmbs = AHashSet::new();
+                            for i in d.data.unwrap().propagator.momentum.pattern_match(
+                                &fun!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern(),
+                                None,
+                                None,
+                            ) {
+                                lmbs.insert(fun!(DIS_SYMBOLS.loop_mom, i[&symb!("x_")].to_atom()));
+                            }
+
+                            if lmbs.len() == 1 {
+                                lmb_map.insert(
+                                    lmbs.drain().next().unwrap(),
+                                    fun!(DIS_SYMBOLS.internal_mom, a as i32),
+                                );
+                            }
+                        }
+                    }
+
+                    _ => {}
+                }
+            }
+        }
+
+        for (k, v) in lmb_map {
+            reps.push(Replacement::new(k.to_pattern(), v.to_pattern()));
+        }
+        reps
     }
 
     pub fn prefactor(&self) -> Atom {
@@ -1495,10 +1697,14 @@ impl Topology {
             }
         }
 
-        return Topology {
+        let mut topo = Topology {
             graph: skeleton,
             prefactor,
         };
+
+        topo.complete_externals();
+
+        topo
     }
 }
 
