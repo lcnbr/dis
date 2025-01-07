@@ -667,7 +667,7 @@ impl DisGraph {
 
         let loop_mom_pat = fun!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
 
-        println!("{sum}");
+        // println!("{sum}");
         let solving_var = sum
             .expand()
             .pattern_match(&loop_mom_pat, None, None)
@@ -682,8 +682,8 @@ impl DisGraph {
         .unwrap()[0]
             .clone();
 
-        println!("solution: {}", solution);
-        println!("solving_var: {}", solving_var);
+        // println!("solution: {}", solution);
+        // println!("solving_var: {}", solving_var);
 
         Some((solution, solving_var))
     }
@@ -718,8 +718,58 @@ pub struct MathematicaIntegrand {
     pq_to_ext: Vec<Replacement>,
     ext_to_pq: Vec<(Atom, Atom)>,
     prefactor: Atom,
-    topology: HedgeGraph<(usize, Atom), ()>,
+    topology: Topology,
     numerators: Vec<Atom>,
+}
+
+impl MathematicaIntegrand {
+    pub fn new(topology: Topology, numerators: &[Atom]) -> Self {
+        let pq_to_ext = topology.map_pq_ext();
+        let ext_to_pq = topology.map_ext_pq();
+
+        let prefactor = topology.prefactor().replace_all_multiple(&pq_to_ext);
+
+        let numerators = numerators
+            .iter()
+            .map(|a| a.replace_all_multiple(&pq_to_ext))
+            .collect();
+
+        Self {
+            pq_to_ext,
+            prefactor,
+            ext_to_pq,
+            topology,
+            numerators,
+        }
+    }
+}
+
+impl ToMathematica for MathematicaIntegrand {
+    fn to_math(&self) -> String {
+        let mut map = AHashMap::new();
+
+        map.insert("topology".to_string(), self.topology.to_math());
+
+        map.insert(
+            "ext_to_pq".to_string(),
+            self.ext_to_pq
+                .iter()
+                .map(|(a, b)| (a, b))
+                .collect::<AHashMap<_, _>>()
+                .to_math(),
+        );
+
+        map.insert(
+            "numerators".to_string(),
+            self.numerators
+                .iter()
+                .map(|a| a * &self.prefactor)
+                .collect_vec()
+                .to_math(),
+        );
+
+        map.to_math()
+    }
 }
 
 pub trait ToMathematica {
@@ -761,6 +811,13 @@ impl ToMathematica for Atom {
     }
 }
 
+impl ToMathematica for &Atom {
+    fn to_math(&self) -> String {
+        self.printer(symbolica::printer::PrintOptions::mathematica())
+            .to_string()
+    }
+}
+
 impl<E: ToMathematica> ToMathematica for Vec<E> {
     fn to_math(&self) -> String {
         let mut out = String::new();
@@ -790,6 +847,7 @@ pub struct TopologyEdge {
 
 pub struct Topology {
     pub graph: HedgeGraph<TopologyEdge, ()>,
+    pub prefactor: Atom,
 }
 
 impl ToMathematica for Topology {
@@ -1056,6 +1114,19 @@ impl Topology {
             .map(|(a, b)| Replacement::new(a.to_pattern(), b.to_pattern()))
             .collect()
     }
+
+    pub fn prefactor(&self) -> Atom {
+        let mut p = self.prefactor.clone();
+
+        for (e, d) in self.graph.iter_egdes(&!self.graph.external_filter()) {
+            let d = d.data.unwrap();
+            if d.power > 1 {
+                p = p / (d.propagator.to_atom().npow((d.power - 1) as i32))
+            }
+        }
+
+        p
+    }
 }
 pub struct LmbSignature {
     signs: Signature,
@@ -1156,6 +1227,8 @@ impl Topology {
 
         let mut props = IndexMap::new();
 
+        let mut prefactor = Atom::new_num(1);
+
         for (i, s) in signatures.edge_signatures.iter().enumerate().rev() {
             if ext_signature.is_none() {
                 ext_signature = Some(Signature::from_iter(vec![0i8; s.signs.len()]));
@@ -1163,14 +1236,16 @@ impl Topology {
 
             let (mut p, pow) = denom.props.pop().unwrap();
 
-            println!("{}", p.to_atom());
+            // println!("{}", p.to_atom());
 
             p.rescale(s.overall_sign * s.prefactor.inv());
+            // println!("prefactor{}", s.prefactor);
 
-            println!("rescaled:{}", p.to_atom());
+            prefactor = prefactor / s.prefactor.pow(2);
+            // println!("rescaled:{}", p.to_atom());
             props.insert(p, pow);
 
-            println!("signature:{}", s.signs);
+            // println!("signature:{}", s.signs);
             unique_signatures.entry(s.signs.clone()).or_insert(i);
         }
 
@@ -1180,6 +1255,9 @@ impl Topology {
         let mut ext_edgenum = 0;
 
         let mut not_seen = !BitVec::empty(props.len());
+
+        // here we add the basic loops to satify all found lmb signatures.
+        // currently we only support one loop
         let (mut skeleton, mut signature_cut) = if unique_signatures.len() == 1 {
             let (s, i) = unique_signatures.iter().next().unwrap();
             not_seen.set(*i, false);
@@ -1222,6 +1300,7 @@ impl Topology {
             unimplemented!()
         };
 
+        // now we add all the internal edges
         for i in not_seen.iter_ones() {
             let signature = &signatures.edge_signatures[i];
             let (prop, pow) = props.get_index(i).unwrap();
@@ -1244,7 +1323,7 @@ impl Topology {
                 )
                 .unwrap();
 
-            println!("split:\n{}", skeleton.base_dot());
+            // println!("split:\n{}", skeleton.base_dot());
             let mut dot = HedgeGraphBuilder::new();
             let v = dot.add_node(());
 
@@ -1299,12 +1378,12 @@ impl Topology {
 
                 sum = sum.expand();
                 if !sum.is_zero() {
-                    println!("sum{sum}");
+                    // println!("sum{sum}");
                     new_node_hairs.insert(skeleton.id_from_hairs(n).unwrap(), sum);
                 }
             }
             for (n, h) in new_node_hairs.drain() {
-                if ext_edgenum == 3 {
+                if ext_edgenum == 4 {
                     let ext = skeleton
                         .hairs_from_id(n)
                         .hairs
@@ -1364,7 +1443,10 @@ impl Topology {
             }
         }
 
-        return Topology { graph: skeleton };
+        return Topology {
+            graph: skeleton,
+            prefactor,
+        };
     }
 }
 
@@ -1405,7 +1487,7 @@ impl DenominatorDis {
         let mut system = vec![];
         for m in &matches {
             let coef = sum.coefficient(m);
-            println!("coef:{coef}");
+            // println!("coef:{coef}");
             system.push(coef);
         }
 
@@ -1569,7 +1651,7 @@ impl DenominatorDis {
     pub fn new(prop_iter: impl IntoIterator<Item = Prop>) -> Self {
         let mut props = IndexMap::new();
         for p in prop_iter {
-            println!("p:{}", p.to_atom());
+            // println!("p:{}", p.to_atom());
             *props.entry(p).or_insert(0) += 1;
         }
 
