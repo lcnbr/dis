@@ -777,18 +777,6 @@ impl ToMathematica for MathematicaIntegrand {
 
         map.insert("topology".to_string(), self.topology.to_math());
 
-        println!("//n_ext:{}", self.topology.graph.n_externals());
-
-        println!(
-            "{}",
-            self.topology.graph.dot_impl(
-                &self.topology.graph.full_filter(),
-                "".into(),
-                &|e| Some(format!("label=\"{}\"", e.propagator.momentum)),
-                &|_| None
-            )
-        );
-
         map.insert(
             "ext_to_pq".to_string(),
             self.ext_to_pq
@@ -1233,7 +1221,7 @@ impl Topology {
                         if first {
                             d.propagator.momentum = d.propagator.momentum - &additional_momenta;
                         } else {
-                            d.propagator.momentum = d.propagator.momentum - &additional_momenta;
+                            d.propagator.momentum = d.propagator.momentum + &additional_momenta;
                         }
 
                         *data = EdgeData::new(d, a.orientation);
