@@ -4,6 +4,7 @@ use std::{
     io::Write,
     ops::Neg,
     path::Path,
+    str::FromStr,
     sync::{Arc, LazyLock},
 };
 
@@ -11,12 +12,14 @@ use _gammaloop::{
     graph::{
         half_edge::{
             drawing::Decoration,
-            layout::{FancySettings, LayoutIters, LayoutParams, PositionalHedgeGraph},
+            layout::{
+                FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph,
+            },
             subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
             EdgeData, EdgeId, Flow, Hedge, HedgeGraph, HedgeGraphBuilder, InvolutiveMapping,
-            Orientation,
+            NodeIndex, Orientation,
         },
-        BareGraph, Edge, Vertex,
+        BareGraph, Edge, EdgeType, Vertex, VertexInfo,
     },
     model::{normalise_complex, Model},
     momentum::{Sign, SignOrZero, Signature},
@@ -24,7 +27,9 @@ use _gammaloop::{
 };
 use ahash::{AHashMap, AHashSet};
 use bitvec::vec::BitVec;
+use cgmath::{Angle, Rad, Zero};
 use indexmap::{IndexMap, IndexSet};
+use indicatif::ProgressBar;
 use itertools::Itertools;
 use log::debug;
 use spenso::{
@@ -72,8 +77,137 @@ pub struct IFCuts {
 }
 
 impl IFCuts {
+    pub fn to_typst(&self, dis_graph: &DisGraph, filename: &str) -> std::io::Result<()> {
+        let file = std::fs::File::open("fancy_settings.json").unwrap();
+        let fancy_settings = serde_json::from_reader::<_, FancySettings>(file).unwrap();
+
+        let file = std::fs::File::open("layout_params.json").unwrap();
+        let params = serde_json::from_reader::<_, LayoutParams>(file).unwrap();
+
+        let file = std::fs::File::open("layout_iters.json").unwrap();
+        let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
+        let mut layouts: Vec<_> = Vec::new();
+
+        let number_of_layouts = self
+            .cuts
+            .iter()
+            .map(|a| a.1[0].len() + a.1[1].len())
+            .fold(0, |acc, a| acc + a as u64);
+
+        let bar = ProgressBar::new(number_of_layouts);
+
+        for (i, (e, cuts)) in self.cuts.iter().enumerate() {
+            let first_initial = &cuts[0][0];
+            let denom = dis_graph.denominator(first_initial);
+            let denoms = denom.partial_fraction();
+
+            let mut sum = Atom::new_num(0);
+            for d in &denoms {
+                sum = sum + d.to_atom();
+            }
+
+            let layout_emb_i: Vec<_> = cuts[0]
+                .iter()
+                .map(|c| {
+                    let l = dis_cut_layout(
+                        c.clone(),
+                        &dis_graph,
+                        params,
+                        layout_iters,
+                        Some(&fancy_settings),
+                        20.,
+                    );
+                    bar.inc(1);
+                    l
+                })
+                .collect();
+
+            let layout_emb_f = cuts[1]
+                .iter()
+                .map(|c| {
+                    let l = dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.);
+                    bar.inc(1);
+                    l
+                })
+                .collect();
+
+            layouts.push((
+                format!("embedding{}i", i + 1),
+                format!(
+                    "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
+                    i + 1,
+                    e.windings,
+                    denom
+                        .to_atom()
+                        .printer(symbolica::printer::PrintOptions::mathematica()),
+                    sum.printer(symbolica::printer::PrintOptions {
+                        pretty_matrix:true,
+                        terms_on_new_line: true,
+                        color_top_level_sum: false,
+                        color_builtin_symbols: false,
+                        print_finite_field: true,
+                        symmetric_representation_for_finite_field: false,
+                        explicit_rational_polynomial: false,
+                        number_thousands_separator: None,
+                        multiplication_operator: ' ',
+                        double_star_for_exponentiation: false,
+                        square_brackets_for_function: true,
+                        num_exp_as_superscript: false,
+                        latex: false,
+                        precision: None,
+                    })
+                ),
+                layout_emb_i,
+            ));
+
+            layouts.push((
+                format!("embedding{}f", i + 1),
+                format!("== final"),
+                layout_emb_f,
+            ));
+        }
+        bar.finish();
+        write_layout(&layouts, filename)
+    }
+
     pub fn remove_empty(&mut self) {
         self.cuts.retain(|_, v| !v[0].is_empty() & !v[1].is_empty());
+    }
+
+    pub fn to_other_mathematica_file(
+        &self,
+        graph: &DisGraph,
+        filename: &str,
+    ) -> std::io::Result<()> {
+        let mut embeddings = vec![];
+
+        for (e, cuts) in self.cuts.iter() {
+            let mut map = AHashMap::new();
+            let first_initial = &cuts[0][0];
+            map.insert("embedding".to_string(), e.windings.to_math());
+            let denom = graph.denominator(first_initial);
+
+            let numers = graph.numerator(first_initial);
+            // for n in &numers {
+            //     println!(":{n}");
+            // }
+
+            map.insert("Denominator".to_string(), denom.to_atom().to_math());
+            let denoms = denom
+                .partial_fraction()
+                .into_iter()
+                .map(|a| a.to_atom())
+                .collect_vec();
+
+            map.insert("Partial_fraction".to_string(), denoms.to_math());
+            map.insert("Numerator".to_string(), numers.to_math());
+
+            embeddings.push(map);
+        }
+
+        let mut f = File::create(filename)?;
+        write!(f, "{}", embeddings.to_math())?;
+        Ok(())
     }
 
     pub fn to_mathematica_file(&self, graph: &DisGraph, filename: &str) -> std::io::Result<()> {
@@ -264,7 +398,16 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
         let i = Atom::new_var(Atom::I);
         for (j, e) in graph.iter_egdes(subgraph) {
             let edge = &e.data.as_ref().unwrap().bare_edge;
-            let [n, c] = edge.color_separated_numerator(bare);
+            let num = match j {
+                EdgeId::Split {
+                    source,
+                    sink,
+                    split,
+                } => source,
+                EdgeId::Paired { source, sink } => source,
+                EdgeId::Unpaired { hedge, flow } => hedge,
+            };
+            let [n, c] = edge.color_separated_numerator(bare, num.0);
             if matches!(j, EdgeId::Paired { .. }) {
                 eatoms.push([&n * &i, c]);
             };
@@ -366,6 +509,48 @@ pub struct DisGraph {
 }
 
 impl DisGraph {
+    pub fn to_typst(set: &[Self], radius: f64, filename: &str) -> std::io::Result<()> {
+        let bar = ProgressBar::new(set.len() as u64);
+
+        let col: Vec<_> = set
+            .iter()
+            .enumerate()
+            .map(|(i, g)| {
+                let o = (format!("d{i}"), "".to_string(), vec![g.draw_graph(radius)]);
+                bar.inc(1);
+                o
+            })
+            .collect();
+        std::fs::write(
+            filename,
+            String::from_str("#set page(width: 35cm, height: auto)\n").unwrap()
+                + PositionalHedgeGraph::cetz_impl_collection(&col, &|a| "".to_string(), &|e| {
+                    e.decoration()
+                })
+                .as_str(),
+        )
+    }
+
+    pub fn draw_graph(&self, radius: f64) -> PositionalHedgeGraph<DisEdge, DisVertex> {
+        let file = std::fs::File::open("layout_params.json").unwrap();
+        let params = serde_json::from_reader::<_, LayoutParams>(file).unwrap();
+
+        let file = std::fs::File::open("layout_iters.json").unwrap();
+        let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
+
+        let settings = LayoutSettings::circle_ext(
+            &self.graph,
+            params,
+            layout_iters,
+            vec![1, 1],
+            1,
+            Rad::turn_div_2(),
+            radius,
+        );
+
+        self.graph.clone().layout(settings)
+    }
+
     pub fn full_dis_filter_split(&self) -> IFCuts {
         let mut i = Embeddings::classify(
             OrientedCut::all_initial_state_cuts(&self.graph),
@@ -422,40 +607,205 @@ impl DisGraph {
         i
     }
 
-    pub fn from_bare(bare: &BareGraph) -> DisGraph {
-        let mut h = bare.hedge_representation.clone();
+    pub fn from_self_energy_bare(bare: &BareGraph, model: &Model) -> DisGraph {
+        let mut builder = HedgeGraphBuilder::new();
+        let mut map = AHashMap::new();
 
-        let mut elec_node = None;
-
-        if let Some((elec, _)) = h.iter_egdes(&h.full_filter()).find(|(_, n)| {
-            bare.edges[**n.as_ref().data.unwrap()]
-                .particle
-                .pdg_code
-                .abs()
-                == 11
-        }) {
-            if let EdgeId::Paired { source, .. } = elec {
-                elec_node = Some(h.node_hairs(source).clone());
+        for (i, v) in bare.vertices.iter().enumerate() {
+            if matches!(v.vertex_info, VertexInfo::InteractonVertexInfo(_)) {
+                map.insert(i, builder.add_node(v.clone()));
             }
         }
 
-        let mut included_hedge = None;
-        let node = if let Some(s) = elec_node {
-            for i in s.hairs.included_iter() {
-                if bare.edges[*h.get_edge_data(i)].particle.pdg_code.abs() == 11 {
-                    included_hedge = Some(i);
+        for edge in bare.edges.iter() {
+            match edge.edge_type {
+                EdgeType::Virtual => {
+                    let source = map[&edge.vertices[0]];
+                    let sink = map[&edge.vertices[1]];
+                    builder.add_edge(source, sink, edge.clone(), true);
+                }
+                EdgeType::Incoming => {
+                    // let source = map[&edge.vertices[0]];
+                    let sink = map[&edge.vertices[1]];
+                    builder.add_external_edge(sink, edge.clone(), true, Flow::Sink);
+                }
+                EdgeType::Outgoing => {
+                    let source = map[&edge.vertices[0]];
+                    // let sink = map[&edge.vertices[1]];
+                    builder.add_external_edge(source, edge.clone(), true, Flow::Source);
+                }
+            }
+        }
+
+        let mut h = builder.build();
+
+        let mut outer_ring_builder = HedgeGraphBuilder::new();
+
+        let epemavertex = model.get_vertex_rule(&"V_98".into());
+
+        let o1 = outer_ring_builder.add_node(Vertex {
+            name: "or1".into(),
+            vertex_info: VertexInfo::InteractonVertexInfo(
+                _gammaloop::graph::InteractionVertexInfo {
+                    vertex_rule: epemavertex.clone(),
+                },
+            ),
+            edges: vec![],
+        });
+        let o2 = outer_ring_builder.add_node(Vertex {
+            name: "or2".into(),
+            vertex_info: VertexInfo::InteractonVertexInfo(
+                _gammaloop::graph::InteractionVertexInfo {
+                    vertex_rule: epemavertex.clone(),
+                },
+            ),
+            edges: vec![],
+        });
+
+        let e = model.get_particle_from_pdg(11);
+        let prop = model.get_propagator_for_particle(&e.name);
+
+        outer_ring_builder.add_edge(
+            o1,
+            o2,
+            Edge {
+                name: "eo1".into(),
+                edge_type: EdgeType::Virtual,
+                propagator: prop.clone(),
+                particle: e.clone(),
+                vertices: [0, 0],
+                internal_index: vec![],
+            },
+            true,
+        );
+
+        outer_ring_builder.add_edge(
+            o2,
+            o1,
+            Edge {
+                name: "eo2".into(),
+                edge_type: EdgeType::Virtual,
+                propagator: prop.clone(),
+                particle: e.clone(),
+                vertices: [0, 0],
+                internal_index: vec![],
+            },
+            true,
+        );
+
+        let a = model.get_particle_from_pdg(22);
+        let propa = model.get_propagator_for_particle(&a.name);
+
+        outer_ring_builder.add_external_edge(
+            o1,
+            Edge {
+                name: "eo3".into(),
+                edge_type: EdgeType::Virtual,
+                propagator: propa.clone(),
+                particle: a.clone(),
+                vertices: [0, 0],
+                internal_index: vec![],
+            },
+            true,
+            Flow::Sink,
+        );
+
+        outer_ring_builder.add_external_edge(
+            o2,
+            Edge {
+                name: "eo4".into(),
+                edge_type: EdgeType::Virtual,
+                propagator: propa.clone(),
+                particle: a.clone(),
+                vertices: [0, 0],
+                internal_index: vec![],
+            },
+            true,
+            Flow::Source,
+        );
+
+        let g = outer_ring_builder.build();
+
+        let mut elec_node = None;
+
+        if let Some((elec, _)) = g
+            .iter_egdes(&g.full_filter())
+            .find(|(_, n)| n.data.unwrap().particle.pdg_code.abs() == 11)
+        {
+            if let EdgeId::Paired { source, .. } = elec {
+                elec_node = Some(g.involution.hedge_data(source).clone());
+            }
+        }
+
+        let mut hedge_in_basis = None;
+        let basis_start = if let Some(s) = elec_node {
+            for i in g.hairs_from_id(s).hairs.included_iter() {
+                if g.get_edge_data(i).particle.pdg_code.abs() == 11 {
+                    hedge_in_basis = Some(i);
                     break;
                 }
             }
             s
         } else {
-            h.node_hairs(Hedge(0)).clone()
+            NodeIndex(0)
         };
 
+        println!(
+            "{}",
+            h.dot_impl(
+                &h.full_filter(),
+                "".into(),
+                &|e| Some(format!("label=\"{}\"", e.name)),
+                &|v| None
+            )
+        );
+        println!(
+            "{}",
+            g.dot_impl(
+                &g.full_filter(),
+                "".into(),
+                &|e| Some(format!("label=\"{}\"", e.name)),
+                &|v| None
+            )
+        );
+        let h = g
+            .join(
+                h,
+                |hf, hd, gf, gd| hf == -gf,
+                |hf, hd, gf, gd| {
+                    // (*hd.data.as_mut().unwrap()).edgetype = EdgeType::Virtual;
+                    (gf, gd)
+                },
+            )
+            .unwrap();
+
+        println!(
+            "{}",
+            h.dot_impl(
+                &h.full_filter(),
+                "".into(),
+                &|e| Some(format!("label=\"{}\"", e.name)),
+                &|v| None
+            )
+        );
+
+        DisGraph::from_hedge(h, bare, basis_start, hedge_in_basis)
+    }
+
+    pub fn from_hedge(
+        mut h: HedgeGraph<Edge, Vertex>,
+        bare: &BareGraph,
+        basis_start: NodeIndex,
+        hedge_in_basis: Option<Hedge>,
+    ) -> DisGraph {
         println!("finding basis");
 
         let (basis, tree) = h
-            .paton_cycle_basis(&h.full_graph(), &node, included_hedge)
+            .paton_cycle_basis(
+                &h.full_graph(),
+                &h.hairs_from_id(basis_start),
+                hedge_in_basis,
+            )
             .unwrap();
 
         println!("aligning tree");
@@ -467,10 +817,18 @@ impl DisGraph {
         let mut seen_pdg22 = None;
         let mut seen_pdg11 = None;
         let lmbsymb = symb!("k");
+
+        let mut vertex_n = 0;
+
+        let mut edge_n = 0;
         let graph = h.map(
-            |bare_vertex_id| DisVertex {
-                bare_vertex_id,
-                bare_vertex: bare.vertices[bare_vertex_id].clone(),
+            |bare_vertex| {
+                let v = DisVertex {
+                    bare_vertex_id: vertex_n,
+                    bare_vertex,
+                };
+                vertex_n += 1;
+                v
             },
             |e, d| {
                 let mut mom_e = Atom::new_num(0);
@@ -490,9 +848,7 @@ impl DisGraph {
                         }
                     }
                 }
-                d.and_then(|bare_edge_id| {
-                    let bare_edge = bare.edges[bare_edge_id].clone();
-
+                d.and_then(|bare_edge| {
                     let marked = if only_cycle {
                         if let Some(i) = first_cycle {
                             match bare_edge.particle.pdg_code.abs() {
@@ -521,15 +877,17 @@ impl DisGraph {
                         false
                     };
 
-                    let emr_mom = fun!(DIS_SYMBOLS.emr_mom, bare_edge_id as i32);
+                    let emr_mom = fun!(DIS_SYMBOLS.emr_mom, edge_n as i32);
 
-                    Some(DisEdge {
+                    let a = Some(DisEdge {
                         bare_edge,
-                        bare_edge_id,
+                        bare_edge_id: edge_n,
                         marked,
                         lmb_momentum: mom_e,
                         emr_momentum: emr_mom,
-                    })
+                    });
+                    edge_n += 1;
+                    a
                 })
             },
         );
@@ -612,6 +970,241 @@ impl DisGraph {
             marked_electron_edge: seen_pdg11.unwrap(),
             basis,
         }
+    }
+
+    // pub fn from_bare(bare: &BareGraph) -> DisGraph {
+    //     let mut h = bare.hedge_representation.clone();
+
+    //     let mut elec_node = None;
+
+    //     if let Some((elec, _)) = h.iter_egdes(&h.full_filter()).find(|(_, n)| {
+    //         bare.edges[**n.as_ref().data.unwrap()]
+    //             .particle
+    //             .pdg_code
+    //             .abs()
+    //             == 11
+    //     }) {
+    //         if let EdgeId::Paired { source, .. } = elec {
+    //             elec_node = Some(h.node_hairs(source).clone());
+    //         }
+    //     }
+
+    //     let mut included_hedge = None;
+    //     let node = if let Some(s) = elec_node {
+    //         for i in s.hairs.included_iter() {
+    //             if bare.edges[*h.get_edge_data(i)].particle.pdg_code.abs() == 11 {
+    //                 included_hedge = Some(i);
+    //                 break;
+    //             }
+    //         }
+    //         s
+    //     } else {
+    //         h.node_hairs(Hedge(0)).clone()
+    //     };
+
+    //     println!("finding basis");
+
+    //     let (basis, tree) = h
+    //         .paton_cycle_basis(&h.full_graph(), &node, included_hedge)
+    //         .unwrap();
+
+    //     println!("aligning tree");
+    //     h.align_to_tree_underlying(&tree);
+
+    //     println!("{}", h.base_dot());
+    //     println!("{}", h.dot(&tree.tree));
+
+    //     let mut seen_pdg22 = None;
+    //     let mut seen_pdg11 = None;
+    //     let lmbsymb = symb!("k");
+    //     let graph = h.map(
+    //         |bare_vertex_id| DisVertex {
+    //             bare_vertex_id,
+    //             bare_vertex: bare.vertices[bare_vertex_id].clone(),
+    //         },
+    //         |e, d| {
+    //             let mut mom_e = Atom::new_num(0);
+
+    //             let mut first_cycle = None;
+    //             let mut only_cycle = true;
+
+    //             for (i, c) in basis.iter().enumerate() {
+    //                 if let EdgeId::Paired { source, .. } = e {
+    //                     if c.filter.includes(&source) {
+    //                         if first_cycle.is_none() {
+    //                             first_cycle = Some(i);
+    //                         } else {
+    //                             only_cycle = false;
+    //                         }
+    //                         mom_e = mom_e + fun!(lmbsymb, i as i32)
+    //                     }
+    //                 }
+    //             }
+    //             d.and_then(|bare_edge_id| {
+    //                 let bare_edge = bare.edges[bare_edge_id].clone();
+
+    //                 let marked = if only_cycle {
+    //                     if let Some(i) = first_cycle {
+    //                         match bare_edge.particle.pdg_code.abs() {
+    //                             11 => {
+    //                                 if seen_pdg11.is_some() {
+    //                                     false
+    //                                 } else {
+    //                                     seen_pdg11 = Some((e, i));
+    //                                     true
+    //                                 }
+    //                             }
+    //                             22 => {
+    //                                 if seen_pdg22.is_some() {
+    //                                     false
+    //                                 } else {
+    //                                     seen_pdg22 = Some((e, i));
+    //                                     true
+    //                                 }
+    //                             }
+    //                             _ => false,
+    //                         }
+    //                     } else {
+    //                         false
+    //                     }
+    //                 } else {
+    //                     false
+    //                 };
+
+    //                 let emr_mom = fun!(DIS_SYMBOLS.emr_mom, bare_edge_id as i32);
+
+    //                 Some(DisEdge {
+    //                     bare_edge,
+    //                     bare_edge_id,
+    //                     marked,
+    //                     lmb_momentum: mom_e,
+    //                     emr_momentum: emr_mom,
+    //                 })
+    //             })
+    //         },
+    //     );
+
+    //     let mut outer_graph = graph.empty_filter();
+
+    //     for (i, e) in graph.iter_egdes(&graph.full_filter()) {
+    //         if let EdgeId::Paired { source, sink } = i {
+    //             if e.data.as_ref().unwrap().bare_edge.particle.pdg_code.abs() == 11 {
+    //                 outer_graph.set(source.0, true);
+    //                 for i in graph.node_hairs(sink).included_iter() {
+    //                     outer_graph.set(i.0, true);
+    //                 }
+    //                 outer_graph.set(sink.0, true);
+    //             }
+    //         }
+    //     }
+
+    //     let inner_graph = outer_graph.complement(&graph);
+
+    //     let mink = Rep::new_self_dual("mink").unwrap();
+    //     let mu = mink.new_slot(4, 3).to_atom();
+    //     let nu = mink.new_slot(4, 2).to_atom();
+    //     let metric = fun!(ETS.metric, mu, nu);
+    //     let p = symb!("p");
+    //     let phat2 = Atom::new_var(symb!("phat")).pow(Atom::new_num(2));
+    //     let pp = fun!(p, mu) * fun!(p, nu);
+    //     let diminv = Atom::parse("1/(2-dim)").unwrap();
+
+    //     let w1_proj = GlobalPrefactor {
+    //         color: Atom::new_num(1),
+    //         colorless: &diminv * (&metric - &pp / &phat2),
+    //     };
+
+    //     let w2_proj = GlobalPrefactor {
+    //         color: Atom::new_num(1),
+    //         colorless: (diminv * (metric - &pp / &phat2) + &pp / &phat2) / &phat2,
+    //     };
+
+    //     let mut w1 = _gammaloop::numerator::Numerator::default()
+    //         .from_dis_graph(bare, &graph, &inner_graph, Some(&w1_proj))
+    //         .color_simplify()
+    //         .gamma_simplify()
+    //         .get_single_atom()
+    //         .unwrap()
+    //         .0;
+
+    //     let w2 = _gammaloop::numerator::Numerator::default()
+    //         .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
+    //         .color_simplify();
+
+    //     // println!("color simplified:{}", w2.state.colorless);
+
+    //     let w2 = w2.gamma_simplify();
+
+    //     // println!("gamma simplified: {}", w2.state.colorless);
+
+    //     let mut w2 = w2.get_single_atom().unwrap().0;
+
+    //     numerator_dis_apply(&mut w1);
+    //     numerator_dis_apply(&mut w2);
+
+    //     let mut props = vec![];
+    //     for (j, e) in graph.iter_egdes(&inner_graph) {
+    //         let edge = &e.data.as_ref().unwrap().bare_edge;
+    //         let i = e.data.as_ref().unwrap().bare_edge_id;
+    //         if matches!(j, EdgeId::Paired { .. }) {
+    //             let mass = edge.particle.mass.expression.clone();
+    //             let emr_mom = fun!(DIS_SYMBOLS.emr_mom, i as i32);
+    //             props.push(Prop::new(mass, emr_mom));
+    //             // denominator = denominator * fun!(denomsymb, mass, emr_mom);
+    //         };
+    //     }
+
+    //     DisGraph {
+    //         graph,
+    //         numerator: vec![w1.expand(), w2.expand()],
+    //         denominator: DenominatorDis::new(props),
+    //         lmb_photon: seen_pdg22.unwrap(),
+    //         marked_electron_edge: seen_pdg11.unwrap(),
+    //         basis,
+    //     }
+    // }
+
+    pub fn from_bare(bare: &BareGraph) -> DisGraph {
+        let mut h = bare.hedge_representation.clone();
+
+        let mut elec_node = None;
+
+        if let Some((elec, _)) = h.iter_egdes(&h.full_filter()).find(|(_, n)| {
+            bare.edges[**n.as_ref().data.unwrap()]
+                .particle
+                .pdg_code
+                .abs()
+                == 11
+        }) {
+            if let EdgeId::Paired { source, .. } = elec {
+                elec_node = Some(h.node_hairs(source).clone());
+            }
+        }
+
+        let mut included_hedge = None;
+        let node = if let Some(s) = elec_node {
+            for i in s.hairs.included_iter() {
+                if bare.edges[*h.get_edge_data(i)].particle.pdg_code.abs() == 11 {
+                    included_hedge = Some(i);
+                    break;
+                }
+            }
+            s
+        } else {
+            h.node_hairs(Hedge(0)).clone()
+        };
+
+        let basis_start = h.id_from_hairs(&node).unwrap();
+
+        DisGraph::from_hedge(
+            h.map(
+                |v| bare.vertices[v].clone(),
+                |e, d| EdgeData::new(bare.edges[d.data.unwrap()].clone(), d.orientation),
+            ),
+            bare,
+            basis_start,
+            included_hedge,
+        )
     }
     pub fn numerator(&self, cut: &OrientedCut) -> Vec<Atom> {
         let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
@@ -758,7 +1351,7 @@ impl MathematicaIntegrand {
 
         let numerators = numerators
             .iter()
-            .map(|a| a.replace_all_multiple(&pq_to_ext))
+            .map(|a| a.replace_all_multiple_repeat(&pq_to_ext))
             .collect();
 
         Self {
@@ -897,7 +1490,7 @@ impl ToMathematica for Topology {
         for (e, _) in self.graph.iter_egdes(&self.graph.external_filter()) {
             if let EdgeId::Unpaired { hedge, flow } = e {
                 let (a, _) = numbering_map.insert_full(hedge);
-                nodelist.push(vec![format!("{}p[{}]", SignOrZero::from(flow), a)]);
+                nodelist.push(vec![format!("{}p[{}]", -SignOrZero::from(flow), a)]);
             } else {
                 panic!("ahhhh");
             }
@@ -1293,7 +1886,7 @@ impl Topology {
             .into_iter()
             .map(|s| s.to_expression())
             .zip(pq)
-            .map(|(a, b)| Replacement::new(a.to_pattern(), b.to_pattern()))
+            .map(|(a, b)| Replacement::new(b.to_pattern(), a.to_pattern()))
             .collect();
 
         let mut lmb_map = AHashMap::new();
@@ -1871,7 +2464,6 @@ impl DenominatorDis {
             // println!("p:{}", p.to_atom());
             *props.entry(p).or_insert(0) += 1;
         }
-
         Self {
             props,
             prefactor: Atom::new_num(1),
@@ -1879,7 +2471,12 @@ impl DenominatorDis {
     }
 
     pub fn map_all(&self, f: &impl Fn(&Atom) -> Atom) -> Self {
-        let props = self.props.iter().map(|(p, n)| (p.map_all(f), *n)).collect();
+        let mut props = IndexMap::new();
+
+        for (k, v) in self.props.iter() {
+            let p = k.map_all(f);
+            *props.entry(p).or_insert(0) += *v;
+        }
         let prefactor = f(&self.prefactor);
         Self { props, prefactor }
     }
@@ -1955,21 +2552,22 @@ pub fn write_layout<'a>(
         Vec<PositionalHedgeGraph<(&'a DisEdge, Orientation, Atom), &'a DisVertex>>,
     )],
     filename: &str,
-) {
+) -> std::io::Result<()> {
     std::fs::write(
         filename,
-        PositionalHedgeGraph::cetz_impl_collection(
-            layouts,
-            &|(_, o, a)| {
-                format!(
-                    "{}",
-                    (SignOrZero::from(*o) * a.expand())
-                        .expand()
-                        .printer(symbolica::printer::PrintOptions::mathematica())
-                )
-            },
-            &|(e, _, _)| e.decoration(),
-        ),
+        String::from_str("#set page(width: 35cm, height: auto)\n").unwrap()
+            + PositionalHedgeGraph::cetz_impl_collection(
+                layouts,
+                &|(_, o, a)| {
+                    format!(
+                        "{}",
+                        (SignOrZero::from(*o) * a.expand())
+                            .expand()
+                            .printer(symbolica::printer::PrintOptions::mathematica())
+                    )
+                },
+                &|(e, _, _)| e.decoration(),
+            )
+            .as_str(),
     )
-    .unwrap();
 }

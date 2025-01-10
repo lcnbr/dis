@@ -214,9 +214,15 @@ fn main() {
     //         vec![first_initial_layout],
     //     ));
     // }
+
+    ifsplit.to_typst(&dis_graph, "self_energy.typ").unwrap();
     // write_layout(&layouts, "self_energy_embeddings.typ");
     // ifsplit
-    //     .to_mathematica_file(&dis_graph, "double_triangle_tes.m")
+    //     .to_mathematica_file(&dis_graph, "self_energy.m")
     //     .unwrap();
+
+    ifsplit
+        .to_other_mathematica_file(&dis_graph, "self_energy_new.m")
+        .unwrap();
     // write_layout(&routings_integrand, "self_energy_integrands.typ");
 }
