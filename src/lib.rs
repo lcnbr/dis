@@ -184,7 +184,12 @@ impl IFCuts {
             map.insert("embedding".to_string(), e.windings.to_math());
             let denom = graph.denominator(first_initial);
 
-            let numers = graph.numerator(first_initial);
+            let numers: AHashMap<_, _> = graph
+                .numerator(first_initial)
+                .into_iter()
+                .enumerate()
+                .map(|(i, a)| (format!("w{}", i), a))
+                .collect();
             // for n in &numers {
             //     println!(":{n}");
             // }
