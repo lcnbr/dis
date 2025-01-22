@@ -227,7 +227,7 @@ fn main() {
     //     ));
     // }
 
-    ifsplit.to_typst(&dis_graph, "self_energy.typ").unwrap();
+    // ifsplit.to_typst(&dis_graph, "self_energy.typ").unwrap();
     // write_layout(&layouts, "self_energy_embeddings.typ");
     // ifsplit
     //     .to_mathematica_file(&dis_graph, "self_energy.m")

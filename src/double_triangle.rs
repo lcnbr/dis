@@ -214,7 +214,7 @@ fn main() {
     // }
     // write_layout(&layouts, "double_triangle_embeddings.typ");
     //
-    ifsplit.to_typst(&dis_graph, "double_triangle.typ").unwrap();
+    // ifsplit.to_typst(&dis_graph, "double_triangle.typ").unwrap();
     // ifsplit
     //     .to_mathematica_file(&dis_graph, "double_triangle.m")
     //     .unwrap();
