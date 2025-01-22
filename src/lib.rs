@@ -45,7 +45,7 @@ use symbolica::{
     atom::{Atom, AtomCore, AtomView, FunctionAttribute, Symbol},
     coefficient::ConvertToRing,
     domains::{
-        integer::Z,
+        integer::{Integer, Z},
         rational::{Rational, Q},
         rational_polynomial::{RationalPolynomial, RationalPolynomialField},
         Ring, SelfRing,
@@ -115,7 +115,7 @@ impl IFCuts {
                         20.,
                     );
                     bar.inc(1);
-                    l
+                    (c.to_string(), l)
                 })
                 .collect();
 
@@ -124,7 +124,8 @@ impl IFCuts {
                 .map(|c| {
                     let l = dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.);
                     bar.inc(1);
-                    l
+
+                    (c.to_string(), l)
                 })
                 .collect();
 
@@ -188,7 +189,10 @@ impl IFCuts {
                 .numerator(first_initial)
                 .into_iter()
                 .enumerate()
-                .map(|(i, a)| (format!("w{}", i), a))
+                .map(|(i, a)| {
+                    // println!("{:+}", a.expand());
+                    (format!("w{}", i), a.expand().factor())
+                })
                 .collect();
             // for n in &numers {
             //     println!(":{n}");
@@ -361,7 +365,7 @@ const DIS_SYMBOLS: LazyLock<DisSymbols> = LazyLock::new(|| DisSymbols {
     photon_mom: symb!("q"),
     emr_mom: symb!("Q"),
     loop_mom: symb!("k"),
-    dim: symb!("dim"),
+    dim: symb!("d"),
     internal_mom: symb!("l"),
     external_mom: symb!("p"),
     dot: Symbol::new_with_attributes(
@@ -399,13 +403,15 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
         let mut eatoms: Vec<_> = vec![];
         let i = Atom::new_var(Atom::I);
         for (j, e) in graph.iter_egdes(subgraph) {
+            // println!("emr:")
             let edge = &e.data.as_ref().unwrap().bare_edge;
+            let edge_id = &e.data.as_ref().unwrap().bare_edge_id;
             let num = match j {
                 EdgeId::Split { source, .. } => source,
                 EdgeId::Paired { source, .. } => source,
                 EdgeId::Unpaired { hedge, .. } => hedge,
             };
-            let [n, c] = edge.color_separated_numerator(bare, num.0);
+            let [n, c] = edge.color_separated_numerator(bare, *edge_id);
             if matches!(j, EdgeId::Paired { .. }) {
                 eatoms.push([&n * &i, c]);
             };
@@ -499,24 +505,30 @@ pub fn numerator_dis_apply(num: &mut Atom) {
 pub struct DisGraph {
     graph: HedgeGraph<DisEdge, DisVertex>,
     marked_electron_edge: (EdgeId, usize),
+    symmetry_group: Integer,
     lmb_photon: (EdgeId, usize),
     numerator: Vec<Atom>,
     denominator: DenominatorDis,
+    overall_prefactor: Atom,
     basis: Vec<Cycle>,
 }
 
 impl DisGraph {
-    pub fn to_typst(set: &[Self], radius: f64, filename: &str) -> std::io::Result<()> {
+    pub fn to_typst(set: &[(usize, Self)], radius: f64, filename: &str) -> std::io::Result<()> {
         let bar = ProgressBar::new(set.len() as u64);
 
         let col: Vec<_> = set
             .iter()
-            .enumerate()
             .map(|(i, g)| {
                 let o = (
                     format!("d{i}"),
-                    format!("d{i}"),
-                    vec![g.draw_graph(radius, true)],
+                    format!(
+                        "
+                            = d{i}\n overall factor: {}
+                            \n symmetry group: {}",
+                        g.overall_prefactor, g.symmetry_group
+                    ),
+                    vec![("".into(), g.draw_graph(radius, true))],
                 );
                 bar.inc(1);
                 o
@@ -529,6 +541,7 @@ impl DisGraph {
                     &col,
                     &|a| a.lmb_momentum.to_string(),
                     &|e| e.decoration(),
+                    true,
                 )
                 .as_str(),
         )
@@ -582,6 +595,8 @@ impl DisGraph {
                         true
                     }
                 });
+
+                println!("aligned_electron:{}", alligned_electron);
                 let contains_photon = self
                     .graph
                     .iter_egdes(c)
@@ -923,9 +938,10 @@ impl DisGraph {
         let nu = mink.new_slot(4, 2).to_atom();
         let metric = fun!(ETS.metric, mu, nu);
         let p = symb!("p");
+        let q = symb!("q");
         let phat2 = Atom::new_var(symb!("phat")).pow(Atom::new_num(2));
         let pp = fun!(p, mu) * fun!(p, nu);
-        let diminv = Atom::parse("1/(2-dim)").unwrap();
+        let diminv = Atom::parse("1/(2-d)").unwrap();
 
         let w1_proj = GlobalPrefactor {
             color: Atom::new_num(1),
@@ -937,18 +953,23 @@ impl DisGraph {
             colorless: (diminv * (metric - &pp / &phat2) + &pp / &phat2) / &phat2,
         };
 
-        let mut w1 = _gammaloop::numerator::Numerator::default()
+        let zero_proj = GlobalPrefactor {
+            colorless: fun!(q, mu) * fun!(q, nu),
+            ..GlobalPrefactor::default()
+        };
+
+        let w1 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w1_proj))
-            .color_simplify()
-            .gamma_simplify()
-            .get_single_atom()
-            .unwrap()
-            .0;
+            .color_simplify();
+        println!("{}", w1.get_single_atom().unwrap().0);
+        assert!(w1.validate_against_branches(1112));
+        let mut w1 = w1.gamma_simplify().get_single_atom().unwrap().0;
 
         let w2 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
             .color_simplify();
 
+        assert!(w2.validate_against_branches(1313));
         // println!("color simplified:{}", w2.state.colorless);
 
         let w2 = w2.gamma_simplify();
@@ -957,8 +978,21 @@ impl DisGraph {
 
         let mut w2 = w2.get_single_atom().unwrap().0;
 
+        let zero = _gammaloop::numerator::Numerator::default()
+            .from_dis_graph(bare, &graph, &inner_graph, Some(&zero_proj))
+            .color_simplify();
+
+        assert!(zero.validate_against_branches(3234));
+
+        let mut zero = zero.gamma_simplify().get_single_atom().unwrap().0;
+
         numerator_dis_apply(&mut w1);
         numerator_dis_apply(&mut w2);
+        numerator_dis_apply(&mut zero);
+
+        // for a in [&w1, &w2, &zero] {
+        //     println!("before_emr_to_lmb:{}", a);
+        // }
 
         let mut props = vec![];
         for (j, e) in graph.iter_egdes(&inner_graph) {
@@ -972,13 +1006,26 @@ impl DisGraph {
             };
         }
 
+        let symbolica_graph: symbolica::graph::Graph<_, _> = graph
+            .clone()
+            .map(
+                |v| v.bare_vertex.name,
+                |e, d| d.map(|d| d.bare_edge.particle.pdg_code),
+            )
+            .try_into()
+            .unwrap();
+
+        let sym_group = symbolica_graph.canonize().automorphism_group_size;
+
         DisGraph {
             graph,
-            numerator: vec![w1.expand(), w2.expand()],
+            numerator: vec![w1.expand(), w2.expand(), zero.expand()],
             denominator: DenominatorDis::new(props),
             lmb_photon: seen_pdg22.unwrap(),
             marked_electron_edge: seen_pdg11.unwrap(),
             basis,
+            symmetry_group: sym_group,
+            overall_prefactor: Atom::parse(&bare.overall_factor).unwrap(),
         }
     }
 
@@ -2559,7 +2606,10 @@ pub fn write_layout<'a>(
     layouts: &[(
         String,
         String,
-        Vec<PositionalHedgeGraph<(&'a DisEdge, Orientation, Atom), &'a DisVertex>>,
+        Vec<(
+            String,
+            PositionalHedgeGraph<(&'a DisEdge, Orientation, Atom), &'a DisVertex>,
+        )>,
     )],
     filename: &str,
 ) -> std::io::Result<()> {
@@ -2577,6 +2627,7 @@ pub fn write_layout<'a>(
                     )
                 },
                 &|(e, _, _)| e.decoration(),
+                true,
             )
             .as_str(),
     )

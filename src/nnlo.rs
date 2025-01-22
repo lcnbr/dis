@@ -1,14 +1,43 @@
+use std::{
+    io::{self, Write},
+    sync::Barrier,
+};
+
 use _gammaloop::feyngen::{
     diagram_generator::FeynGen, FeynGenFilter, FeynGenOptions, GenerationType,
     SelfEnergyFilterOptions, SnailFilterOptions, TadpolesFilterOptions,
 };
 use ahash::{HashMap, HashMapExt};
 use dis::{load_generic_model, DisGraph};
-//use indicatif::ProgressBar;
+use indicatif::{ParallelProgressIterator, ProgressBar, ProgressIterator};
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator,
+    IntoParallelRefMutIterator, ParallelIterator,
+};
 
 fn main() {
-    let nloops = 3;
+    let nloops: usize;
 
+    loop {
+        print!("Please enter the number of loops: ");
+        // Flush the prompt to ensure it's displayed immediately
+        io::stdout().flush().expect("Failed to flush stdout");
+
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+
+        match input.trim().parse::<u8>() {
+            Ok(num) => {
+                nloops = num as usize; // Store the valid input in the variable
+                break; // Exit the loop once a valid non-zero number is obtained
+            }
+            Err(_) => {
+                println!("Invalid input. Please enter a non-negative integer.");
+            }
+        }
+    }
     let model = load_generic_model("sm");
     let mut coupling = HashMap::new();
     coupling.insert("QED".into(), 2);
@@ -34,7 +63,8 @@ fn main() {
     };
     let diagram_gen = FeynGen::new(options);
 
-    let diagrams: Vec<_> = diagram_gen
+    let mut bar = ProgressBar::new(1);
+    let mut diagrams: Vec<_> = diagram_gen
         .generate(
             &model,
             _gammaloop::feyngen::NumeratorAwareGraphGroupingOption::OnlyDetectZeroes,
@@ -46,15 +76,21 @@ fn main() {
         )
         .unwrap()
         .into_iter()
+        .progress_with(bar)
         .map(|a| DisGraph::from_self_energy_bare(&a, &model))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .enumerate()
         .collect();
 
-    //let mut bar = ProgressBar::new(diagrams.len() as u64);
-
-    // for (i, d) in diagrams.iter().enumerate() {
-    //     let ifsplit = d.full_dis_filter_split();
-    //     ifsplit.to_typst(d, &format!("supergraph{i}.typ")).unwrap();
-    //     bar.inc(1);
-    // }
-    DisGraph::to_typst(&diagrams, 10., "nnlo.typ").unwrap();
+    let bar = ProgressBar::new(diagrams.len() as u64);
+    diagrams.par_iter().progress().for_each(|(i, d)| {
+        let ifsplit = d.full_dis_filter_split();
+        ifsplit
+            .to_typst(d, &format!("nsupergraphn{nloops}lo{i}.typ"))
+            .unwrap();
+        bar.inc(1);
+    });
+    DisGraph::to_typst(&diagrams, 10., &format!("n{nloops}lo.typ")).unwrap();
+    println!("Generated {} self energies", diagrams.len())
 }
