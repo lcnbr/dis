@@ -8,26 +8,23 @@ use std::{
     sync::{Arc, LazyLock},
 };
 
+use linnet::half_edge::{
+    drawing::Decoration,
+    layout::{FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph},
+    subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
+    EdgeData, EdgeId, Flow, Hedge, HedgeGraph, HedgeGraphBuilder, InvolutiveMapping, NodeIndex,
+    Orientation, SignOrZero,
+};
+
 use _gammaloop::{
-    graph::{
-        half_edge::{
-            drawing::Decoration,
-            layout::{
-                FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph,
-            },
-            subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
-            EdgeData, EdgeId, Flow, Hedge, HedgeGraph, HedgeGraphBuilder, InvolutiveMapping,
-            NodeIndex, Orientation,
-        },
-        BareGraph, Edge, EdgeType, Vertex, VertexInfo,
-    },
+    graph::{BareGraph, Edge, EdgeType, Vertex, VertexInfo},
     model::{normalise_complex, Model},
-    momentum::{Sign, SignOrZero, Signature},
+    momentum::{Sign, Signature},
     numerator::{AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
 };
 use ahash::{AHashMap, AHashSet};
 use bitvec::vec::BitVec;
-use cgmath::{Angle, Rad, Zero};
+use cgmath::{Angle, Rad};
 use indexmap::{IndexMap, IndexSet};
 use indicatif::ProgressBar;
 use itertools::Itertools;
@@ -399,13 +396,9 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
         for (j, e) in graph.iter_egdes(subgraph) {
             let edge = &e.data.as_ref().unwrap().bare_edge;
             let num = match j {
-                EdgeId::Split {
-                    source,
-                    sink,
-                    split,
-                } => source,
-                EdgeId::Paired { source, sink } => source,
-                EdgeId::Unpaired { hedge, flow } => hedge,
+                EdgeId::Split { source, .. } => source,
+                EdgeId::Paired { source, .. } => source,
+                EdgeId::Unpaired { hedge, .. } => hedge,
             };
             let [n, c] = edge.color_separated_numerator(bare, num.0);
             if matches!(j, EdgeId::Paired { .. }) {
@@ -498,7 +491,6 @@ pub fn numerator_dis_apply(num: &mut Atom) {
 
     num.replace_all_multiple_repeat_mut(&replacements)
 }
-
 pub struct DisGraph {
     graph: HedgeGraph<DisEdge, DisVertex>,
     marked_electron_edge: (EdgeId, usize),
@@ -516,7 +508,11 @@ impl DisGraph {
             .iter()
             .enumerate()
             .map(|(i, g)| {
-                let o = (format!("d{i}"), "".to_string(), vec![g.draw_graph(radius)]);
+                let o = (
+                    format!("d{i}"),
+                    format!("d{i}"),
+                    vec![g.draw_graph(radius, true)],
+                );
                 bar.inc(1);
                 o
             })
@@ -524,19 +520,24 @@ impl DisGraph {
         std::fs::write(
             filename,
             String::from_str("#set page(width: 35cm, height: auto)\n").unwrap()
-                + PositionalHedgeGraph::cetz_impl_collection(&col, &|a| "".to_string(), &|e| {
-                    e.decoration()
-                })
+                + PositionalHedgeGraph::cetz_impl_collection(
+                    &col,
+                    &|a| a.lmb_momentum.to_string(),
+                    &|e| e.decoration(),
+                )
                 .as_str(),
         )
     }
 
-    pub fn draw_graph(&self, radius: f64) -> PositionalHedgeGraph<DisEdge, DisVertex> {
+    pub fn draw_graph(&self, radius: f64, fancy: bool) -> PositionalHedgeGraph<DisEdge, DisVertex> {
         let file = std::fs::File::open("layout_params.json").unwrap();
         let params = serde_json::from_reader::<_, LayoutParams>(file).unwrap();
 
         let file = std::fs::File::open("layout_iters.json").unwrap();
         let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
+
+        let file = std::fs::File::open("fancy_settings.json").unwrap();
+        let fancy_settings = serde_json::from_reader::<_, FancySettings>(file).unwrap();
 
         let settings = LayoutSettings::circle_ext(
             &self.graph,
@@ -548,7 +549,11 @@ impl DisGraph {
             radius,
         );
 
-        self.graph.clone().layout(settings)
+        let mut a = self.graph.clone().layout(settings);
+        if fancy {
+            a.to_fancy(&fancy_settings);
+        }
+        a
     }
 
     pub fn full_dis_filter_split(&self) -> IFCuts {
@@ -637,7 +642,7 @@ impl DisGraph {
             }
         }
 
-        let mut h = builder.build();
+        let h = builder.build();
 
         let mut outer_ring_builder = HedgeGraphBuilder::new();
 
@@ -756,7 +761,7 @@ impl DisGraph {
                 &h.full_filter(),
                 "".into(),
                 &|e| Some(format!("label=\"{}\"", e.name)),
-                &|v| None
+                &|_| None
             )
         );
         println!(
@@ -765,14 +770,14 @@ impl DisGraph {
                 &g.full_filter(),
                 "".into(),
                 &|e| Some(format!("label=\"{}\"", e.name)),
-                &|v| None
+                &|_| None
             )
         );
         let h = g
             .join(
                 h,
-                |hf, hd, gf, gd| hf == -gf,
-                |hf, hd, gf, gd| {
+                |hf, _, gf, _| hf == -gf,
+                |_, _, gf, gd| {
                     // (*hd.data.as_mut().unwrap()).edgetype = EdgeType::Virtual;
                     (gf, gd)
                 },
@@ -785,7 +790,7 @@ impl DisGraph {
                 &h.full_filter(),
                 "".into(),
                 &|e| Some(format!("label=\"{}\"", e.name)),
-                &|v| None
+                &|_| None
             )
         );
 
@@ -1165,7 +1170,7 @@ impl DisGraph {
     // }
 
     pub fn from_bare(bare: &BareGraph) -> DisGraph {
-        let mut h = bare.hedge_representation.clone();
+        let h = bare.hedge_representation.clone();
 
         let mut elec_node = None;
 
@@ -1199,7 +1204,7 @@ impl DisGraph {
         DisGraph::from_hedge(
             h.map(
                 |v| bare.vertices[v].clone(),
-                |e, d| EdgeData::new(bare.edges[d.data.unwrap()].clone(), d.orientation),
+                |_, d| EdgeData::new(bare.edges[d.data.unwrap()].clone(), d.orientation),
             ),
             bare,
             basis_start,

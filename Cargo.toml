@@ -45,9 +45,8 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # These will be patched
 symbolica = { version = "0.14.0" }
 spenso = { version = "0.4.0", features = ["shadowing"] }
-#gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "296316eaf7f8a6b1085c61693c07b7e4b443021e", default-features = false }
-gammalooprs = { path = "../gammaloop", default-features = false }
-momtrop = { git = "https://github.com/alphal00p/momtrop", features = ["log"] }
+gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "c33036eeba5b4bcc85edb7bf25f9bb325f55b2bd", default-features = false }
+#gammalooprs = { path = "../gammaloop", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "*"
 bincode = { version = "2.0.0-rc.3", features = ["serde"] }
@@ -110,9 +109,11 @@ argmin = "0.10.0"
 by_address = "1.2.1"
 indicatif = "0.17.9"
 
+linnet = {git =  "https://github.com/alphal00p/linnet",features = ["symbolica","drawing"]}
 
 [patch.crates-io]
 spenso = { git = "https://github.com/alphal00p/spenso", rev = "e93679f3f77c24017b73cce527087a1bce52bbbf" }
 symbolica = { git = "https://github.com/alphal00p/symbolica", branch = "main" }
-
+[patch."https://github.com/alphal00p/linnet"]
+#linnet = { path = "../linnet" }
 # spenso = { path = "../alphal00p/spenso" }

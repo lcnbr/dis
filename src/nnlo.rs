@@ -1,13 +1,10 @@
-use _gammaloop::{
-    feyngen::{
-        diagram_generator::FeynGen, FeynGenFilter, FeynGenOptions, GenerationType,
-        SelfEnergyFilterOptions, SnailFilterOptions, TadpolesFilterOptions,
-    },
-    model::Model,
+use _gammaloop::feyngen::{
+    diagram_generator::FeynGen, FeynGenFilter, FeynGenOptions, GenerationType,
+    SelfEnergyFilterOptions, SnailFilterOptions, TadpolesFilterOptions,
 };
 use ahash::{HashMap, HashMapExt};
 use dis::{load_generic_model, DisGraph};
-use indicatif::ProgressBar;
+//use indicatif::ProgressBar;
 
 fn main() {
     let nloops = 3;
@@ -16,14 +13,14 @@ fn main() {
     let mut coupling = HashMap::new();
     coupling.insert("QED".into(), 2);
     let options = FeynGenOptions {
-        generation_type: GenerationType::CrossSection,
+        generation_type: GenerationType::Amplitude,
         initial_pdgs: vec![22],
-        final_pdgs: vec![],
+        final_pdgs: vec![22],
         loop_count_range: (nloops, nloops),
         symmetrize_final_states: true,
         symmetrize_initial_states: true,
         symmetrize_left_right_states: true,
-        filters: _gammaloop::feyngen::FeynGenFilters(vec![
+        amplitude_filters: _gammaloop::feyngen::FeynGenFilters(vec![
             FeynGenFilter::ParticleVeto(vec![
                 23, 24, 9000001, 9000002, 9000003, 9000004, 12, 14, 16, 2, 4, 6, 3, 5, 25, 250,
                 251, 11, 13, 15,
@@ -33,6 +30,7 @@ fn main() {
             FeynGenFilter::TadpolesFilter(TadpolesFilterOptions::default()),
             FeynGenFilter::CouplingOrders(coupling),
         ]),
+        cross_section_filters: _gammaloop::feyngen::FeynGenFilters(vec![]),
     };
     let diagram_gen = FeynGen::new(options);
 
@@ -51,12 +49,12 @@ fn main() {
         .map(|a| DisGraph::from_self_energy_bare(&a, &model))
         .collect();
 
-    let mut bar = ProgressBar::new(diagrams.len() as u64);
+    //let mut bar = ProgressBar::new(diagrams.len() as u64);
 
-    for (i, d) in diagrams.iter().enumerate() {
-        let ifsplit = d.full_dis_filter_split();
-        ifsplit.to_typst(d, &format!("supergraph{i}.typ")).unwrap();
-        bar.inc(1);
-    }
+    // for (i, d) in diagrams.iter().enumerate() {
+    //     let ifsplit = d.full_dis_filter_split();
+    //     ifsplit.to_typst(d, &format!("supergraph{i}.typ")).unwrap();
+    //     bar.inc(1);
+    // }
     DisGraph::to_typst(&diagrams, 10., "nnlo.typ").unwrap();
 }

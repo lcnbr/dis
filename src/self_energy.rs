@@ -1,21 +1,33 @@
 use std::{fs::File, io::BufReader};
 
-use _gammaloop::graph::{
-    half_edge::layout::{FancySettings, LayoutIters, LayoutParams},
-    BareGraph,
-};
+use _gammaloop::{feyngen::diagram_generator::NodeColorWithVertexRule, graph::BareGraph};
 use dis::{load_generic_model, DisGraph};
+use linnet::half_edge::layout::{FancySettings, LayoutIters, LayoutParams};
 
 fn main() {
     let model = load_generic_model("sm");
     let mut symbolica_graph = symbolica::graph::Graph::new();
 
-    let v1 = symbolica_graph.add_node((0, "V_98".into()));
-    let v2 = symbolica_graph.add_node((0, "V_98".into()));
-    let v3 = symbolica_graph.add_node((0, "V_71".into()));
-    let v4 = symbolica_graph.add_node((0, "V_71".into()));
-    let v5 = symbolica_graph.add_node((0, "V_74".into()));
-    let v6 = symbolica_graph.add_node((0, "V_74".into()));
+    let epema = NodeColorWithVertexRule {
+        external_tag: 0,
+        vertex_rule: model.get_vertex_rule(&"V_98".into()),
+    };
+
+    let dda = NodeColorWithVertexRule {
+        external_tag: 0,
+        vertex_rule: model.get_vertex_rule(&"V_71".into()),
+    };
+    let ddg = NodeColorWithVertexRule {
+        external_tag: 0,
+        vertex_rule: model.get_vertex_rule(&"V_74".into()),
+    };
+
+    let v1 = symbolica_graph.add_node(epema.clone());
+    let v2 = symbolica_graph.add_node(epema.clone());
+    let v3 = symbolica_graph.add_node(dda.clone());
+    let v4 = symbolica_graph.add_node(dda.clone());
+    let v5 = symbolica_graph.add_node(ddg.clone());
+    let v6 = symbolica_graph.add_node(ddg.clone());
     symbolica_graph.add_edge(v1, v2, true, "e-").unwrap();
     symbolica_graph.add_edge(v2, v1, true, "e-").unwrap();
     symbolica_graph.add_edge(v2, v4, true, "a").unwrap();
