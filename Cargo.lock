@@ -466,8 +466,10 @@ checksum = "7e36cc9d416881d2e24f9a963be5fb1cd90966419ac844274161d10488b3e825"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-targets",
 ]
 
@@ -1122,6 +1124,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
+name = "fern"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4316185f709b23713e41e3195f90edef7fb00c3ed4adc79769cf09cc762a3b29"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "findshlibs"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1167,8 +1178,8 @@ checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
 
 [[package]]
 name = "gammalooprs"
-version = "0.2.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=d9bb1c10345bc2c91be984097cbe4ec079a76050#d9bb1c10345bc2c91be984097cbe4ec079a76050"
+version = "0.3.0"
+source = "git+https://github.com/alphal00p/gammaloop?rev=414c114bff41798df1e7360cfdcf59264ef7d7cc#414c114bff41798df1e7360cfdcf59264ef7d7cc"
 dependencies = [
  "ahash",
  "argmin",
@@ -1177,6 +1188,7 @@ dependencies = [
  "brotli 7.0.0",
  "by_address",
  "cgmath",
+ "chrono",
  "clap 2.34.0",
  "clarabel",
  "color-eyre",
@@ -1189,8 +1201,10 @@ dependencies = [
  "enum_dispatch",
  "env_logger",
  "eyre",
+ "fern",
  "gat-lending-iterator",
  "git-version",
+ "humantime",
  "hyperdual",
  "indexmap 2.7.0",
  "indicatif",
@@ -2572,7 +2586,7 @@ dependencies = [
 [[package]]
 name = "spenso"
 version = "0.4.1"
-source = "git+https://github.com/alphal00p/spenso?rev=e93679f3f77c24017b73cce527087a1bce52bbbf#e93679f3f77c24017b73cce527087a1bce52bbbf"
+source = "git+https://github.com/alphal00p/spenso?rev=47a35775325a4d061af05e2fc00904b221d8bf83#47a35775325a4d061af05e2fc00904b221d8bf83"
 dependencies = [
  "ahash",
  "ambassador",
@@ -2593,6 +2607,7 @@ dependencies = [
  "flexi_logger",
  "gat-lending-iterator",
  "indexmap 2.7.0",
+ "itertools 0.14.0",
  "log",
  "num 0.4.3",
  "once_cell",
@@ -2683,7 +2698,7 @@ dependencies = [
 [[package]]
 name = "symbolica"
 version = "0.14.0"
-source = "git+https://github.com/alphal00p/symbolica?branch=main#283187f003bee8b8e3ac046c18e4eb29ca2167a5"
+source = "git+https://github.com/alphal00p/symbolica?rev=e534d9f7f8972e22d2a4fb7cd6cb5943373d3bb3#e534d9f7f8972e22d2a4fb7cd6cb5943373d3bb3"
 dependencies = [
  "ahash",
  "append-only-vec",

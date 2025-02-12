@@ -1,4 +1,7 @@
-use _gammaloop::{feyngen::diagram_generator::NodeColorWithVertexRule, graph::BareGraph};
+use _gammaloop::{
+    feyngen::diagram_generator::{EdgeColor, NodeColorWithVertexRule},
+    graph::BareGraph,
+};
 use dis::DisGraph;
 use linnet::half_edge::layout::{FancySettings, LayoutIters, LayoutParams};
 
@@ -28,17 +31,22 @@ fn main() {
     let l4 = symbolica_graph.add_node(dda.clone());
     let l5 = symbolica_graph.add_node(ddg.clone());
     let l6 = symbolica_graph.add_node(ddg.clone());
-    symbolica_graph.add_edge(l1, l2, true, "e-").unwrap();
-    symbolica_graph.add_edge(l2, l1, true, "e-").unwrap();
-    symbolica_graph.add_edge(l2, l4, true, "a").unwrap();
-    symbolica_graph.add_edge(l1, l3, true, "a").unwrap();
 
-    symbolica_graph.add_edge(l3, l6, true, "d").unwrap();
-    symbolica_graph.add_edge(l6, l4, true, "d").unwrap();
-    symbolica_graph.add_edge(l4, l5, true, "d").unwrap();
-    symbolica_graph.add_edge(l5, l3, true, "d").unwrap();
+    let eminus = EdgeColor::from_particle(model.get_particle(&"e-".to_string().into()));
+    let a = EdgeColor::from_particle(model.get_particle(&"a".to_string().into()));
+    let d = EdgeColor::from_particle(model.get_particle(&"d".to_string().into()));
+    let g = EdgeColor::from_particle(model.get_particle(&"g".to_string().into()));
+    symbolica_graph.add_edge(l1, l2, true, eminus).unwrap();
+    symbolica_graph.add_edge(l2, l1, true, eminus).unwrap();
+    symbolica_graph.add_edge(l2, l4, true, a).unwrap();
+    symbolica_graph.add_edge(l1, l3, true, a).unwrap();
 
-    symbolica_graph.add_edge(l5, l6, true, "g").unwrap();
+    symbolica_graph.add_edge(l3, l6, true, d).unwrap();
+    symbolica_graph.add_edge(l6, l4, true, d).unwrap();
+    symbolica_graph.add_edge(l4, l5, true, d).unwrap();
+    symbolica_graph.add_edge(l5, l3, true, d).unwrap();
+
+    symbolica_graph.add_edge(l5, l6, true, g).unwrap();
     let bare_graph = BareGraph::from_symbolica_graph(
         &model,
         "disdoubletriangle".into(),
@@ -214,12 +222,14 @@ fn main() {
     // }
     // write_layout(&layouts, "double_triangle_embeddings.typ");
     //
-    ifsplit.to_typst(&dis_graph, "double_triangle.typ").unwrap();
+    ifsplit
+        .to_typst(&dis_graph, "outputs/double_triangle/double_triangle.typ")
+        .unwrap();
     // ifsplit
     //     .to_mathematica_file(&dis_graph, "double_triangle.m")
     //     .unwrap();
     ifsplit
-        .to_other_mathematica_file(&dis_graph, "double_triangle_new.m")
+        .to_other_mathematica_file(&dis_graph, "outputs/double_triangle/double_triangle_new.m")
         .unwrap();
     // write_layout(&routings_integrand, "double_triangle_integrands.typ");
 }

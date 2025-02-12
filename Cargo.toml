@@ -45,7 +45,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # These will be patched
 symbolica = { version = "0.14.0" }
 spenso = { version = "0.4.0", features = ["shadowing"] }
-gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "d9bb1c10345bc2c91be984097cbe4ec079a76050", default-features = false }
+gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "414c114bff41798df1e7360cfdcf59264ef7d7cc", default-features = false }
 # gammalooprs = { path = "../gammaloop", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "*"
@@ -109,11 +109,15 @@ argmin = "0.10.0"
 by_address = "1.2.1"
 indicatif = "0.17.9"
 
-linnet = {git =  "https://github.com/alphal00p/linnet",features = ["symbolica","drawing"]}
+linnet = { git = "https://github.com/alphal00p/linnet", features = [
+    "symbolica",
+    "drawing",
+] }
 
 [patch.crates-io]
-spenso = { git = "https://github.com/alphal00p/spenso", rev = "e93679f3f77c24017b73cce527087a1bce52bbbf" }
-symbolica = { git = "https://github.com/alphal00p/symbolica", branch = "main" }
-[patch."https://github.com/alphal00p/linnet"]
+spenso = { git = "https://github.com/alphal00p/spenso", rev = "47a35775325a4d061af05e2fc00904b221d8bf83" }
+symbolica = { git = "https://github.com/alphal00p/symbolica", rev = "e534d9f7f8972e22d2a4fb7cd6cb5943373d3bb3" }
+[patch."https://github.com/alphal00p/gammaloop"]
+# gammalooprs={path="../gammaloop"}
 # linnet = { path = "../linnet" }
 # spenso = { path = "../alphal00p/spenso" }

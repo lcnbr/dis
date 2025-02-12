@@ -1,5 +1,5 @@
 {
-  description = "Gammaloop";
+  description = "Linnet";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -46,16 +46,20 @@
       commonArgs = {
         inherit src;
         strictDeps = true;
+        pname = "linnet";
+        version = "0.1.0";
 
         buildInputs =
           [
             pkgs.mold
+            pkgs.gcc
             pkgs.clang
             # Add additional build inputs here
           ]
           ++ lib.optionals pkgs.stdenv.isDarwin [
             # Additional darwin specific inputs can be set here
             pkgs.libiconv
+            pkgs.gcc.cc.lib
           ];
 
         # Additional environment variables can be set directly
@@ -79,6 +83,8 @@
       my-crate = craneLib.buildPackage (commonArgs
         // {
           inherit cargoArtifacts;
+          pname = "linnet";
+          version = "0.1.0";
         });
     in {
       checks = {
@@ -128,16 +134,16 @@
           });
       };
 
-      # packages =
-      #   {
-      #     default = my-crate;
-      #   }
-      #   // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-      #     my-crate-llvm-coverage = craneLibLLvmTools.cargoLlvmCov (commonArgs
-      #       // {
-      #         inherit cargoArtifacts;
-      #       });
-      #   };
+      packages =
+        {
+          default = my-crate;
+        }
+        // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+          my-crate-llvm-coverage = craneLibLLvmTools.cargoLlvmCov (commonArgs
+            // {
+              inherit cargoArtifacts;
+            });
+        };
 
       apps.default = flake-utils.lib.mkApp {
         drv = my-crate;
@@ -150,37 +156,22 @@
         # Additional dev-shell environment variables can be set directly
         # MY_CUSTOM_DEVELOPMENT_VAR = "something else";
         RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
-        RUSTFLAGS = "-C codegen-units=16 -C target-cpu=native -Clink-arg=-fuse-ld=${pkgs.mold}/bin/mold";
 
         LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib";
 
+        EDITOR = "zeditor --wait";
         # Extra inputs can be added here; cargo and rustc are provided by default.
         packages = with pkgs; [
           # pkgs.ripgrep
           cargo-udeps
           cargo-insta
-          openssl
-          diffedit3
-          # wolfram-engine
-          pyright
-          gnum4
-          typst
-          gmp.dev
-          mpfr.dev
-          gcc_debug.out
-          stdenv.cc.cc.lib
-          pkg-config
           cargo-deny
           cargo-edit
           cargo-watch
-          python311
-          poetry
-          ghostscript
-          mupdf
-          poppler_utils
           rust-analyzer
-          graphviz
-          maturin
+          nixd
+          wolfram-engine
+          nil
         ];
       };
     });

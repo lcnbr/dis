@@ -50,7 +50,7 @@ use symbolica::{
         rational_polynomial::{RationalPolynomial, RationalPolynomialField},
         Ring, SelfRing,
     },
-    fun,
+    function,
     id::Replacement,
     poly::{PositiveExponent, Variable},
     symb,
@@ -94,13 +94,17 @@ impl IFCuts {
         let bar = ProgressBar::new(number_of_layouts);
 
         for (i, (e, cuts)) in self.cuts.iter().enumerate() {
-            let first_initial = &cuts[0][0];
-            let denom = dis_graph.denominator(first_initial);
-            let denoms = denom.partial_fraction();
+            let first_initial = cuts[0].get(0);
+            let first_final = cuts[1].get(0);
+            let denom_init = first_initial.map(|cut| dis_graph.denominator(cut));
+            let denom_final = first_final.map(|cut| dis_graph.denominator(cut));
+            let denoms = denom_init.as_ref().map(DenominatorDis::partial_fraction);
 
             let mut sum = Atom::new_num(0);
-            for d in &denoms {
-                sum = sum + d.to_atom();
+            if let Some(ds) = &denoms {
+                for d in ds {
+                    sum = sum + d.to_atom();
+                }
             }
 
             let layout_emb_i: Vec<_> = cuts[0]
@@ -124,7 +128,6 @@ impl IFCuts {
                 .map(|c| {
                     let l = dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.);
                     bar.inc(1);
-
                     (c.to_string(), l)
                 })
                 .collect();
@@ -135,8 +138,7 @@ impl IFCuts {
                     "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
                     i + 1,
                     e.windings,
-                    denom
-                        .to_atom()
+                    denom_init.as_ref().map(DenominatorDis::to_atom).unwrap_or(Atom::new_num(0))
                         .printer(symbolica::printer::PrintOptions::mathematica()),
                     sum.printer(symbolica::printer::PrintOptions {
                         pretty_matrix:true,
@@ -160,7 +162,14 @@ impl IFCuts {
 
             layouts.push((
                 format!("embedding{}f", i + 1),
-                format!("== final"),
+                format!(
+                    "== final\nDenominator: \n```mathematica\n{}\n```",
+                    denom_final
+                        .as_ref()
+                        .map(DenominatorDis::to_atom)
+                        .unwrap_or(Atom::new_num(0))
+                        .printer(symbolica::printer::PrintOptions::mathematica()),
+                ),
                 layout_emb_f,
             ));
         }
@@ -469,30 +478,36 @@ pub fn numerator_dis_apply(num: &mut Atom) {
 
     let reps = vec![
         (
-            fun!(ETS.metric, a_, b_).pow(Atom::new_num(2)),
+            function!(ETS.metric, a_, b_).pow(Atom::new_num(2)),
             Atom::new_var(dim),
         ),
         (
-            fun!(emrmom, b_, a_) * fun!(emrmom, c_, a_),
-            fun!(dot, fun!(emrmom, b_), fun!(emrmom, c_)),
+            function!(emrmom, b_, a_) * function!(emrmom, c_, a_),
+            function!(dot, function!(emrmom, b_), function!(emrmom, c_)),
         ),
         (
-            fun!(p, a_) * fun!(emrmom, c_, a_),
-            fun!(dot, p, fun!(emrmom, c_)),
+            function!(p, a_) * function!(emrmom, c_, a_),
+            function!(dot, p, function!(emrmom, c_)),
         ),
         (
-            fun!(q, a_) * fun!(emrmom, c_, a_),
-            fun!(dot, q, fun!(emrmom, c_)),
+            function!(q, a_) * function!(emrmom, c_, a_),
+            function!(dot, q, function!(emrmom, c_)),
         ),
-        (fun!(p, a_) * fun!(p, a_), fun!(dot, p, p)),
-        (fun!(p, a_) * fun!(q, a_), fun!(dot, p, q)),
-        (fun!(q, a_) * fun!(q, a_), fun!(dot, q, q)),
+        (function!(p, a_) * function!(p, a_), function!(dot, p, p)),
+        (function!(p, a_) * function!(q, a_), function!(dot, p, q)),
+        (function!(q, a_) * function!(q, a_), function!(dot, q, q)),
         (
-            fun!(ETS.metric, a_, b_) * fun!(emrmom, c_, a_),
-            fun!(emrmom, c_, b_),
+            function!(ETS.metric, a_, b_) * function!(emrmom, c_, a_),
+            function!(emrmom, c_, b_),
         ),
-        (fun!(ETS.metric, a_, b_) * fun!(p, a_), fun!(p, b_)),
-        (fun!(ETS.metric, a_, b_) * fun!(q, a_), fun!(q, b_)),
+        (
+            function!(ETS.metric, a_, b_) * function!(p, a_),
+            function!(p, b_),
+        ),
+        (
+            function!(ETS.metric, a_, b_) * function!(q, a_),
+            function!(q, b_),
+        ),
     ];
 
     let replacements: Vec<Replacement> = reps
@@ -620,10 +635,8 @@ impl DisGraph {
 
                 let electron_disconnects = !self.graph.is_connected(&complement);
 
-                contains_electron == 1
-                    && !contains_photon
-                    && alligned_electron
-                    && !electron_disconnects
+                contains_electron == 1 && !contains_photon && alligned_electron
+                // && !electron_disconnects
             },
             true,
         )
@@ -869,7 +882,7 @@ impl DisGraph {
                             } else {
                                 only_cycle = false;
                             }
-                            mom_e = mom_e + fun!(lmbsymb, i as i32)
+                            mom_e = mom_e + function!(lmbsymb, i as i32)
                         }
                     }
                 }
@@ -902,7 +915,7 @@ impl DisGraph {
                         false
                     };
 
-                    let emr_mom = fun!(DIS_SYMBOLS.emr_mom, edge_n as i32);
+                    let emr_mom = function!(DIS_SYMBOLS.emr_mom, edge_n as i32);
 
                     let a = Some(DisEdge {
                         bare_edge,
@@ -936,11 +949,11 @@ impl DisGraph {
         let mink = Rep::new_self_dual("mink").unwrap();
         let mu = mink.new_slot(4, 3).to_atom();
         let nu = mink.new_slot(4, 2).to_atom();
-        let metric = fun!(ETS.metric, mu, nu);
+        let metric = function!(ETS.metric, mu, nu);
         let p = symb!("p");
         let q = symb!("q");
         let phat2 = Atom::new_var(symb!("phat")).pow(Atom::new_num(2));
-        let pp = fun!(p, mu) * fun!(p, nu);
+        let pp = function!(p, mu) * function!(p, nu);
         let diminv = Atom::parse("1/(2-d)").unwrap();
 
         let w1_proj = GlobalPrefactor {
@@ -954,7 +967,7 @@ impl DisGraph {
         };
 
         let zero_proj = GlobalPrefactor {
-            colorless: fun!(q, mu) * fun!(q, nu),
+            colorless: function!(q, mu) * function!(q, nu),
             ..GlobalPrefactor::default()
         };
 
@@ -964,7 +977,7 @@ impl DisGraph {
         println!("{}", w1.get_single_atom().unwrap().0);
         assert!(w1.validate_against_branches(1112));
         let mut w1 = w1.gamma_simplify().get_single_atom().unwrap().0;
-
+        println!("{}", w1);
         let w2 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
             .color_simplify();
@@ -1000,9 +1013,9 @@ impl DisGraph {
             let i = e.data.as_ref().unwrap().bare_edge_id;
             if matches!(j, EdgeId::Paired { .. }) {
                 let mass = edge.particle.mass.expression.clone();
-                let emr_mom = fun!(DIS_SYMBOLS.emr_mom, i as i32);
+                let emr_mom = function!(DIS_SYMBOLS.emr_mom, i as i32);
                 props.push(Prop::new(mass, emr_mom));
-                // denominator = denominator * fun!(denomsymb, mass, emr_mom);
+                // denominator = denominator * function!(denomsymb, mass, emr_mom);
             };
         }
 
@@ -1093,7 +1106,7 @@ impl DisGraph {
     //                         } else {
     //                             only_cycle = false;
     //                         }
-    //                         mom_e = mom_e + fun!(lmbsymb, i as i32)
+    //                         mom_e = mom_e + function!(lmbsymb, i as i32)
     //                     }
     //                 }
     //             }
@@ -1128,7 +1141,7 @@ impl DisGraph {
     //                     false
     //                 };
 
-    //                 let emr_mom = fun!(DIS_SYMBOLS.emr_mom, bare_edge_id as i32);
+    //                 let emr_mom = function!(DIS_SYMBOLS.emr_mom, bare_edge_id as i32);
 
     //                 Some(DisEdge {
     //                     bare_edge,
@@ -1160,10 +1173,10 @@ impl DisGraph {
     //     let mink = Rep::new_self_dual("mink").unwrap();
     //     let mu = mink.new_slot(4, 3).to_atom();
     //     let nu = mink.new_slot(4, 2).to_atom();
-    //     let metric = fun!(ETS.metric, mu, nu);
+    //     let metric = function!(ETS.metric, mu, nu);
     //     let p = symb!("p");
     //     let phat2 = Atom::new_var(symb!("phat")).pow(Atom::new_num(2));
-    //     let pp = fun!(p, mu) * fun!(p, nu);
+    //     let pp = function!(p, mu) * function!(p, nu);
     //     let diminv = Atom::parse("1/(2-dim)").unwrap();
 
     //     let w1_proj = GlobalPrefactor {
@@ -1205,9 +1218,9 @@ impl DisGraph {
     //         let i = e.data.as_ref().unwrap().bare_edge_id;
     //         if matches!(j, EdgeId::Paired { .. }) {
     //             let mass = edge.particle.mass.expression.clone();
-    //             let emr_mom = fun!(DIS_SYMBOLS.emr_mom, i as i32);
+    //             let emr_mom = function!(DIS_SYMBOLS.emr_mom, i as i32);
     //             props.push(Prop::new(mass, emr_mom));
-    //             // denominator = denominator * fun!(denomsymb, mass, emr_mom);
+    //             // denominator = denominator * function!(denomsymb, mass, emr_mom);
     //         };
     //     }
 
@@ -1279,7 +1292,7 @@ impl DisGraph {
     }
 
     pub fn emr_to_lmb_and_cut(&self, cut: &OrientedCut) -> Vec<Replacement> {
-        let photon_momenta = fun!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
+        let photon_momenta = function!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
         let mut reps = vec![Replacement::new(
             photon_momenta.to_pattern(),
             Atom::new_var(DIS_SYMBOLS.photon_mom).to_pattern(),
@@ -1297,11 +1310,11 @@ impl DisGraph {
 
             // println!(
             //     "{}->{}",
-            //     fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
+            //     function!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
             //     data.lmb_momentum.replace_all_multiple(&reps)
             // );
             emr_to_lmb_cut.insert(
-                fun!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
+                function!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
                 data.lmb_momentum.replace_all_multiple(&reps).to_pattern(),
             );
         }
@@ -1316,8 +1329,8 @@ impl DisGraph {
         let mut sum = Atom::new_num(0);
 
         // let mut total = Atom::new_var(DIS_SYMBOLS.cut_mom);
-        // let electron_momenta = fun!(DIS_SYMBOLS.loop_mom, self.marked_electron_edge.1 as i32);
-        let photon_momenta = fun!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
+        // let electron_momenta = function!(DIS_SYMBOLS.loop_mom, self.marked_electron_edge.1 as i32);
+        let photon_momenta = function!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
 
         for (o, cut_edge) in cut.iter_edges_relative(&self.graph) {
             if cut_edge
@@ -1342,7 +1355,7 @@ impl DisGraph {
             )])
             .expand();
 
-        let loop_mom_pat = fun!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
+        let loop_mom_pat = function!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
 
         // println!("{sum}");
         let solving_var = sum
@@ -1739,7 +1752,7 @@ impl Topology {
         for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
             if let EdgeId::Unpaired { hedge, flow } = e {
                 let (a, _) = numbering_map.insert_full(hedge);
-                let p = fun!(extsymb, a as i32);
+                let p = function!(extsymb, a as i32);
 
                 map.push((
                     p,
@@ -1911,7 +1924,7 @@ impl Topology {
 
             if let EdgeId::Unpaired { hedge, flow } = e {
                 let (a, _) = numbering_map.insert_full(hedge);
-                let p = SignOrZero::from(flow) * fun!(extsymb, a as i32);
+                let p = SignOrZero::from(flow) * function!(extsymb, a as i32);
 
                 eqs.push(&d.data.unwrap().propagator.momentum - &p);
                 vars.push(p);
@@ -1956,17 +1969,17 @@ impl Topology {
                     if new {
                         let mut lmbs = AHashSet::new();
                         for i in d.data.unwrap().propagator.momentum.pattern_match(
-                            &fun!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern(),
+                            &function!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern(),
                             None,
                             None,
                         ) {
-                            lmbs.insert(fun!(DIS_SYMBOLS.loop_mom, i[&symb!("x_")].to_atom()));
+                            lmbs.insert(function!(DIS_SYMBOLS.loop_mom, i[&symb!("x_")]));
                         }
 
                         if lmbs.len() == 1 {
                             lmb_map.insert(
                                 lmbs.drain().next().unwrap(),
-                                fun!(DIS_SYMBOLS.internal_mom, a as i32),
+                                function!(DIS_SYMBOLS.internal_mom, a as i32),
                             );
                         }
                     }
@@ -2012,7 +2025,7 @@ impl EdgeSignatures {
     pub fn from_momenta(momenta: &[Atom]) -> Self {
         let mut basis = IndexSet::new();
 
-        let loop_mom_pat = fun!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
+        let loop_mom_pat = function!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
 
         for p in momenta {
             let mut matches = p.pattern_match(&loop_mom_pat, None, None);
@@ -2130,7 +2143,7 @@ impl Topology {
             let (prop, pow) = props.get_index(*i).unwrap();
 
             // let prefactor = if *pow > 1 {
-            //     fun!(DIS_SYMBOLS.internal_mom, 0).npow(1 - *pow as i32)
+            //     function!(DIS_SYMBOLS.internal_mom, 0).npow(1 - *pow as i32)
             // } else {
             //     Atom::new_num(1)
             // };
@@ -2337,7 +2350,7 @@ impl DenominatorDis {
         let mut vars = vec![];
 
         for (i, (p, _)) in self.props.iter().enumerate() {
-            vars.push(fun!(symb!("alpha"), i as i32));
+            vars.push(function!(symb!("alpha"), i as i32));
             sum = sum + p.to_expression() * vars.last().unwrap();
         }
         sum = sum.expand();
@@ -2345,7 +2358,7 @@ impl DenominatorDis {
         let y_ = symb!("y_");
 
         let loop_mom_dot_pat =
-            fun!(DIS_SYMBOLS.dot, fun!(DIS_SYMBOLS.loop_mom, x_), y_).to_pattern();
+            function!(DIS_SYMBOLS.dot, function!(DIS_SYMBOLS.loop_mom, x_), y_).to_pattern();
 
         let mut iter = sum.pattern_match(&loop_mom_dot_pat, None, None);
 
@@ -2561,7 +2574,7 @@ impl Prop {
     }
 
     pub fn to_atom(&self) -> Atom {
-        fun!(
+        function!(
             DIS_SYMBOLS.prop,
             self.mass.clone().unwrap_or(Atom::Zero),
             self.momentum.clone()
@@ -2569,7 +2582,7 @@ impl Prop {
     }
 
     pub fn to_expression(&self) -> Atom {
-        fun!(
+        function!(
             DIS_SYMBOLS.dot,
             self.momentum.clone(),
             self.momentum.clone()

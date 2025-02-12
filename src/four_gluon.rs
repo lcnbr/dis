@@ -1,6 +1,9 @@
 use std::{fs::File, io::BufReader};
 
-use _gammaloop::{feyngen::diagram_generator::NodeColorWithVertexRule, graph::BareGraph};
+use _gammaloop::{
+    feyngen::diagram_generator::{EdgeColor, NodeColorWithVertexRule},
+    graph::BareGraph,
+};
 use dis::{load_generic_model, DisGraph};
 use linnet::half_edge::layout::{FancySettings, LayoutParams};
 use symbolica::atom::AtomCore;
@@ -38,22 +41,27 @@ fn main() {
     let v8 = symbolica_graph.add_node(ddg.clone());
     let v9 = symbolica_graph.add_node(gggg.clone());
 
-    symbolica_graph.add_edge(v1, v2, true, "e-").unwrap();
-    symbolica_graph.add_edge(v2, v1, true, "e-").unwrap();
-    symbolica_graph.add_edge(v2, v4, true, "a").unwrap();
-    symbolica_graph.add_edge(v1, v3, true, "a").unwrap();
+    let eminus = EdgeColor::from_particle(model.get_particle(&"e-".to_string().into()));
+    let a = EdgeColor::from_particle(model.get_particle(&"a".to_string().into()));
+    let d = EdgeColor::from_particle(model.get_particle(&"d".to_string().into()));
+    let g = EdgeColor::from_particle(model.get_particle(&"g".to_string().into()));
 
-    symbolica_graph.add_edge(v3, v5, true, "d").unwrap();
-    symbolica_graph.add_edge(v5, v6, true, "d").unwrap();
-    symbolica_graph.add_edge(v6, v4, true, "d").unwrap();
-    symbolica_graph.add_edge(v4, v8, true, "d").unwrap();
-    symbolica_graph.add_edge(v8, v7, true, "d").unwrap();
-    symbolica_graph.add_edge(v7, v3, true, "d").unwrap();
+    symbolica_graph.add_edge(v1, v2, true, eminus).unwrap();
+    symbolica_graph.add_edge(v2, v1, true, eminus).unwrap();
+    symbolica_graph.add_edge(v2, v4, true, a).unwrap();
+    symbolica_graph.add_edge(v1, v3, true, a).unwrap();
 
-    symbolica_graph.add_edge(v5, v9, true, "g").unwrap();
-    symbolica_graph.add_edge(v6, v9, true, "g").unwrap();
-    symbolica_graph.add_edge(v7, v9, true, "g").unwrap();
-    symbolica_graph.add_edge(v8, v9, true, "g").unwrap();
+    symbolica_graph.add_edge(v3, v5, true, d).unwrap();
+    symbolica_graph.add_edge(v5, v6, true, d).unwrap();
+    symbolica_graph.add_edge(v6, v4, true, d).unwrap();
+    symbolica_graph.add_edge(v4, v8, true, d).unwrap();
+    symbolica_graph.add_edge(v8, v7, true, d).unwrap();
+    symbolica_graph.add_edge(v7, v3, true, d).unwrap();
+
+    symbolica_graph.add_edge(v5, v9, true, g).unwrap();
+    symbolica_graph.add_edge(v6, v9, true, g).unwrap();
+    symbolica_graph.add_edge(v7, v9, true, g).unwrap();
+    symbolica_graph.add_edge(v8, v9, true, g).unwrap();
     let bare_graph = BareGraph::from_symbolica_graph(
         &model,
         "four_gluon".into(),

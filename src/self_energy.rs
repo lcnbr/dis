@@ -1,6 +1,9 @@
 use std::{fs::File, io::BufReader};
 
-use _gammaloop::{feyngen::diagram_generator::NodeColorWithVertexRule, graph::BareGraph};
+use _gammaloop::{
+    feyngen::diagram_generator::{EdgeColor, NodeColorWithVertexRule},
+    graph::BareGraph,
+};
 use dis::{load_generic_model, DisGraph};
 use linnet::half_edge::layout::{FancySettings, LayoutIters, LayoutParams};
 
@@ -28,17 +31,21 @@ fn main() {
     let v4 = symbolica_graph.add_node(dda.clone());
     let v5 = symbolica_graph.add_node(ddg.clone());
     let v6 = symbolica_graph.add_node(ddg.clone());
-    symbolica_graph.add_edge(v1, v2, true, "e-").unwrap();
-    symbolica_graph.add_edge(v2, v1, true, "e-").unwrap();
-    symbolica_graph.add_edge(v2, v4, true, "a").unwrap();
-    symbolica_graph.add_edge(v1, v3, true, "a").unwrap();
+    let eminus = EdgeColor::from_particle(model.get_particle(&"e-".to_string().into()));
+    let a = EdgeColor::from_particle(model.get_particle(&"a".to_string().into()));
+    let d = EdgeColor::from_particle(model.get_particle(&"d".to_string().into()));
+    let g = EdgeColor::from_particle(model.get_particle(&"g".to_string().into()));
+    symbolica_graph.add_edge(v1, v2, true, eminus).unwrap();
+    symbolica_graph.add_edge(v2, v1, true, eminus).unwrap();
+    symbolica_graph.add_edge(v2, v4, true, a).unwrap();
+    symbolica_graph.add_edge(v1, v3, true, a).unwrap();
 
-    symbolica_graph.add_edge(v3, v5, true, "d").unwrap();
-    symbolica_graph.add_edge(v5, v6, true, "d").unwrap();
-    symbolica_graph.add_edge(v6, v4, true, "d").unwrap();
-    symbolica_graph.add_edge(v4, v3, true, "d").unwrap();
+    symbolica_graph.add_edge(v3, v5, true, d).unwrap();
+    symbolica_graph.add_edge(v5, v6, true, d).unwrap();
+    symbolica_graph.add_edge(v6, v4, true, d).unwrap();
+    symbolica_graph.add_edge(v4, v3, true, d).unwrap();
 
-    symbolica_graph.add_edge(v5, v6, true, "g").unwrap();
+    symbolica_graph.add_edge(v5, v6, true, g).unwrap();
     let bare_graph = BareGraph::from_symbolica_graph(
         &model,
         "disselfenergy".into(),
@@ -227,14 +234,16 @@ fn main() {
     //     ));
     // }
 
-    ifsplit.to_typst(&dis_graph, "self_energy.typ").unwrap();
+    ifsplit
+        .to_typst(&dis_graph, "outputs/self_energy/self_energy.typ")
+        .unwrap();
     // write_layout(&layouts, "self_energy_embeddings.typ");
     // ifsplit
     //     .to_mathematica_file(&dis_graph, "self_energy.m")
     //     .unwrap();
 
     ifsplit
-        .to_other_mathematica_file(&dis_graph, "self_energy_new.m")
+        .to_other_mathematica_file(&dis_graph, "outputs/self_energy/self_energy_new.m")
         .unwrap();
     // write_layout(&routings_integrand, "self_energy_integrands.typ");
 }

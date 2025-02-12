@@ -3,9 +3,12 @@ use std::{
     sync::Barrier,
 };
 
-use _gammaloop::feyngen::{
-    diagram_generator::FeynGen, FeynGenFilter, FeynGenOptions, GenerationType,
-    SelfEnergyFilterOptions, SnailFilterOptions, TadpolesFilterOptions,
+use _gammaloop::{
+    feyngen::{
+        diagram_generator::FeynGen, FeynGenFilter, FeynGenOptions, GenerationType,
+        SelfEnergyFilterOptions, SnailFilterOptions, TadpolesFilterOptions,
+    },
+    numerator::GlobalPrefactor,
 };
 use ahash::{HashMap, HashMapExt};
 use dis::{load_generic_model, DisGraph};
@@ -46,6 +49,7 @@ fn main() {
         initial_pdgs: vec![22],
         final_pdgs: vec![22],
         loop_count_range: (nloops, nloops),
+        allow_symmetrization_of_external_fermions_in_amplitudes: false,
         symmetrize_final_states: true,
         symmetrize_initial_states: true,
         symmetrize_left_right_states: true,
@@ -67,11 +71,13 @@ fn main() {
     let mut diagrams: Vec<_> = diagram_gen
         .generate(
             &model,
-            _gammaloop::feyngen::NumeratorAwareGraphGroupingOption::OnlyDetectZeroes,
+            &_gammaloop::feyngen::NumeratorAwareGraphGroupingOption::OnlyDetectZeroes,
             true,
             "DIS".into(),
             None,
             None,
+            None,
+            GlobalPrefactor::default(),
             None,
         )
         .unwrap()
