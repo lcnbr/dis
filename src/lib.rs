@@ -635,8 +635,10 @@ impl DisGraph {
 
                 let electron_disconnects = !self.graph.is_connected(&complement);
 
-                contains_electron == 1 && !contains_photon && alligned_electron
-                // && !electron_disconnects
+                contains_electron == 1
+                    && !contains_photon
+                    && alligned_electron
+                    && !electron_disconnects
             },
             true,
         )
