@@ -92,26 +92,29 @@ fn main() {
 
     let bar = ProgressBar::new(diagrams.len() as u64);
 
-    fs::create_dir_all(&format!("outputs/{nloops}lo/")).unwrap();
+    fs::create_dir_all(&format!("./outputs/{nloops}lo")).unwrap();
 
     diagrams.par_iter().progress().for_each(|(i, d)| {
         let ifsplit = d.full_dis_filter_split();
         ifsplit
             .to_typst(
                 d,
-                &format!("outputs/{nloops}lo/nsupergraphn{nloops}lo{i}.typ"),
+                &format!("./outputs/{nloops}lo/nsupergraphn{nloops}lo{i}.typ"),
             )
             .unwrap();
         bar.inc(1);
         ifsplit
-            .to_other_mathematica_file(&d, "outputs/{nloops}lo/nsupergraphn{nloops}lo{i}.m")
+            .to_other_mathematica_file(
+                &d,
+                &format!("./outputs/{nloops}lo/nsupergraphn{nloops}lo{i}.m"),
+            )
             .unwrap();
         bar.inc(1);
     });
     DisGraph::to_typst(
         &diagrams,
         10.,
-        &format!("outputs/{nloops}lo/supergraphs.typ"),
+        &format!("./outputs/{nloops}lo/supergraphs.typ"),
     )
     .unwrap();
     println!("Generated {} self energies", diagrams.len())

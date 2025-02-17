@@ -1,5 +1,6 @@
 use std::{
     collections::BTreeMap,
+    fs,
     fs::File,
     io::Write,
     ops::Neg,
@@ -220,7 +221,14 @@ impl IFCuts {
             embeddings.push(map);
         }
 
-        let mut f = File::create(filename)?;
+        let path = std::path::Path::new(filename);
+        let prefix = path.parent().unwrap();
+        std::fs::create_dir_all(prefix).unwrap();
+        let mut f = File::create(path)?;
+        println!(
+            "writing mathematica to {:?}",
+            path.canonicalize()?.into_os_string()
+        );
         write!(f, "{}", embeddings.to_math())?;
         Ok(())
     }
