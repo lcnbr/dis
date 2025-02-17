@@ -976,10 +976,10 @@ impl DisGraph {
         let w1 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w1_proj))
             .color_simplify();
-        println!("{}", w1.get_single_atom().unwrap().0);
+        println!("color simplified: {}", w1.get_single_atom().unwrap().0);
         assert!(w1.validate_against_branches(1112));
         let mut w1 = w1.gamma_simplify().get_single_atom().unwrap().0;
-        println!("{}", w1);
+        println!("gamma simplified {}", w1);
         let w2 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
             .color_simplify();

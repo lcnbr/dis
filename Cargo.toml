@@ -45,7 +45,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # These will be patched
 symbolica = { version = "0.14.0" }
 spenso = { version = "0.4.0", features = ["shadowing"] }
-gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "414c114bff41798df1e7360cfdcf59264ef7d7cc", default-features = false }
+gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "d9b91ea32e9bb26d72aedaea33f96e5fa1e16416", default-features = false }
 # gammalooprs = { path = "../gammaloop", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "*"
