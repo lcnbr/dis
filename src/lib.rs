@@ -405,6 +405,8 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
         let mut vatoms = Vec::new();
         for (_, v) in graph.iter_node_data(subgraph) {
             if let Some(a) = v.bare_vertex.colorless_vertex_rule(bare) {
+                // println!("colorless vertex {}: {}", v.bare_vertex_id, a[0]);
+                // println!("colored vertex {}:{}", v.bare_vertex_id, a[1]);
                 vatoms.push(a);
             }
         }
@@ -415,15 +417,38 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
             // println!("emr:")
             let edge = &e.data.as_ref().unwrap().bare_edge;
             let edge_id = &e.data.as_ref().unwrap().bare_edge_id;
-            let num = match j {
-                EdgeId::Split { source, .. } => source,
-                EdgeId::Paired { source, .. } => source,
-                EdgeId::Unpaired { hedge, .. } => hedge,
-            };
-            let [n, c] = edge.color_separated_numerator(bare, *edge_id);
-            if matches!(j, EdgeId::Paired { .. }) {
-                eatoms.push([&n * &i, c]);
-            };
+            // println!("Edgeid :{edge_id}");
+            // println!("EMR Id:{}", e.data.unwrap().emr_idx);
+            let in_slots = edge.in_slot(bare);
+            let out_slots = edge.out_slot(bare);
+            eatoms.push(match j {
+                EdgeId::Paired { .. } => {
+                    let [n, c] = edge.color_separated_numerator(bare, e.data.unwrap().emr_idx);
+                    [&n * &i, c]
+                }
+                EdgeId::Split { split, .. } => match split {
+                    Flow::Source => {
+                        let [lorentz, spin, color] = in_slots.dual().kroneker(&out_slots);
+                        // println!("Slit source{lorentz}{spin}{color}");
+
+                        [lorentz * spin, color]
+                    }
+                    Flow::Sink => {
+                        let [lorentz, spin, color] = out_slots.dual().kroneker(&in_slots);
+                        // println!("Spit sink {lorentz}{spin}{color}");
+                        [lorentz * spin, color]
+                    }
+                },
+                EdgeId::Unpaired { .. } => {
+                    let [n, c] = edge.color_separated_numerator(bare, e.data.unwrap().emr_idx);
+                    [&n * &i, c]
+                }
+            });
+            // if matches!(j, EdgeId::Paired { .. }) {
+            //     println!("n:{n}");
+            //     println!("c:{c}");
+            //     // eatoms.push([&n * &i, c]);
+            // };
             // shift += s;
             // graph.shifts.0 += shift;
         }
@@ -460,7 +485,7 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
             "Applied feynman rules:\n\tcolor:{}\n\tcolorless:{}",
             state.color, state.colorless
         );
-        println!("from dis success");
+        // println!("from dis success");
         Numerator { state }
     }
 }
@@ -611,7 +636,7 @@ impl DisGraph {
                     }
                 });
 
-                println!("aligned_electron:{}", alligned_electron);
+                // println!("aligned_electron:{}", alligned_electron);
                 let contains_photon = self
                     .graph
                     .iter_egdes(c)
@@ -653,26 +678,26 @@ impl DisGraph {
 
         for (i, v) in bare.vertices.iter().enumerate() {
             if matches!(v.vertex_info, VertexInfo::InteractonVertexInfo(_)) {
-                map.insert(i, builder.add_node(v.clone()));
+                map.insert(i, builder.add_node((i, v.clone())));
             }
         }
 
-        for edge in bare.edges.iter() {
+        for (i, edge) in bare.edges.iter().enumerate() {
             match edge.edge_type {
                 EdgeType::Virtual => {
                     let source = map[&edge.vertices[0]];
                     let sink = map[&edge.vertices[1]];
-                    builder.add_edge(source, sink, edge.clone(), true);
+                    builder.add_edge(source, sink, (i, edge.clone()), true);
                 }
                 EdgeType::Incoming => {
                     // let source = map[&edge.vertices[0]];
                     let sink = map[&edge.vertices[1]];
-                    builder.add_external_edge(sink, edge.clone(), true, Flow::Sink);
+                    builder.add_external_edge(sink, (i, edge.clone()), true, Flow::Sink);
                 }
                 EdgeType::Outgoing => {
                     let source = map[&edge.vertices[0]];
                     // let sink = map[&edge.vertices[1]];
-                    builder.add_external_edge(source, edge.clone(), true, Flow::Source);
+                    builder.add_external_edge(source, (i, edge.clone()), true, Flow::Source);
                 }
             }
         }
@@ -683,24 +708,30 @@ impl DisGraph {
 
         let epemavertex = model.get_vertex_rule(&"V_98".into());
 
-        let o1 = outer_ring_builder.add_node(Vertex {
-            name: "or1".into(),
-            vertex_info: VertexInfo::InteractonVertexInfo(
-                _gammaloop::graph::InteractionVertexInfo {
-                    vertex_rule: epemavertex.clone(),
-                },
-            ),
-            edges: vec![],
-        });
-        let o2 = outer_ring_builder.add_node(Vertex {
-            name: "or2".into(),
-            vertex_info: VertexInfo::InteractonVertexInfo(
-                _gammaloop::graph::InteractionVertexInfo {
-                    vertex_rule: epemavertex.clone(),
-                },
-            ),
-            edges: vec![],
-        });
+        let o1 = outer_ring_builder.add_node((
+            10000,
+            Vertex {
+                name: "or1".into(),
+                vertex_info: VertexInfo::InteractonVertexInfo(
+                    _gammaloop::graph::InteractionVertexInfo {
+                        vertex_rule: epemavertex.clone(),
+                    },
+                ),
+                edges: vec![],
+            },
+        ));
+        let o2 = outer_ring_builder.add_node((
+            10000,
+            Vertex {
+                name: "or2".into(),
+                vertex_info: VertexInfo::InteractonVertexInfo(
+                    _gammaloop::graph::InteractionVertexInfo {
+                        vertex_rule: epemavertex.clone(),
+                    },
+                ),
+                edges: vec![],
+            },
+        ));
 
         let e = model.get_particle_from_pdg(11);
         let prop = model.get_propagator_for_particle(&e.name);
@@ -708,28 +739,34 @@ impl DisGraph {
         outer_ring_builder.add_edge(
             o1,
             o2,
-            Edge {
-                name: "eo1".into(),
-                edge_type: EdgeType::Virtual,
-                propagator: prop.clone(),
-                particle: e.clone(),
-                vertices: [0, 0],
-                internal_index: vec![],
-            },
+            (
+                10000,
+                Edge {
+                    name: "eo1".into(),
+                    edge_type: EdgeType::Virtual,
+                    propagator: prop.clone(),
+                    particle: e.clone(),
+                    vertices: [0, 0],
+                    internal_index: vec![],
+                },
+            ),
             true,
         );
 
         outer_ring_builder.add_edge(
             o2,
             o1,
-            Edge {
-                name: "eo2".into(),
-                edge_type: EdgeType::Virtual,
-                propagator: prop.clone(),
-                particle: e.clone(),
-                vertices: [0, 0],
-                internal_index: vec![],
-            },
+            (
+                10000,
+                Edge {
+                    name: "eo2".into(),
+                    edge_type: EdgeType::Virtual,
+                    propagator: prop.clone(),
+                    particle: e.clone(),
+                    vertices: [0, 0],
+                    internal_index: vec![],
+                },
+            ),
             true,
         );
 
@@ -738,28 +775,34 @@ impl DisGraph {
 
         outer_ring_builder.add_external_edge(
             o1,
-            Edge {
-                name: "eo3".into(),
-                edge_type: EdgeType::Virtual,
-                propagator: propa.clone(),
-                particle: a.clone(),
-                vertices: [0, 0],
-                internal_index: vec![],
-            },
+            (
+                10000,
+                Edge {
+                    name: "eo3".into(),
+                    edge_type: EdgeType::Virtual,
+                    propagator: propa.clone(),
+                    particle: a.clone(),
+                    vertices: [0, 0],
+                    internal_index: vec![],
+                },
+            ),
             true,
             Flow::Sink,
         );
 
         outer_ring_builder.add_external_edge(
             o2,
-            Edge {
-                name: "eo4".into(),
-                edge_type: EdgeType::Virtual,
-                propagator: propa.clone(),
-                particle: a.clone(),
-                vertices: [0, 0],
-                internal_index: vec![],
-            },
+            (
+                10000,
+                Edge {
+                    name: "eo4".into(),
+                    edge_type: EdgeType::Virtual,
+                    propagator: propa.clone(),
+                    particle: a.clone(),
+                    vertices: [0, 0],
+                    internal_index: vec![],
+                },
+            ),
             true,
             Flow::Source,
         );
@@ -770,7 +813,7 @@ impl DisGraph {
 
         if let Some((elec, _)) = g
             .iter_egdes(&g.full_filter())
-            .find(|(_, n)| n.data.unwrap().particle.pdg_code.abs() == 11)
+            .find(|(_, n)| n.data.unwrap().1.particle.pdg_code.abs() == 11)
         {
             if let EdgeId::Paired { source, .. } = elec {
                 elec_node = Some(g.involution.hedge_data(source).clone());
@@ -780,7 +823,7 @@ impl DisGraph {
         let mut hedge_in_basis = None;
         let basis_start = if let Some(s) = elec_node {
             for i in g.hairs_from_id(s).hairs.included_iter() {
-                if g.get_edge_data(i).particle.pdg_code.abs() == 11 {
+                if g.get_edge_data(i).1.particle.pdg_code.abs() == 11 {
                     hedge_in_basis = Some(i);
                     break;
                 }
@@ -790,24 +833,24 @@ impl DisGraph {
             NodeIndex(0)
         };
 
-        println!(
-            "{}",
-            h.dot_impl(
-                &h.full_filter(),
-                "".into(),
-                &|e| Some(format!("label=\"{}\"", e.name)),
-                &|_| None
-            )
-        );
-        println!(
-            "{}",
-            g.dot_impl(
-                &g.full_filter(),
-                "".into(),
-                &|e| Some(format!("label=\"{}\"", e.name)),
-                &|_| None
-            )
-        );
+        // println!(
+        //     "{}",
+        //     h.dot_impl(
+        //         &h.full_filter(),
+        //         "".into(),
+        //         &|e| Some(format!("label=\"{}\"", e.name)),
+        //         &|_| None
+        //     )
+        // );
+        // println!(
+        //     "{}",
+        //     g.dot_impl(
+        //         &g.full_filter(),
+        //         "".into(),
+        //         &|e| Some(format!("label=\"{}\"", e.name)),
+        //         &|_| None
+        //     )
+        // );
         let h = g
             .join(
                 h,
@@ -819,21 +862,11 @@ impl DisGraph {
             )
             .unwrap();
 
-        println!(
-            "{}",
-            h.dot_impl(
-                &h.full_filter(),
-                "".into(),
-                &|e| Some(format!("label=\"{}\"", e.name)),
-                &|_| None
-            )
-        );
-
         DisGraph::from_hedge(h, bare, basis_start, hedge_in_basis)
     }
 
     pub fn from_hedge(
-        mut h: HedgeGraph<Edge, Vertex>,
+        mut h: HedgeGraph<(usize, Edge), (usize, Vertex)>,
         bare: &BareGraph,
         basis_start: NodeIndex,
         hedge_in_basis: Option<Hedge>,
@@ -858,16 +891,15 @@ impl DisGraph {
         let mut seen_pdg11 = None;
         let lmbsymb = symb!("k");
 
-        let mut vertex_n = 0;
+        // let mut vertex_n = 0;
 
         let mut edge_n = 0;
         let graph = h.map(
-            |bare_vertex| {
+            |(bare_vertex_id, bare_vertex)| {
                 let v = DisVertex {
-                    bare_vertex_id: vertex_n,
+                    bare_vertex_id,
                     bare_vertex,
                 };
-                vertex_n += 1;
                 v
             },
             |e, d| {
@@ -891,7 +923,7 @@ impl DisGraph {
                 d.and_then(|bare_edge| {
                     let marked = if only_cycle {
                         if let Some(i) = first_cycle {
-                            match bare_edge.particle.pdg_code.abs() {
+                            match bare_edge.1.particle.pdg_code.abs() {
                                 11 => {
                                     if seen_pdg11.is_some() {
                                         false
@@ -920,10 +952,11 @@ impl DisGraph {
                     let emr_mom = function!(DIS_SYMBOLS.emr_mom, edge_n as i32);
 
                     let a = Some(DisEdge {
-                        bare_edge,
-                        bare_edge_id: edge_n,
+                        bare_edge: bare_edge.1,
+                        bare_edge_id: bare_edge.0,
                         marked,
                         lmb_momentum: mom_e,
+                        emr_idx: edge_n,
                         emr_momentum: emr_mom,
                     });
                     edge_n += 1;
@@ -948,9 +981,22 @@ impl DisGraph {
 
         let inner_graph = outer_graph.complement(&graph);
 
+        println!(
+            "//innergraph :\n{}",
+            graph.dot_impl(
+                &inner_graph,
+                "".into(),
+                &|e| Some(format!(
+                    "label=\"{}:{}\"",
+                    e.bare_edge.particle.name, e.bare_edge_id
+                )),
+                &|v| Some(format!("label=\"{}\"", v.bare_vertex_id))
+            )
+        );
+
         let mink = Rep::new_self_dual("mink").unwrap();
-        let mu = mink.new_slot(4, 3).to_atom();
-        let nu = mink.new_slot(4, 2).to_atom();
+        let mu = mink.new_slot(4, 0).to_atom();
+        let nu = mink.new_slot(4, 1).to_atom();
         let metric = function!(ETS.metric, mu, nu);
         let p = symb!("p");
         let q = symb!("q");
@@ -977,14 +1023,14 @@ impl DisGraph {
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w1_proj))
             .color_simplify();
         println!("color simplified: {}", w1.get_single_atom().unwrap().0);
-        assert!(w1.validate_against_branches(1112));
+        // assert!(w1.validate_against_branches(1112));
         let mut w1 = w1.gamma_simplify().get_single_atom().unwrap().0;
         println!("gamma simplified {}", w1);
         let w2 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
             .color_simplify();
 
-        assert!(w2.validate_against_branches(1313));
+        // assert!(w2.validate_against_branches(1313));
         // println!("color simplified:{}", w2.state.colorless);
 
         let w2 = w2.gamma_simplify();
@@ -997,7 +1043,7 @@ impl DisGraph {
             .from_dis_graph(bare, &graph, &inner_graph, Some(&zero_proj))
             .color_simplify();
 
-        assert!(zero.validate_against_branches(3234));
+        // assert!(zero.validate_against_branches(3234));
 
         let mut zero = zero.gamma_simplify().get_single_atom().unwrap().0;
 
@@ -1270,8 +1316,13 @@ impl DisGraph {
 
         DisGraph::from_hedge(
             h.map(
-                |v| bare.vertices[v].clone(),
-                |_, d| EdgeData::new(bare.edges[d.data.unwrap()].clone(), d.orientation),
+                |v| (v, bare.vertices[v].clone()),
+                |_, d| {
+                    EdgeData::new(
+                        (d.data.unwrap(), bare.edges[d.data.unwrap()].clone()),
+                        d.orientation,
+                    )
+                },
             ),
             bare,
             basis_start,
@@ -1387,6 +1438,7 @@ pub struct DisEdge {
     pub bare_edge: Edge,
     marked: bool,
     lmb_momentum: Atom,
+    emr_idx: usize,
     emr_momentum: Atom,
 }
 

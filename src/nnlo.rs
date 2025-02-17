@@ -1,6 +1,6 @@
 use std::{
+    fs,
     io::{self, Write},
-    sync::Barrier,
 };
 
 use _gammaloop::{
@@ -13,10 +13,7 @@ use _gammaloop::{
 use ahash::{HashMap, HashMapExt};
 use dis::{load_generic_model, DisGraph};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressIterator};
-use rayon::iter::{
-    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator,
-    IntoParallelRefMutIterator, ParallelIterator,
-};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 fn main() {
     let nloops: usize;
@@ -67,8 +64,7 @@ fn main() {
     };
     let diagram_gen = FeynGen::new(options);
 
-    let mut bar = ProgressBar::new(1);
-    let mut diagrams: Vec<_> = diagram_gen
+    let diagrams: Vec<_> = diagram_gen
         .generate(
             &model,
             &_gammaloop::feyngen::NumeratorAwareGraphGroupingOption::OnlyDetectZeroes,
@@ -80,7 +76,12 @@ fn main() {
             GlobalPrefactor::default(),
             None,
         )
-        .unwrap()
+        .unwrap();
+
+    println!("Generated {} supergraphs", diagrams.len());
+
+    let bar = ProgressBar::new(diagrams.len() as u64);
+    let diagrams: Vec<_> = diagrams
         .into_iter()
         .progress_with(bar)
         .map(|a| DisGraph::from_self_energy_bare(&a, &model))
@@ -90,6 +91,9 @@ fn main() {
         .collect();
 
     let bar = ProgressBar::new(diagrams.len() as u64);
+
+    fs::create_dir_all(&format!("outputs/{nloops}lo/")).unwrap();
+
     diagrams.par_iter().progress().for_each(|(i, d)| {
         let ifsplit = d.full_dis_filter_split();
         ifsplit
