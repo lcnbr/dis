@@ -1,6 +1,5 @@
 use std::{
     collections::BTreeMap,
-    fs,
     fs::File,
     io::Write,
     ops::Neg,
@@ -424,7 +423,6 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
         for (j, e) in graph.iter_egdes(subgraph) {
             // println!("emr:")
             let edge = &e.data.as_ref().unwrap().bare_edge;
-            let edge_id = &e.data.as_ref().unwrap().bare_edge_id;
             // println!("Edgeid :{edge_id}");
             // println!("EMR Id:{}", e.data.unwrap().emr_idx);
             let in_slots = edge.in_slot(bare);
@@ -550,6 +548,7 @@ pub fn numerator_dis_apply(num: &mut Atom) {
 
     num.replace_all_multiple_repeat_mut(&replacements)
 }
+#[allow(dead_code)]
 pub struct DisGraph {
     graph: HedgeGraph<DisEdge, DisVertex>,
     marked_electron_edge: (EdgeId, usize),
@@ -1079,7 +1078,7 @@ impl DisGraph {
             .clone()
             .map(
                 |v| v.bare_vertex.name,
-                |e, d| d.map(|d| d.bare_edge.particle.pdg_code),
+                |_, d| d.map(|d| d.bare_edge.particle.pdg_code),
             )
             .try_into()
             .unwrap();
@@ -1471,7 +1470,7 @@ pub struct DisVertex {
 }
 
 pub struct MathematicaIntegrand {
-    pq_to_ext: Vec<Replacement>,
+    _pq_to_ext: Vec<Replacement>,
     ext_to_pq: Vec<(Atom, Atom)>,
     prefactor: Atom,
     topology: Topology,
@@ -1480,18 +1479,18 @@ pub struct MathematicaIntegrand {
 
 impl MathematicaIntegrand {
     pub fn new(topology: Topology, numerators: &[Atom]) -> Self {
-        let pq_to_ext = topology.map_pq_ext();
+        let _pq_to_ext = topology.map_pq_ext();
         let ext_to_pq = topology.map_ext_pq();
 
-        let prefactor = topology.prefactor().replace_all_multiple(&pq_to_ext);
+        let prefactor = topology.prefactor().replace_all_multiple(&_pq_to_ext);
 
         let numerators = numerators
             .iter()
-            .map(|a| a.replace_all_multiple_repeat(&pq_to_ext))
+            .map(|a| a.replace_all_multiple_repeat(&_pq_to_ext))
             .collect();
 
         Self {
-            pq_to_ext,
+            _pq_to_ext,
             prefactor,
             ext_to_pq,
             topology,
