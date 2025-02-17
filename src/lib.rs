@@ -879,7 +879,7 @@ impl DisGraph {
         basis_start: NodeIndex,
         hedge_in_basis: Option<Hedge>,
     ) -> DisGraph {
-        println!("finding basis");
+        // println!("finding basis");
 
         let (basis, tree) = h
             .paton_cycle_basis(
@@ -889,11 +889,11 @@ impl DisGraph {
             )
             .unwrap();
 
-        println!("aligning tree");
+        // println!("aligning tree");
         h.align_to_tree_underlying(&tree);
 
-        println!("{}", h.base_dot());
-        println!("{}", h.dot(&tree.tree));
+        // println!("{}", h.base_dot());
+        // println!("{}", h.dot(&tree.tree));
 
         let mut seen_pdg22 = None;
         let mut seen_pdg11 = None;
@@ -1030,10 +1030,10 @@ impl DisGraph {
         let w1 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w1_proj))
             .color_simplify();
-        println!("color simplified: {}", w1.get_single_atom().unwrap().0);
+        // println!("color simplified: {}", w1.get_single_atom().unwrap().0);
         // assert!(w1.validate_against_branches(1112));
         let mut w1 = w1.gamma_simplify().get_single_atom().unwrap().0;
-        println!("gamma simplified {}", w1);
+        // println!("gamma simplified {}", w1);
         let w2 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
             .color_simplify();
@@ -1340,9 +1340,9 @@ impl DisGraph {
     pub fn numerator(&self, cut: &OrientedCut) -> Vec<Atom> {
         let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
 
-        for a in &emr_to_lmb_cut {
-            println!("{}", a);
-        }
+        // for a in &emr_to_lmb_cut {
+        //     println!("{}", a);
+        // }
 
         self.numerator
             .iter()
