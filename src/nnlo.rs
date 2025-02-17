@@ -93,10 +93,22 @@ fn main() {
     diagrams.par_iter().progress().for_each(|(i, d)| {
         let ifsplit = d.full_dis_filter_split();
         ifsplit
-            .to_typst(d, &format!("nsupergraphn{nloops}lo{i}.typ"))
+            .to_typst(
+                d,
+                &format!("outputs/{nloops}lo/nsupergraphn{nloops}lo{i}.typ"),
+            )
+            .unwrap();
+        bar.inc(1);
+        ifsplit
+            .to_other_mathematica_file(&d, "outputs/{nloops}lo/nsupergraphn{nloops}lo{i}.m")
             .unwrap();
         bar.inc(1);
     });
-    DisGraph::to_typst(&diagrams, 10., &format!("n{nloops}lo.typ")).unwrap();
+    DisGraph::to_typst(
+        &diagrams,
+        10.,
+        &format!("outputs/{nloops}lo/supergraphs.typ"),
+    )
+    .unwrap();
     println!("Generated {} self energies", diagrams.len())
 }

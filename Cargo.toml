@@ -116,7 +116,7 @@ linnet = { git = "https://github.com/alphal00p/linnet", features = [
 
 [patch.crates-io]
 spenso = { git = "https://github.com/alphal00p/spenso", rev = "47a35775325a4d061af05e2fc00904b221d8bf83" }
-symbolica = { git = "https://github.com/alphal00p/symbolica", rev = "e534d9f7f8972e22d2a4fb7cd6cb5943373d3bb3" }
+symbolica = { git = "https://github.com/alphal00p/symbolica", rev = "3f1a5d17abde15df49ca092f311fcd685c1d56fc" }
 [patch."https://github.com/alphal00p/gammaloop"]
 # gammalooprs={path="../gammaloop"}
 # linnet = { path = "../linnet" }
