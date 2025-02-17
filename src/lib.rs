@@ -1340,6 +1340,10 @@ impl DisGraph {
     pub fn numerator(&self, cut: &OrientedCut) -> Vec<Atom> {
         let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
 
+        for a in &emr_to_lmb_cut {
+            println!("{}", a);
+        }
+
         self.numerator
             .iter()
             .map(|a| a.replace_all_multiple_repeat(&emr_to_lmb_cut))
@@ -1375,7 +1379,7 @@ impl DisGraph {
             //     data.lmb_momentum.replace_all_multiple(&reps)
             // );
             emr_to_lmb_cut.insert(
-                function!(DIS_SYMBOLS.emr_mom, data.bare_edge_id as i32),
+                function!(DIS_SYMBOLS.emr_mom, data.emr_idx as i32),
                 data.lmb_momentum.replace_all_multiple(&reps).to_pattern(),
             );
         }
