@@ -225,10 +225,10 @@ impl IFCuts {
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).unwrap();
         let mut f = File::create(path)?;
-        println!(
-            "writing mathematica to {:?}",
-            path.canonicalize()?.into_os_string()
-        );
+        // println!(
+        //     "writing mathematica to {:?}",
+        //     path.canonicalize()?.into_os_string()
+        // );
         write!(f, "{}", embeddings.to_math())?;
         Ok(())
     }
@@ -2437,6 +2437,10 @@ impl DenominatorDis {
             let coef = sum.coefficient(m);
             // println!("coef:{coef}");
             system.push(coef);
+        }
+
+        if system.is_empty() {
+            return vec![self.clone()];
         }
 
         let (m, b) = Atom::system_to_matrix::<u8, _, _>(&system, &vars).unwrap();
