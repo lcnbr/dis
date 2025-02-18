@@ -170,8 +170,9 @@
           cargo-watch
           rust-analyzer
           nixd
-          # wolfram-engine
           
+          # wolfram-engine
+          typst
           nil
         ];
       };
