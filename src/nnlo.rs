@@ -98,7 +98,10 @@ fn main() {
     diagrams.par_iter().progress().for_each(|(i, d)| {
         let ifsplit = d.full_dis_filter_split();
         ifsplit
-            .to_typst(d, &format!("./outputs/{nloops}lo/supergraph{i:03}.typ"))
+            .to_typst(
+                d,
+                &format!("./outputs/{nloops}lo/supergraph{i:0a$}.typ", a = padding),
+            )
             .unwrap();
         bar.inc(1);
         ifsplit
