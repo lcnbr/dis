@@ -1500,7 +1500,7 @@ impl MathematicaIntegrand {
 }
 
 impl ToMathematica for MathematicaIntegrand {
-    fn to_math(&self) -> String {
+    fn to_math_with_indent(&self, indent: usize) -> String {
         let mut map = AHashMap::new();
 
         map.insert("topology".to_string(), self.topology.to_math());
@@ -1527,30 +1527,54 @@ impl ToMathematica for MathematicaIntegrand {
                 .to_math(),
         );
 
-        map.to_math()
+        map.to_math_with_indent(indent)
     }
 }
 
 pub trait ToMathematica {
-    fn to_math(&self) -> String;
+    fn to_math(&self) -> String {
+        self.to_math_with_indent(0)
+    }
+
+    fn to_math_with_indent(&self, indent: usize) -> String;
+}
+
+fn indent_string(indent: usize) -> String {
+    " ".repeat(indent)
 }
 
 impl<K: ToMathematica, V: ToMathematica> ToMathematica for AHashMap<K, V> {
-    fn to_math(&self) -> String {
+    fn to_math_with_indent(&self, indent: usize) -> String {
         let mut out = String::new();
+        let base_indent = indent_string(indent);
+        let inner_indent = indent + 2;
+        let inner_indent_str = indent_string(inner_indent);
+
+        // Open the Association with the beginning syntax.
+        out.push_str(&base_indent);
         out.push_str("<|");
+        if !self.is_empty() {
+            out.push('\n');
+        }
         let mut first = true;
         for (k, v) in self {
             if !first {
-                out.push(',');
+                out.push_str(",\n");
             } else {
                 first = false;
             }
+            // Print the key. We add quotes around the key.
+            out.push_str(&inner_indent_str);
             out.push('"');
-            out.push_str(&k.to_math());
+            out.push_str(&k.to_math_with_indent(inner_indent));
             out.push('"');
-            out.push_str("->");
-            out.push_str(&v.to_math());
+            out.push_str(" -> ");
+            // For the value, we also call the indented printing.
+            out.push_str(&v.to_math_with_indent(inner_indent));
+        }
+        if !self.is_empty() {
+            out.push('\n');
+            out.push_str(&base_indent);
         }
         out.push_str("|>");
         out
@@ -1558,44 +1582,56 @@ impl<K: ToMathematica, V: ToMathematica> ToMathematica for AHashMap<K, V> {
 }
 
 impl ToMathematica for String {
-    fn to_math(&self) -> String {
+    fn to_math_with_indent(&self, _indent: usize) -> String {
         self.clone()
     }
 }
 
 impl ToMathematica for i32 {
-    fn to_math(&self) -> String {
+    fn to_math_with_indent(&self, _indent: usize) -> String {
         self.to_string()
     }
 }
 
 impl ToMathematica for Atom {
-    fn to_math(&self) -> String {
+    fn to_math_with_indent(&self, _indent: usize) -> String {
         self.printer(symbolica::printer::PrintOptions::mathematica())
             .to_string()
     }
 }
 
 impl ToMathematica for &Atom {
-    fn to_math(&self) -> String {
+    fn to_math_with_indent(&self, _indent: usize) -> String {
         self.printer(symbolica::printer::PrintOptions::mathematica())
             .to_string()
     }
 }
 
 impl<E: ToMathematica> ToMathematica for Vec<E> {
-    fn to_math(&self) -> String {
+    fn to_math_with_indent(&self, indent: usize) -> String {
         let mut out = String::new();
+        let base_indent = indent_string(indent);
+        let inner_indent = indent + 2;
+        let inner_indent_str = indent_string(inner_indent);
 
+        out.push_str(&base_indent);
         out.push('{');
+        if !self.is_empty() {
+            out.push('\n');
+        }
         let mut first = true;
-        for v in self {
+        for element in self {
             if !first {
-                out.push(',');
+                out.push_str(",\n");
             } else {
                 first = false;
             }
-            out.push_str(&v.to_math());
+            out.push_str(&inner_indent_str);
+            out.push_str(&element.to_math_with_indent(inner_indent));
+        }
+        if !self.is_empty() {
+            out.push('\n');
+            out.push_str(&base_indent);
         }
         out.push('}');
         out
@@ -1616,7 +1652,7 @@ pub struct Topology {
 }
 
 impl ToMathematica for Topology {
-    fn to_math(&self) -> String {
+    fn to_math_with_indent(&self, indent: usize) -> String {
         let mut map = AHashMap::new();
 
         let mut numbering_map = IndexSet::new();
@@ -1680,7 +1716,7 @@ impl ToMathematica for Topology {
 
         map.insert(String::from("masses"), massmap.to_math());
 
-        map.to_math()
+        map.to_math_with_indent(indent)
     }
 }
 
