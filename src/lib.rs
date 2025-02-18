@@ -191,7 +191,7 @@ impl IFCuts {
         for (e, cuts) in self.cuts.iter() {
             let mut map = AHashMap::new();
             let first_initial = &cuts[0][0];
-            map.insert("embedding".to_string(), e.windings.to_math());
+            map.insert("embedding".to_string(), e.windings.to_math_with_indent(4));
             let denom = graph.denominator(first_initial);
 
             let numers: AHashMap<_, _> = graph
@@ -207,15 +207,21 @@ impl IFCuts {
             //     println!(":{n}");
             // }
 
-            map.insert("Denominator".to_string(), denom.to_atom().to_math());
+            map.insert(
+                "Denominator".to_string(),
+                denom.to_atom().to_math_with_indent(4),
+            );
             let denoms = denom
                 .partial_fraction()
                 .into_iter()
                 .map(|a| a.to_atom())
                 .collect_vec();
 
-            map.insert("Partial_fraction".to_string(), denoms.to_math());
-            map.insert("Numerator".to_string(), numers.to_math());
+            map.insert(
+                "Partial_fraction".to_string(),
+                denoms.to_math_with_indent(4),
+            );
+            map.insert("Numerator".to_string(), numers.to_math_with_indent(4));
 
             embeddings.push(map);
         }
@@ -228,7 +234,7 @@ impl IFCuts {
         //     "writing mathematica to {:?}",
         //     path.canonicalize()?.into_os_string()
         // );
-        write!(f, "{}", embeddings.to_math())?;
+        write!(f, "{}", embeddings.to_math_with_indent(0))?;
         Ok(())
     }
 
@@ -1551,7 +1557,7 @@ impl<K: ToMathematica, V: ToMathematica> ToMathematica for AHashMap<K, V> {
         let inner_indent_str = indent_string(inner_indent);
 
         // Open the Association with the beginning syntax.
-        out.push_str(&base_indent);
+        // out.push_str(&base_indent);
         out.push_str("<|");
         if !self.is_empty() {
             out.push('\n');
@@ -1566,7 +1572,7 @@ impl<K: ToMathematica, V: ToMathematica> ToMathematica for AHashMap<K, V> {
             // Print the key. We add quotes around the key.
             out.push_str(&inner_indent_str);
             out.push('"');
-            out.push_str(&k.to_math_with_indent(inner_indent));
+            out.push_str(&k.to_math_with_indent(0));
             out.push('"');
             out.push_str(" -> ");
             // For the value, we also call the indented printing.
@@ -1582,26 +1588,42 @@ impl<K: ToMathematica, V: ToMathematica> ToMathematica for AHashMap<K, V> {
 }
 
 impl ToMathematica for String {
-    fn to_math_with_indent(&self, _indent: usize) -> String {
+    fn to_math_with_indent(&self, indent: usize) -> String {
+        let mut s = indent_string(indent);
+        s.push_str(&self);
         self.clone()
     }
 }
 
 impl ToMathematica for i32 {
-    fn to_math_with_indent(&self, _indent: usize) -> String {
+    fn to_math_with_indent(&self, indent: usize) -> String {
+        let mut s = indent_string(0);
+        s.push_str(&self.to_string());
         self.to_string()
     }
 }
 
 impl ToMathematica for Atom {
-    fn to_math_with_indent(&self, _indent: usize) -> String {
+    fn to_math_with_indent(&self, indent: usize) -> String {
+        let mut s = indent_string(0);
+        s.push_str(
+            &self
+                .printer(symbolica::printer::PrintOptions::mathematica())
+                .to_string(),
+        );
         self.printer(symbolica::printer::PrintOptions::mathematica())
             .to_string()
     }
 }
 
 impl ToMathematica for &Atom {
-    fn to_math_with_indent(&self, _indent: usize) -> String {
+    fn to_math_with_indent(&self, indent: usize) -> String {
+        let mut s = indent_string(0);
+        s.push_str(
+            &self
+                .printer(symbolica::printer::PrintOptions::mathematica())
+                .to_string(),
+        );
         self.printer(symbolica::printer::PrintOptions::mathematica())
             .to_string()
     }
@@ -1613,8 +1635,7 @@ impl<E: ToMathematica> ToMathematica for Vec<E> {
         let base_indent = indent_string(indent);
         let inner_indent = indent + 2;
         let inner_indent_str = indent_string(inner_indent);
-
-        out.push_str(&base_indent);
+        // out.push_str(&base_indent);
         out.push('{');
         if !self.is_empty() {
             out.push('\n');
