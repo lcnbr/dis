@@ -8,6 +8,7 @@ use std::{
     sync::{Arc, LazyLock},
 };
 
+use gamma::Gamma;
 use linnet::half_edge::{
     drawing::Decoration,
     layout::{FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph},
@@ -57,6 +58,7 @@ use symbolica::{
     tensors::matrix::Matrix,
 };
 
+pub mod gamma;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Embeddings {
     pub cuts: BTreeMap<Embedding, Vec<OrientedCut>>,
@@ -1037,7 +1039,7 @@ impl DisGraph {
             .color_simplify();
         // println!("color simplified: {}", w1.get_single_atom().unwrap().0);
         // assert!(w1.validate_against_branches(1112));
-        let mut w1 = w1.gamma_simplify().get_single_atom().unwrap().0;
+        let mut w1 = w1.gamma_simplify_ddim().get_single_atom().unwrap().0;
         // println!("gamma simplified {}", w1);
         let w2 = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
@@ -1046,7 +1048,7 @@ impl DisGraph {
         // assert!(w2.validate_against_branches(1313));
         // println!("color simplified:{}", w2.state.colorless);
 
-        let w2 = w2.gamma_simplify();
+        let w2 = w2.gamma_simplify_ddim();
 
         // println!("gamma simplified: {}", w2.state.colorless);
 
@@ -1058,7 +1060,7 @@ impl DisGraph {
 
         // assert!(zero.validate_against_branches(3234));
 
-        let mut zero = zero.gamma_simplify().get_single_atom().unwrap().0;
+        let mut zero = zero.gamma_simplify_ddim().get_single_atom().unwrap().0;
 
         numerator_dis_apply(&mut w1);
         numerator_dis_apply(&mut w2);
