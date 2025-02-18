@@ -1588,42 +1588,26 @@ impl<K: ToMathematica, V: ToMathematica> ToMathematica for AHashMap<K, V> {
 }
 
 impl ToMathematica for String {
-    fn to_math_with_indent(&self, indent: usize) -> String {
-        let mut s = indent_string(indent);
-        s.push_str(&self);
+    fn to_math_with_indent(&self, _indent: usize) -> String {
         self.clone()
     }
 }
 
 impl ToMathematica for i32 {
-    fn to_math_with_indent(&self, indent: usize) -> String {
-        let mut s = indent_string(0);
-        s.push_str(&self.to_string());
+    fn to_math_with_indent(&self, _indent: usize) -> String {
         self.to_string()
     }
 }
 
 impl ToMathematica for Atom {
-    fn to_math_with_indent(&self, indent: usize) -> String {
-        let mut s = indent_string(0);
-        s.push_str(
-            &self
-                .printer(symbolica::printer::PrintOptions::mathematica())
-                .to_string(),
-        );
+    fn to_math_with_indent(&self, _indent: usize) -> String {
         self.printer(symbolica::printer::PrintOptions::mathematica())
             .to_string()
     }
 }
 
 impl ToMathematica for &Atom {
-    fn to_math_with_indent(&self, indent: usize) -> String {
-        let mut s = indent_string(0);
-        s.push_str(
-            &self
-                .printer(symbolica::printer::PrintOptions::mathematica())
-                .to_string(),
-        );
+    fn to_math_with_indent(&self, _indent: usize) -> String {
         self.printer(symbolica::printer::PrintOptions::mathematica())
             .to_string()
     }
