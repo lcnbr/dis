@@ -1073,7 +1073,7 @@ impl DisGraph {
         let mut props = vec![];
         for (j, e) in graph.iter_egdes(&inner_graph) {
             let edge = &e.data.as_ref().unwrap().bare_edge;
-            let i = e.data.as_ref().unwrap().bare_edge_id;
+            let i = e.data.as_ref().unwrap().emr_idx;
             if matches!(j, EdgeId::Paired { .. }) {
                 let mass = edge.particle.mass.expression.clone();
                 let emr_mom = function!(DIS_SYMBOLS.emr_mom, i as i32);
