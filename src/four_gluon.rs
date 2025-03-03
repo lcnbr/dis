@@ -99,7 +99,7 @@ fn main() {
         let _num: Vec<_> = dis_graph
             .numerator(first_initial)
             .iter()
-            .map(|a| a.expand())
+            .map(|a| a.1.expand())
             .collect();
 
         println!("Denominator:");

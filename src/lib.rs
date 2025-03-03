@@ -198,15 +198,7 @@ impl IFCuts {
             map.insert("embedding".to_string(), e.windings.to_math_with_indent(4));
             let denom = graph.denominator(first_initial);
 
-            let numers: AHashMap<_, _> = graph
-                .numerator(first_initial)
-                .into_iter()
-                .enumerate()
-                .map(|(i, a)| {
-                    // println!("{:+}", a.expand());
-                    (format!("w{}", i), a.expand().factor())
-                })
-                .collect();
+            let numers: AHashMap<_, _> = graph.numerator(first_initial);
             // for n in &numers {
             //     println!(":{n}");
             // }
@@ -549,6 +541,7 @@ pub fn numerator_dis_apply(num: &mut Atom) {
             function!(ETS.metric, a_, b_) * function!(q, a_),
             function!(q, b_),
         ),
+        (Atom::parse("ee").unwrap(), Atom::parse("qe/3").unwrap()),
     ];
 
     let replacements: Vec<Replacement> = reps
@@ -564,7 +557,7 @@ pub struct DisGraph {
     marked_electron_edge: (EdgeId, usize),
     symmetry_group: Integer,
     lmb_photon: (EdgeId, usize),
-    numerator: Vec<Atom>,
+    numerator: AHashMap<String, Atom>,
     denominator: DenominatorDis,
     overall_prefactor: Atom,
     basis: Vec<Cycle>,
@@ -1107,10 +1100,14 @@ impl DisGraph {
             .unwrap();
 
         let sym_group = symbolica_graph.canonize().automorphism_group_size;
+        let mut numerator = AHashMap::new();
+        numerator.insert("F2".into(), f2);
+        numerator.insert("FL".into(), fl);
+        numerator.insert("zero".into(), zero);
 
         DisGraph {
             graph,
-            numerator: vec![fl.expand(), f2.expand(), zero.expand()],
+            numerator,
             denominator: DenominatorDis::new(props),
             lmb_photon: seen_pdg22.unwrap(),
             marked_electron_edge: seen_pdg11.unwrap(),
@@ -1362,15 +1359,20 @@ impl DisGraph {
 
     fn color_and_spin_average(&self, cut: &OrientedCut) -> Atom {
         let mut cut_content = 0;
-        self.graph.iter_egdes(cut).for_each(|(a, p)| {
+        println!("looking at cut {}", cut);
+        cut.iter_edges_relative(&self.graph).for_each(|(a, p)| {
             let particle = &p.data.as_ref().unwrap().bare_edge.particle;
             if particle.color.abs() == 3 && particle.spin == 2 {
-                if let EdgeId::Split { split, .. } = a {
-                    match p.orientation.relative_to(split) {
-                        Orientation::Default => cut_content += 1,
-                        Orientation::Reversed => cut_content -= 1,
-                        Orientation::Undirected => panic!("undirected fermion!"),
+                match a.relative_to(p.orientation.try_into().unwrap()) {
+                    Orientation::Default => {
+                        println!("looking at particle: {}", particle.name);
+                        cut_content += 1
                     }
+                    Orientation::Reversed => {
+                        println!("looking at anti particle: {}", particle.name);
+                        cut_content -= 1
+                    }
+                    Orientation::Undirected => panic!("undirected fermion!"),
                 }
             }
         });
@@ -1384,7 +1386,7 @@ impl DisGraph {
             _ => panic!("invalid cut content"),
         }
     }
-    pub fn numerator(&self, cut: &OrientedCut) -> Vec<Atom> {
+    pub fn numerator(&self, cut: &OrientedCut) -> AHashMap<String, Atom> {
         let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
 
         // for a in &emr_to_lmb_cut {
@@ -1393,8 +1395,12 @@ impl DisGraph {
 
         self.numerator
             .iter()
-            .map(|a| {
-                a.replace_all_multiple_repeat(&emr_to_lmb_cut) * self.color_and_spin_average(cut)
+            .map(|(k, v)| {
+                (
+                    k.clone(),
+                    v.replace_all_multiple_repeat(&emr_to_lmb_cut)
+                        * self.color_and_spin_average(cut),
+                )
             })
             .collect()
     }
@@ -1524,11 +1530,11 @@ pub struct MathematicaIntegrand {
     ext_to_pq: Vec<(Atom, Atom)>,
     prefactor: Atom,
     topology: Topology,
-    numerators: Vec<Atom>,
+    numerators: AHashMap<String, Atom>,
 }
 
 impl MathematicaIntegrand {
-    pub fn new(topology: Topology, numerators: &[Atom]) -> Self {
+    pub fn new(topology: Topology, numerators: &AHashMap<String, Atom>) -> Self {
         let _pq_to_ext = topology.map_pq_ext();
         let ext_to_pq = topology.map_ext_pq();
 
@@ -1536,7 +1542,7 @@ impl MathematicaIntegrand {
 
         let numerators = numerators
             .iter()
-            .map(|a| a.replace_all_multiple_repeat(&_pq_to_ext))
+            .map(|(k, v)| (k.clone(), v.replace_all_multiple_repeat(&_pq_to_ext)))
             .collect();
 
         Self {
@@ -1568,14 +1574,14 @@ impl ToMathematica for MathematicaIntegrand {
         //     println!("num:{n}");
         // }
 
-        map.insert(
-            "numerators".to_string(),
-            self.numerators
-                .iter()
-                .map(|a| a * &self.prefactor)
-                .collect_vec()
-                .to_math(),
-        );
+        // map.insert(
+        //     "numerators".to_string(),
+        //     self.numerators
+        //         .iter()
+        //         .map(|a| a * &self.prefactor)
+        //         .collect_vec()
+        //         .to_math(),
+        // );
 
         map.to_math_with_indent(indent)
     }
