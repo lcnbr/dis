@@ -1019,16 +1019,29 @@ impl DisGraph {
         let q = symb!("q");
         let phat2 = Atom::new_var(symb!("phat")).pow(Atom::new_num(2));
         let pp = function!(p, mu) * function!(p, nu);
+
+        let pdq = function!(DIS_SYMBOLS.dot, p, q);
+
+        let q2 = function!(DIS_SYMBOLS.dot, q, q);
         let diminv = Atom::parse("1/(2-d)").unwrap();
 
         let w1_proj = GlobalPrefactor {
             color: Atom::new_num(1),
-            colorless: &diminv * (&metric - &pp / &phat2),
+            colorless: &diminv * (&pp / &phat2 - &metric),
         };
-
         let w2_proj = GlobalPrefactor {
             color: Atom::new_num(1),
-            colorless: (diminv * (metric - &pp / &phat2) + &pp / &phat2) / &phat2,
+            colorless: (&pp / &phat2 - &w1_proj.colorless) / &phat2,
+        };
+
+        let F2proj = GlobalPrefactor {
+            color: Atom::new_num(1),
+            colorless: &pdq * &w2_proj.colorless,
+        };
+
+        let FLproj = GlobalPrefactor {
+            color: Atom::new_num(1),
+            colorless: &F2proj.colorless - &w1_proj.colorless * &q2 / &pdq,
         };
 
         let zero_proj = GlobalPrefactor {
@@ -1036,25 +1049,25 @@ impl DisGraph {
             ..GlobalPrefactor::default()
         };
 
-        let w1 = _gammaloop::numerator::Numerator::default()
-            .from_dis_graph(bare, &graph, &inner_graph, Some(&w1_proj))
+        let f2 = _gammaloop::numerator::Numerator::default()
+            .from_dis_graph(bare, &graph, &inner_graph, Some(&F2proj))
             .color_simplify();
         // println!("color simplified: {}", w1.get_single_atom().unwrap().0);
         // assert!(w1.validate_against_branches(1112));
-        let mut w1 = w1.gamma_simplify_ddim().get_single_atom().unwrap().0;
+        let mut f2 = f2.gamma_simplify_ddim().get_single_atom().unwrap().0;
         // println!("gamma simplified {}", w1);
-        let w2 = _gammaloop::numerator::Numerator::default()
-            .from_dis_graph(bare, &graph, &inner_graph, Some(&w2_proj))
+        let fl = _gammaloop::numerator::Numerator::default()
+            .from_dis_graph(bare, &graph, &inner_graph, Some(&FLproj))
             .color_simplify();
 
         // assert!(w2.validate_against_branches(1313));
         // println!("color simplified:{}", w2.state.colorless);
 
-        let w2 = w2.gamma_simplify_ddim();
+        let fl = fl.gamma_simplify_ddim();
 
         // println!("gamma simplified: {}", w2.state.colorless);
 
-        let mut w2 = w2.get_single_atom().unwrap().0;
+        let mut fl = fl.get_single_atom().unwrap().0;
 
         let zero = _gammaloop::numerator::Numerator::default()
             .from_dis_graph(bare, &graph, &inner_graph, Some(&zero_proj))
@@ -1064,8 +1077,8 @@ impl DisGraph {
 
         let mut zero = zero.gamma_simplify_ddim().get_single_atom().unwrap().0;
 
-        numerator_dis_apply(&mut w1);
-        numerator_dis_apply(&mut w2);
+        numerator_dis_apply(&mut fl);
+        numerator_dis_apply(&mut f2);
         numerator_dis_apply(&mut zero);
 
         // for a in [&w1, &w2, &zero] {
@@ -1097,7 +1110,7 @@ impl DisGraph {
 
         DisGraph {
             graph,
-            numerator: vec![w1.expand(), w2.expand(), zero.expand()],
+            numerator: vec![fl.expand(), f2.expand(), zero.expand()],
             denominator: DenominatorDis::new(props),
             lmb_photon: seen_pdg22.unwrap(),
             marked_electron_edge: seen_pdg11.unwrap(),
