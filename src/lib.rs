@@ -9,6 +9,7 @@ use std::{
 };
 
 use gamma::Gamma;
+// use libc::GS;
 use linnet::half_edge::{
     drawing::Decoration,
     layout::{FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph},
@@ -21,7 +22,8 @@ use _gammaloop::{
     graph::{BareGraph, Edge, EdgeType, Vertex, VertexInfo},
     model::{normalise_complex, Model},
     momentum::{Sign, Signature},
-    numerator::{AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
+    numerator::{ufo::UFO, AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
+    utils::GS,
 };
 use ahash::{AHashMap, AHashSet};
 use bitvec::vec::BitVec;
@@ -1344,6 +1346,31 @@ impl DisGraph {
             included_hedge,
         )
     }
+
+    fn color_and_spin_average(&self, cut: &OrientedCut) -> Atom {
+        let mut cut_content = 0;
+        self.graph.iter_egdes(cut).for_each(|(a, p)| {
+            let particle = &p.data.as_ref().unwrap().bare_edge.particle;
+            if particle.color.abs() == 3 && particle.spin == 2 {
+                if let EdgeId::Split { split, .. } = a {
+                    match p.orientation.relative_to(split) {
+                        Orientation::Default => cut_content += 1,
+                        Orientation::Reversed => cut_content -= 1,
+                        Orientation::Undirected => panic!("undirected fermion!"),
+                    }
+                }
+            }
+        });
+
+        let nc = Atom::new_var(symb!("Nc"));
+
+        match cut_content {
+            0 => Atom::new_num(1) / ((&nc * &nc - 1) * (Atom::new_var(GS.dim) - 2)),
+            1 => Atom::new_num(1) / (nc * 2),
+            -1 => Atom::new_num(1) / (nc * 2),
+            _ => panic!("invalid cut content"),
+        }
+    }
     pub fn numerator(&self, cut: &OrientedCut) -> Vec<Atom> {
         let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
 
@@ -1353,7 +1380,9 @@ impl DisGraph {
 
         self.numerator
             .iter()
-            .map(|a| a.replace_all_multiple_repeat(&emr_to_lmb_cut))
+            .map(|a| {
+                a.replace_all_multiple_repeat(&emr_to_lmb_cut) * self.color_and_spin_average(cut)
+            })
             .collect()
     }
 
