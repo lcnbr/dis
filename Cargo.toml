@@ -36,7 +36,7 @@ opt-level = 3
 
 [profile.release]
 lto = "fat"
-
+codegen-units = 16
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
 

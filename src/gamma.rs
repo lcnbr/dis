@@ -175,11 +175,6 @@ pub fn gamma_simplify_impl(mut expr: SerializableAtom) -> SerializableAtom {
     expr.0 = expr.0.expand();
     expr.replace_all_multiple_repeat_mut(&reps);
 
-    let trace_mu_pat = function!(gamma_chain, GS.a___, GS.a_, GS.a_, GS.b__).to_pattern();
-
-    let permutepat =
-        function!(gamma_chain, GS.a___, GS.a_, GS.b___, GS.b_, GS.a_, GS.a__).to_pattern();
-
     let reps: Vec<_> = [
         (
             function!(gamma_chain, GS.a___, GS.a_, GS.a_, GS.b__),

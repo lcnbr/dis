@@ -31,7 +31,7 @@ use cgmath::{Angle, Rad};
 use indexmap::{IndexMap, IndexSet};
 use indicatif::ProgressBar;
 use itertools::Itertools;
-use log::debug;
+use log::{debug, warn};
 use spenso::{
     arithmetic::ScalarMul,
     contraction::Contract,
@@ -1359,17 +1359,17 @@ impl DisGraph {
 
     fn color_and_spin_average(&self, cut: &OrientedCut) -> Atom {
         let mut cut_content = 0;
-        println!("looking at cut {}", cut);
+        // println!("looking at cut {}", cut);
         cut.iter_edges_relative(&self.graph).for_each(|(a, p)| {
             let particle = &p.data.as_ref().unwrap().bare_edge.particle;
             if particle.color.abs() == 3 && particle.spin == 2 {
                 match a.relative_to(p.orientation.try_into().unwrap()) {
                     Orientation::Default => {
-                        println!("looking at particle: {}", particle.name);
+                        // println!("looking at particle: {}", particle.name);
                         cut_content += 1
                     }
                     Orientation::Reversed => {
-                        println!("looking at anti particle: {}", particle.name);
+                        // println!("looking at anti particle: {}", particle.name);
                         cut_content -= 1
                     }
                     Orientation::Undirected => panic!("undirected fermion!"),
@@ -1381,9 +1381,12 @@ impl DisGraph {
 
         match cut_content {
             0 => Atom::new_num(1) / ((&nc * &nc - 1) * (Atom::new_var(GS.dim) - 2)),
-            1 => Atom::new_num(1) / (nc * 2),
-            -1 => Atom::new_num(1) / (nc * 2),
-            _ => panic!("invalid cut content"),
+            _ => Atom::new_num(1) / (nc * 2).pow(Atom::new_num(cut_content)),
+            // -1 => Atom::new_num(1) / (nc * 2),
+            // _ => {
+            // warn!("invalid cut content");
+            // Atom::new_num(1)
+            // }
         }
     }
     pub fn numerator(&self, cut: &OrientedCut) -> AHashMap<String, Atom> {
