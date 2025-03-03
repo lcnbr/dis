@@ -541,7 +541,9 @@ pub fn numerator_dis_apply(num: &mut Atom) {
             function!(ETS.metric, a_, b_) * function!(q, a_),
             function!(q, b_),
         ),
-        (Atom::parse("ee").unwrap(), Atom::parse("qe/3").unwrap()),
+        (Atom::parse("ee").unwrap(), Atom::parse("eq*3").unwrap()),
+        (Atom::new_var(Atom::I), Atom::parse("I").unwrap()),
+        (Atom::parse("TR").unwrap(), Atom::parse("TF").unwrap()),
     ];
 
     let replacements: Vec<Replacement> = reps
@@ -1016,7 +1018,9 @@ impl DisGraph {
         let pdq = function!(DIS_SYMBOLS.dot, p, q);
 
         let q2 = function!(DIS_SYMBOLS.dot, q, q);
-        let diminv = Atom::parse("1/(2-d)").unwrap();
+        let diminv = Atom::new_num(1) / (Atom::new_var(GS.dim) - 2);
+
+        // Atom::parse("1/(2-dim)").unwrap();
 
         let w1_proj = GlobalPrefactor {
             color: Atom::new_num(1),

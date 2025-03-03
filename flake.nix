@@ -170,7 +170,7 @@
           cargo-watch
           rust-analyzer
           nixd
-          
+          form
           # wolfram-engine
           typst
           nil

@@ -13,117 +13,19 @@ use symbolica::{
     atom::{Atom, AtomCore, AtomView, FunctionBuilder, Symbol},
     function,
     id::{Context, Match, Pattern, Replacement},
+    printer::PrintOptions,
     symb,
 };
 
+use crate::DIS_SYMBOLS;
+
 pub fn gamma_simplify_impl(mut expr: SerializableAtom) -> SerializableAtom {
+    // println!("expr:{expr}");
     // let mink = Minkowski::rep(4);
     fn mink(wildcard: Symbol) -> Atom {
         Minkowski::rep(4).pattern(Atom::new_var(wildcard))
     }
     expr.0 = expr.0.expand();
-    let pats = [
-        Replacement::new(
-            Pattern::parse("id(a_,b_)*t_(d___,b_,c___)").unwrap(),
-            Pattern::parse("t_(d___,a_,c___)").unwrap(),
-        ),
-        Replacement::new(
-            Pattern::parse("Metric(mink(a_),mink(b_))*t_(d___,mink(b_),c___)").unwrap(),
-            Pattern::parse("t_(d___,mink(a_),c___)").unwrap(),
-        ),
-    ];
-
-    expr = expr.replace_all_multiple_repeat(&pats);
-    let pats = vec![
-        (
-            Pattern::parse("ProjP(a_,b_)").unwrap(),
-            Pattern::parse("1/2*id(a_,b_)-1/2*gamma5(a_,b_)").unwrap(),
-        ),
-        (
-            Pattern::parse("ProjM(a_,b_)").unwrap(),
-            Pattern::parse("1/2*id(a_,b_)+1/2*gamma5(a_,b_)").unwrap(),
-        ),
-        (
-            Pattern::parse("id(a_,b_)*f_(d___,b_,e___)").unwrap(),
-            Pattern::parse("f_(c___,a_,e___)").unwrap(),
-        ),
-        // (
-        //     Pattern::parse("id(aind(a_,b_))*f_(c___,aind(d___,a_,e___))").unwrap(),
-        //     Pattern::parse("f_(c___,aind(d___,b_,e___))")
-        //         .unwrap()
-        //         ,
-        // ),
-        // (
-        //     Pattern::parse("γ(a_,b_,c_)*γ(d_,c_,e_)").unwrap(),
-        //     Pattern::parse("gamma_chain(a_,d_,b_,e_)").unwrap(),
-        // ),
-        // (
-        //     Pattern::parse("gamma_chain(a__,b_,c_)*gamma_chain(d__,c_,e_)").unwrap(),
-        //     Pattern::parse("gamma_chain(a__,d__,b_,e_)").unwrap(),
-        // ),
-        // (
-        //     Pattern::parse("γ(a_,b_,c_)*gamma_chain(d__,c_,e_)").unwrap(),
-        //     Pattern::parse("gamma_chain(a_,d__,b_,e_)").unwrap(),
-        // ),
-        // (
-        //     Pattern::parse("gamma_chain(a__,b_,c_)*γ(d_,c_,e_)").unwrap(),
-        //     Pattern::parse("gamma_chain(a__,d_,b_,e_)").unwrap(),
-        // ),
-        // (
-        //     Pattern::parse("gamma_chain(a__,b_,b_)").unwrap(),
-        //     Pattern::parse("gamma_trace(a__)").unwrap(),
-        // ),
-    ];
-    // let reps: Vec<Replacement> = pats
-    //     .into_iter()
-    //     .map(|(lhs, rhs)| Replacement::new(lhs, rhs))
-    //     .collect();
-    // expr.0 = expr.0.expand();
-    // expr.replace_all_multiple_repeat_mut(&reps);
-    // expr.0 = expr.0.expand();
-    // expr.replace_all_multiple_repeat_mut(&reps);
-
-    // let pat = Pattern::parse("gamma_trace(a__)").unwrap();
-
-    // let mut it = expr.0.pattern_match(&pat, None, None);
-
-    // let mut max_nargs = 0;
-
-    // while let Some(p) = it.next_detailed() {
-    //     for (_, v) in p.match_stack {
-    //         match v {
-    //             Match::Single(_) => {
-    //                 if max_nargs < 1 {
-    //                     max_nargs = 1;
-    //                 }
-    //             }
-    //             Match::Multiple(_, v) => {
-    //                 if max_nargs < v.len() {
-    //                     max_nargs = v.len();
-    //                 }
-    //             }
-    //             _ => panic!("should be a single match"),
-    //         }
-    //     }
-    // }
-
-    // expr.0 = expr.0.expand();
-    // let pats: Vec<_> = [
-    //     (
-    //         function!(ETS.id, GS.a_, GS.b_) * function!(GS.f_, GS.d___, GS.b_, GS.c___),
-    //         function!(GS.f_, GS.d___, GS.a_, GS.c___),
-    //     ),
-    //     (
-    //         function!(ETS.metric, mink(GS.a_), mink(GS.b_))
-    //             * function!(GS.f_, GS.d___, mink(GS.b_), GS.c___),
-    //         function!(GS.f_, GS.d___, mink(GS.a_), GS.c___),
-    //     ),
-    // ]
-    // .iter()
-    // .map(|(a, b)| Replacement::new(a.to_pattern(), b.to_pattern()))
-    // .collect();
-
-    // expr = expr.replace_all_multiple_repeat(&pats);
 
     let gamma_chain = symb!("gamma_chain");
     let gamma_trace = symb!("gamma_trace");
@@ -175,10 +77,21 @@ pub fn gamma_simplify_impl(mut expr: SerializableAtom) -> SerializableAtom {
     expr.0 = expr.0.expand();
     expr.replace_all_multiple_repeat_mut(&reps);
 
+    // println!(
+    //     "after simpl:{}",
+    //     expr.0.expand().printer(PrintOptions {
+    //         terms_on_new_line: true,
+    //         ..Default::default()
+    //     })
+    // );
     let reps: Vec<_> = [
         (
             function!(gamma_chain, GS.a___, GS.a_, GS.a_, GS.b__),
-            function!(gamma_trace, GS.a___, GS.b__) * GS.dim,
+            function!(gamma_chain, GS.a___, GS.b__) * GS.dim,
+        ),
+        (
+            function!(gamma_chain, GS.a_, GS.b_),
+            function!(ETS.id, GS.a_, GS.b_),
         ),
         (
             function!(gamma_chain, GS.a___, GS.a_, GS.b___, GS.b_, GS.a_, GS.a__),
@@ -187,11 +100,66 @@ pub fn gamma_simplify_impl(mut expr: SerializableAtom) -> SerializableAtom {
         ),
     ]
     .iter()
-    .map(|(a, b)| Replacement::new(a.to_pattern(), b.to_pattern()))
+    .map(|(a, b)| {
+        Replacement::new(a.to_pattern(), b.to_pattern())
+        // .with_conditions(symbolica::id::Condition::Yield(()))
+    })
     .collect();
 
     loop {
         let new = expr.0.replace_all_multiple(&reps);
+        // println!(
+        //     "during simpl:{}",
+        //     expr.0.expand().printer(PrintOptions {
+        //         terms_on_new_line: true,
+        //         ..Default::default()
+        //     })
+        // );
+        if new == expr.0 {
+            break;
+        } else {
+            expr.0 = new;
+        }
+    }
+
+    loop {
+        let new = expr
+            .0
+            .replace_map(&|a, b, c| {
+                let gamma_chain = symb!("gamma_chain");
+                let mut found = false;
+                if let AtomView::Fun(f) = a {
+                    if f.get_symbol() == gamma_chain {
+                        let mut args = f.iter().collect::<Vec<_>>();
+                        if args.len() >= 4 {
+                            for i in 0..args.len().saturating_sub(3) {
+                                // println!("{}", args[i]);
+                                // println!("{}?{}", args[i], args[i + 1]);
+                                if args[i] > args[i + 1] {
+                                    // println!("{}>{}", args[i], args[i + 1]);
+                                    args.swap(i, i + 1);
+                                    let swapped =
+                                        FunctionBuilder::new(gamma_chain).add_args(&args).finish();
+                                    let mu = args.remove(i);
+                                    let nu = args.remove(i);
+                                    let metric = function!(ETS.metric, mu, nu)
+                                        * 2
+                                        * FunctionBuilder::new(gamma_chain)
+                                            .add_args(&args)
+                                            .finish();
+                                    *c = metric - swapped;
+                                    // println!("{}->{}", a, c);
+                                    return true;
+                                }
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                found
+            })
+            .replace_all_multiple(&reps);
         if new == expr.0 {
             break;
         } else {
@@ -220,6 +188,7 @@ pub fn gamma_simplify_impl(mut expr: SerializableAtom) -> SerializableAtom {
         let mut found = false;
         if let AtomView::Fun(f) = arg {
             if f.get_symbol() == gamma_trace {
+                // println!("{arg}");
                 found = true;
                 let mut sum = Atom::Zero;
 
@@ -283,6 +252,7 @@ pub fn gamma_simplify_impl(mut expr: SerializableAtom) -> SerializableAtom {
             function!(ETS.gamma, GS.a__).pow(Atom::new_num(2)),
             Atom::new_var(GS.dim) * 4,
         ),
+        (function!(ETS.id, GS.a_, GS.a_), Atom::new_num(4)),
     ]
     .iter()
     .map(|(a, b)| Replacement::new(a.to_pattern(), b.to_pattern()))
@@ -312,11 +282,292 @@ impl Gamma for Numerator<ColorSimplified> {
     }
 }
 
-// #[cfg(test)]
-// mod test{
+pub fn to_dots(atom: &Atom) -> Atom {
+    fn mink(wildcard: Symbol, dim: Symbol) -> Atom {
+        Minkowski::rep(dim).pattern(Atom::new_var(wildcard))
+    }
 
-//     #[test]
-//     fn gamma_alg() {
+    let reps = vec![
+        (
+            function!(ETS.metric, GS.a_, GS.b_).pow(Atom::new_num(2)),
+            Atom::new_var(GS.dim),
+        ),
+        (
+            function!(GS.f_, GS.a___, mink(GS.a_, GS.d_))
+                * function!(GS.g_, GS.b___, mink(GS.a_, GS.d_)),
+            function!(
+                DIS_SYMBOLS.dot,
+                function!(GS.f_, GS.a___),
+                function!(GS.g_, GS.b___)
+            ),
+        ),
+        (
+            function!(GS.f_, GS.a___, mink(GS.a_, GS.d_)).pow(Atom::new_num(2)),
+            function!(
+                DIS_SYMBOLS.dot,
+                function!(GS.f_, GS.a___),
+                function!(GS.f_, GS.a___)
+            ),
+        ),
+        // (FunctionBuilder::new(GS.f_).finish(), Atom::new_var(GS.f_)),//cannot pattern match empty function like this
+        // (Atom::parse("f_()").unwrap(), Atom::new_var(GS.f_)),//Or like this
+    ]
+    .into_iter()
+    .map(|(a, b)| Replacement::new(a.to_pattern(), b.to_pattern()))
+    .collect::<Vec<_>>();
 
-//     }
-// }
+    atom.replace_all_multiple_repeat(&reps)
+}
+
+#[cfg(test)]
+mod test {
+    use std::sync::Arc;
+
+    use libc::GS;
+    use spenso::{shadowing::ETS, symbolica_utils::SerializableAtom};
+    use symbolica::{
+        atom::{Atom, AtomCore},
+        domains::{integer::Z, rational::Q, SelfRing},
+        id::Replacement,
+        poly::Variable,
+        printer::{PrintOptions, PrintState},
+        symb,
+    };
+
+    use crate::DIS_SYMBOLS;
+
+    use super::gamma_simplify_impl;
+
+    #[test]
+    fn gamma_alg() {
+        let g = ETS.gamma;
+
+        let expr: SerializableAtom = gamma_simplify_impl(SerializableAtom::from(
+            Atom::parse("gamma_chain(mink(4,0),mink(4,0),b(1),b(2))").unwrap(),
+        ));
+        assert_eq!(
+            expr.0,
+            Atom::parse("dim*id(b(1),b(2))").unwrap(),
+            "got {}",
+            expr.0
+        );
+
+        let expr: SerializableAtom = gamma_simplify_impl(SerializableAtom::from(
+            Atom::parse("p(mink(4,nu1))*(p(mink(4,nu3))+q(mink(4,nu3)))*gamma_chain(mink(4,nu1),mink(4,mu),mink(4,nu3),mink(4,nu),b(1),b(1))")
+                .unwrap(),
+        ));
+        assert_eq!(
+            expr.0,
+            Atom::parse("-4*Metric(mink(4,mu),mink(4,nu))*p(mink(4,nu1))^2+8*p(mink(4,mu))*p(mink(4,nu))+4*p(mink(4,mu))*q(mink(4,nu))+4*p(mink(4,nu))*q(mink(4,mu))-4*Metric(mink(4,mu),mink(4,nu))*p(mink(4,nu1))*q(mink(4,nu1))").unwrap(),
+            "got {}",
+            expr.0
+        );
+
+        let expr: SerializableAtom = gamma_simplify_impl(SerializableAtom::from(
+            Atom::parse("(Metric(mink(4,1), mink(4,2)) Metric(mink(4,3), mink(4,4)) Metric(mink(4,5), mink(4,6)) -
+                Metric(mink(4,1), mink(4,3)) Metric(mink(4,2), mink(4,6)) Metric(mink(4,5), mink(4,4))) (Metric(mink(4,1), mink(4,2)) Metric(mink(4,3), mink(4,4)) -
+                Metric(mink(4,1), mink(4,3)) Metric(mink(4,2), mink(4,4))) Metric(mink(4,5), mink(4,6))")
+                .unwrap(),
+        ));
+        assert_eq!(expr.0, Atom::parse("-dim+dim^3").unwrap(), "got {}", expr.0);
+
+        let expr: SerializableAtom = gamma_simplify_impl(SerializableAtom::from(
+            Atom::parse("p(mink(4,nu1))*(p(mink(4,nu3))+q(mink(4,nu3)))*gamma_chain(mink(4,nu1),mink(4,mu),mink(4,nu),mink(4,nu3),b(1),b(1))")
+                .unwrap(),
+        ));
+        assert_eq!(expr.0, Atom::parse("4*Metric(mink(4,mu),mink(4,nu))*p(mink(4,nu1))^2+4*p(mink(4,mu))*q(mink(4,nu))-4*q(mink(4,mu))*p(mink(4,nu))+4*Metric(mink(4,mu),mink(4,nu))*p(mink(4,nu1))*q(mink(4,nu1))").unwrap(), "got {}", expr.0);
+
+        let expr: SerializableAtom = gamma_simplify_impl(SerializableAtom::from(
+            Atom::parse("p(mink(4,nu1))*(p(mink(4,nu3))+q(mink(4,nu3)))*gamma_chain(mink(4,nu1),mink(4,nu),mink(4,nu),mink(4,nu3),b(1),b(1))")
+                .unwrap(),
+        ));
+        assert_eq!(
+            expr.0,
+            Atom::parse("4*dim*p(mink(4,nu1))^2+4*dim*p(mink(4,nu1))*q(mink(4,nu1))").unwrap(),
+            "got {}",
+            expr.0
+        );
+
+        let expr: SerializableAtom = gamma_simplify_impl(SerializableAtom::from(
+            Atom::parse("p(mink(4,nu1))*(p(mink(4,nu3))+q(mink(4,nu3)))*gamma_chain(mink(4,nu1),mink(4,nu),mink(4,nu3),mink(4,nu),b(1),b(1))")
+                .unwrap(),
+        ));
+        assert_eq!(
+            expr.0,
+            Atom::parse("8*p(mink(4,nu1))^2-4*dim*p(mink(4,nu1))^2+8*p(mink(4,nu1))*q(mink(4,nu1))-4*dim*p(mink(4,nu1))*q(mink(4,nu1))").unwrap(),
+            "got {}",
+            expr.0
+        );
+
+        let expr = crate::gamma::to_dots(& gamma_simplify_impl(SerializableAtom::from(
+            Atom::parse("p(mink(4,nu1))*q(mink(4,nu2))*(p(mink(4,nu3))+q(mink(4,nu3)))*q(mink(4,nu4))*gamma_chain(mink(4,nu1),mink(4,nu4),mink(4,nu3),mink(4,nu2),b(1),b(1))")
+                .unwrap(),
+        )).0);
+        assert_eq!(
+            expr,
+            Atom::parse("8*dot(p(),q())^2-4*dot(p(),p())*dot(q(),q())+4*dot(p(),q())*dot(q(),q())")
+                .unwrap(),
+            "got {}",
+            expr
+        );
+
+        let expr = crate::gamma::to_dots(
+            &gamma_simplify_impl(SerializableAtom::from(
+                Atom::parse("gamma_chain(mink(4,mu),mink(4,nu),mink(4,mu),mink(4,nu),b(1),b(2))")
+                    .unwrap(),
+            ))
+            .0,
+        );
+        assert_eq!(
+            expr,
+            Atom::parse("2*dim*id(b(1),b(2))-dim^2*id(b(1),b(2))").unwrap(),
+            "got {}",
+            expr
+        );
+    }
+
+    #[test]
+    fn num() {
+        let g = ETS.gamma;
+        let expr = symbolica::atom::Atom::parse(
+            // "id(mink(4,0),mink(4,5))*id(mink(4,1),mink(4,4))*γ(mink(4,2),bis(4,3),bis(4,2))*γ(mink(4,3),bis(4,5),bis(4,4))*γ(mink(4,4),bis(4,7),bis(4,6))*γ(mink(4,5),bis(4,9),bis(4,8))*γ(mink(4,21),bis(4,6),bis(4,3))*γ(mink(4,22),bis(4,2),bis(4,9))*γ(mink(4,23),bis(4,4),bis(4,7))*γ(mink(4,24),bis(4,8),bis(4,5))*Metric(mink(4,2),mink(4,3))*p(mink(4,0))*p(mink(4,1))*Q(5,mink(4,21))*Q(6,mink(4,22))*Q(7,mink(4,23))*Q(8,mink(4,24))",
+        "id(mink(4,0),mink(4,5))*id(mink(4,1),mink(4,4))*γ(mink(4,2),bis(4,3),bis(4,2))*γ(mink(4,3),bis(4,5),bis(4,4))*γ(mink(4,4),bis(4,7),bis(4,6))*γ(mink(4,5),bis(4,9),bis(4,8))*γ(mink(4,21),bis(4,6),bis(4,3))*γ(mink(4,22),bis(4,2),bis(4,9))*γ(mink(4,23),bis(4,4),bis(4,7))*γ(mink(4,24),bis(4,8),bis(4,5))*Metric(mink(4,0),mink(4,1))*Metric(mink(4,2),mink(4,3))*Q(5,mink(4,21))*Q(6,mink(4,22))*Q(7,mink(4,23))*Q(8,mink(4,24))"
+        )
+        .unwrap();
+
+        // -1/9*𝑖*ee^2*G^2*phat^-4*id(mink(4,0),mink(4,5))*id(mink(4,1),mink(4,4))*γ(mink(4,2),bis(4,3),bis(4,2))*γ(mink(4,3),bis(4,5),bis(4,4))*γ(mink(4,4),bis(4,7),bis(4,6))*γ(mink(4,5),bis(4,9),bis(4,8))*γ(mink(4,21),bis(4,6),bis(4,3))*γ(mink(4,22),bis(4,2),bis(4,9))*γ(mink(4,23),bis(4,4),bis(4,7))*γ(mink(4,24),bis(4,8),bis(4,5))*Metric(mink(4,2),mink(4,3))*p(mink(4,0))*p(mink(4,1))*Q(5,mink(4,21))*Q(6,mink(4,22))*Q(7,mink(4,23))*Q(8,mink(4,24))*dot(p,q)
+        // -1/9*𝑖*ee^2*G^2*phat^-2*(dim-2)^-1*id(mink(4,0),mink(4,5))*id(mink(4,1),mink(4,4))*γ(mink(4,2),bis(4,3),bis(4,2))*γ(mink(4,3),bis(4,5),bis(4,4))*γ(mink(4,4),bis(4,7),bis(4,6))*γ(mink(4,5),bis(4,9),bis(4,8))*γ(mink(4,21),bis(4,6),bis(4,3))*γ(mink(4,22),bis(4,2),bis(4,9))*γ(mink(4,23),bis(4,4),bis(4,7))*γ(mink(4,24),bis(4,8),bis(4,5))*Metric(mink(4,0),mink(4,1))*Metric(mink(4,2),mink(4,3))*Q(5,mink(4,21))*Q(6,mink(4,22))*Q(7,mink(4,23))*Q(8,mink(4,24))*dot(p,q)
+        // +1/9*𝑖*ee^2*G^2*phat^-4*(dim-2)^-1*id(mink(4,0),mink(4,5))*id(mink(4,1),mink(4,4))*γ(mink(4,2),bis(4,3),bis(4,2))*γ(mink(4,3),bis(4,5),bis(4,4))*γ(mink(4,4),bis(4,7),bis(4,6))*γ(mink(4,5),bis(4,9),bis(4,8))*γ(mink(4,21),bis(4,6),bis(4,3))*γ(mink(4,22),bis(4,2),bis(4,9))*γ(mink(4,23),bis(4,4),bis(4,7))*γ(mink(4,24),bis(4,8),bis(4,5))*Metric(mink(4,2),mink(4,3))*p(mink(4,0))*p(mink(4,1))*Q(5,mink(4,21))*Q(6,mink(4,22))*Q(7,mink(4,23))*Q(8,mink(4,24))*dot(p,q)
+        println!(
+            "{}",
+            expr.expand().printer(PrintOptions {
+                terms_on_new_line: true,
+                ..Default::default()
+            })
+        );
+
+        let expr: SerializableAtom = gamma_simplify_impl(SerializableAtom::from(expr));
+        println!(
+            "{}",
+            expr.0.expand().factor().printer(PrintOptions {
+                terms_on_new_line: true,
+                ..Default::default()
+            })
+        );
+    }
+
+    #[test]
+    fn se2f2() {
+        let dot = DIS_SYMBOLS.dot;
+        let expr = Atom::parse(" G^-2*eq^-2
+        /I 1/2  (-TF+Nc^2 TF)*phat^2*dot[q,q] (16 G^2 phat^-4 eq^2 I *(dot[p,p]-2 dot[p,k[3]]) (dot[p,q]+dot[p,k[3]]) dot[p,q] dot[k[3],k[3]]-32 G^2 phat^-4 eq^2 I *(dot[p,q]+dot[p,k[3]]) (dot[p,k[3]]-2 dot[k[3],k[3]]) dot[p,q] dot[p,k[3]]+16 G^2 phat^-4 eq^2 I *(dot[p,k[3]]-2 dot[k[3],k[3]]) (dot[q,k[3]]+dot[k[3],k[3]]) dot[p,p] dot[p,q]-8 G^2 phat^-4 eq^2 I *(dot[p,q]+dot[p,k[3]]-2 dot[q,k[3]]-2 dot[k[3],k[3]]) dot[p,p] dot[p,q] dot[k[3],k[3]]-32 G^2 phat^-2 eq^2 I *(dim-2)^-1 (dot[p,k[3]]-2 dot[k[3],k[3]]) (dot[q,k[3]]+dot[k[3],k[3]]) dot[p,q]+16 G^2 phat^-2 eq^2 I *(dim-2)^-1 (dot[p,q]+dot[p,k[3]]-2 dot[q,k[3]]-2 dot[k[3],k[3]]) dot[p,q] dot[k[3],k[3]]-8 G^2 dim phat^-4 eq^2 I *(dot[p,p]-2 dot[p,k[3]]) (dot[p,q]+dot[p,k[3]]) dot[p,q] dot[k[3],k[3]]+16 G^2 dim phat^-4 eq^2 I *(dot[p,q]+dot[p,k[3]]) (dot[p,k[3]]-2 dot[k[3],k[3]]) dot[p,q] dot[p,k[3]]-8 G^2 dim phat^-4 eq^2 I *(dot[p,k[3]]-2 dot[k[3],k[3]]) (dot[q,k[3]]+dot[k[3],k[3]]) dot[p,p] dot[p,q]+4 G^2 dim phat^-4 eq^2 I *(dot[p,q]+dot[p,k[3]]-2 dot[q,k[3]]-2 dot[k[3],k[3]]) dot[p,p] dot[p,q] dot[k[3],k[3]]+32 G^2 dim phat^-2 eq^2 I *(dim-2)^-1 (dot[p,k[3]]-2 dot[k[3],k[3]]) (dot[q,k[3]]+dot[k[3],k[3]]) dot[p,q]-16 G^2 dim phat^-2 eq^2 I *(dim-2)^-1 (dot[p,q]+dot[p,k[3]]-2 dot[q,k[3]]-2 dot[k[3],k[3]]) dot[p,q] dot[k[3],k[3]]-8 G^2 dim^2 phat^-2 eq^2 I *(dim-2)^-1 (dot[p,k[3]]-2 dot[k[3],k[3]]) (dot[q,k[3]]+dot[k[3],k[3]]) dot[p,q]+4 G^2 dim^2 phat^-2 eq^2 I *(dim-2)^-1 (dot[p,q]+dot[p,k[3]]-2 dot[q,k[3]]-2 dot[k[3],k[3]]) dot[p,q] dot[k[3],k[3]]-16 G^2 phat^-4 eq^2 I *(dim-2)^-1 (dot[p,p]-2 dot[p,k[3]]) (dot[p,q]+dot[p,k[3]]) dot[p,q] dot[k[3],k[3]]+32 G^2 phat^-4 eq^2 I *(dim-2)^-1 (dot[p,q]+dot[p,k[3]]) (dot[p,k[3]]-2 dot[k[3],k[3]]) dot[p,q] dot[p,k[3]]-16 G^2 phat^-4 eq^2 I *(dim-2)^-1 (dot[p,k[3]]-2 dot[k[3],k[3]]) (dot[q,k[3]]+dot[k[3],k[3]]) dot[p,p] dot[p,q]+8 G^2 phat^-4 eq^2 I *(dim-2)^-1 (dot[p,q]+dot[p,k[3]]-2 dot[q,k[3]]-2 dot[k[3],k[3]]) dot[p,p] dot[p,q] dot[k[3],k[3]]+8 G^2 dim phat^-4 eq^2 I *(dim-2)^-1 (dot[p,p]-2 dot[p,k[3]]) (dot[p,q]+dot[p,k[3]]) dot[p,q] dot[k[3],k[3]]-16 G^2 dim phat^-4 eq^2 I *(dim-2)^-1 (dot[p,q]+dot[p,k[3]]) (dot[p,k[3]]-2 dot[k[3],k[3]]) dot[p,q] dot[p,k[3]]+8 G^2 dim phat^-4 eq^2 I *(dim-2)^-1 (dot[p,k[3]]-2 dot[k[3],k[3]]) (dot[q,k[3]]+dot[k[3],k[3]]) dot[p,p] dot[p,q]-4 G^2 dim phat^-4 eq^2 I *(dim-2)^-1 (dot[p,q]+dot[p,k[3]]-2 dot[q,k[3]]-2 dot[k[3],k[3]]) dot[p,p] dot[p,q] dot[k[3],k[3]])").unwrap();
+
+        println!(
+            "{}",
+            expr.expand().printer(PrintOptions {
+                terms_on_new_line: true,
+                ..Default::default()
+            })
+        );
+
+        let exprzeno = Atom::parse("I*(-4*eq^2*g^2*TF*dot[p, q]*(dot[k, k]^2*dot[q, q]*(dot[p, q]^2 - dot[p, p]*dot[q, q]) + 2*dot[k, p]*(-2*(-1 + d)*dot[k, q]^2*dot[p, q]^2 - 2*(-1 + d)*dot[k, p]^2*dot[q, q]^2 + dot[k, q]*dot[q, q]*(4*(-1 + d)*dot[k, p]*dot[p, q] - dot[p, q]^2 + dot[p, p]*dot[q, q])) + dot[k, k]*(2*(-1 + d)*dot[k, q]^2*dot[p, q]^2 + dot[k, q]*(2*(-1 + d)*dot[p, q]^3 - 2*(-1 + d)*(2*dot[k, p] + dot[p, p])*dot[p, q]*dot[q, q] + dot[p, q]^2*dot[q, q] - dot[p, p]*dot[q, q]^2) + dot[q, q]*(dot[p, q]^3 + 2*(-1 + d)*dot[k, p]^2*dot[q, q] - dot[p, p]*dot[p, q]*dot[q, q] - (-1 + 2*d)*dot[k, p]*(dot[p, q]^2 - dot[p, p]*dot[q, q])))))/((-2 + d))").unwrap();
+
+        let reps = [
+            ("d", "dim"),
+            ("g", "G"),
+            ("TF", "Nc^2-1"),
+            // ("dot[p,q]", "(phat^2-dot[p,p])*dot[q,q]"),
+        ]
+        .iter()
+        .map(|(a, b)| {
+            Replacement::new(
+                Atom::parse(a).unwrap().to_pattern(),
+                Atom::parse(b).unwrap().to_pattern(),
+            )
+        })
+        .collect::<Vec<_>>();
+        println!(
+            "zeno {}",
+            exprzeno
+                .replace_all_multiple(&reps)
+                .expand()
+                .printer(PrintOptions {
+                    terms_on_new_line: true,
+                    ..Default::default()
+                })
+        );
+
+        let repsmine = [
+            // ("dot[p,q]", "(phat^2-dot[p,p])*dot[q,q]"),
+            //
+            ("phat^-2", "dot[q,q]/(dot[p,p]-dot[p,q]*dot[p,q])"),
+            // ("phat^-4", "(dot[p,p]-dot[p,q]*dot[p,q]/dot[q,q])^-2"),
+            ("k(3)", "k"),
+            ("TF", "Nc^2-1"),
+        ]
+        .iter()
+        .map(|(a, b)| {
+            Replacement::new(
+                Atom::parse(a).unwrap().to_pattern(),
+                Atom::parse(b).unwrap().to_pattern(),
+            )
+        })
+        .collect::<Vec<_>>();
+
+        let varmap = Arc::new(vec![
+            Atom::parse("dot[p,p]").unwrap().into(),
+            Atom::parse("dot[p,q]").unwrap().into(),
+            Atom::parse("dot[q,q]").unwrap().into(),
+            Atom::parse("dot[k,p]").unwrap().into(),
+            Atom::parse("dot[k,q]").unwrap().into(),
+            Atom::parse("dot[k,k]").unwrap().into(),
+        ]);
+
+        let a = expr
+            .expand()
+            .replace_all_multiple(&repsmine)
+            .expand()
+            .to_rational_polynomial::<_, _, u8>(&Q, &Z, Some(varmap.clone()))
+            .apart(1);
+
+        for i in a {
+            // let mut buf = String::new();
+            // i.format(
+            //     &PrintOptions {
+            //         terms_on_new_line: true,
+            //         ..Default::default()
+            //     },
+            //     PrintState::default(),
+            //     &mut buf,
+            // );
+
+            let n = i
+                .to_expression()
+                .expand()
+                .to_rational_polynomial::<_, _, u8>(&Q, &Z, Some(varmap.clone()))
+                .apart(0);
+            for j in n {
+                println!("part:{}", j);
+            }
+        }
+
+        // println!(
+        //     "mine {}",
+        //     expr.expand()
+        //         .replace_all_multiple(&repsmine)
+        //         .expand()
+        //         .to_rational_polynomial::<_, _, u8>(&Q, &Z, Some(varmap))
+        //         .apart() // .to_expression()
+        //                  // .printer(PrintOptions {
+        //                  //     terms_on_new_line: true,
+        //                  //     ..Default::default()
+        //                  // })
+        // );
+
+        // println!(
+        //     "{:#}",
+        //     (expr.replace_all_multiple(&repsmine) - exprzeno.replace_all_multiple(&reps))
+        //         .to_rational_polynomial::<_, _, u8>(&Q, &Z, None)
+        // );
+    }
+}
