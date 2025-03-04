@@ -544,6 +544,7 @@ pub fn numerator_dis_apply(num: &mut Atom) {
         (Atom::parse("ee").unwrap(), Atom::parse("eq*3").unwrap()),
         (Atom::new_var(Atom::I), Atom::parse("I").unwrap()),
         (Atom::parse("TR").unwrap(), Atom::parse("TF").unwrap()),
+        // (Atom::parse("Nc^2").unwrap(), Atom::parse("TF-1").unwrap()),
     ];
 
     let replacements: Vec<Replacement> = reps
@@ -1012,19 +1013,21 @@ impl DisGraph {
         let metric = function!(ETS.metric, mu, nu);
         let p = symb!("p");
         let q = symb!("q");
-        let phat2 = Atom::new_var(symb!("phat")).pow(Atom::new_num(2));
-        let pp = function!(p, mu) * function!(p, nu);
 
+        // Atom::new_var(symb!("phat")).pow(Atom::new_num(2));
         let pdq = function!(DIS_SYMBOLS.dot, p, q);
-
         let q2 = function!(DIS_SYMBOLS.dot, q, q);
+        let phat2 = function!(DIS_SYMBOLS.dot, p, p) - &pdq * &pdq / &q2;
+        let pp = (function!(p, mu) - &pdq / &q2 * function!(q, mu))
+            * (function!(p, nu) - &pdq / &q2 * function!(q, nu)); // function!(p, nu);
+
         let diminv = Atom::new_num(1) / (Atom::new_var(GS.dim) - 2);
 
         // Atom::parse("1/(2-dim)").unwrap();
 
         let w1_proj = GlobalPrefactor {
             color: Atom::new_num(1),
-            colorless: &diminv * (&pp / &phat2 - &metric),
+            colorless: &diminv * (&metric - &pp / &phat2),
         };
         let w2_proj = GlobalPrefactor {
             color: Atom::new_num(1),
@@ -1405,8 +1408,10 @@ impl DisGraph {
             .map(|(k, v)| {
                 (
                     k.clone(),
-                    v.replace_all_multiple_repeat(&emr_to_lmb_cut)
-                        * self.color_and_spin_average(cut),
+                    (v.replace_all_multiple_repeat(&emr_to_lmb_cut)
+                        * self.color_and_spin_average(cut))
+                    .expand()
+                    .factor(),
                 )
             })
             .collect()
