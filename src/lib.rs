@@ -1398,7 +1398,7 @@ impl DisGraph {
 
         match cut_content {
             0 => Atom::new_num(1) / ((&nc * &nc - 1) * (Atom::new_var(GS.dim) - 2)),
-            _ => Atom::new_num(1) / (nc * 2).pow(Atom::new_num(cut_content as i32)),
+            _ => Atom::new_num(1) / (nc * 2).pow(Atom::new_num(cut_content.abs() as i32)),
             // -1 => Atom::new_num(1) / (nc * 2),
             // _ => {
             // warn!("invalid cut content");
