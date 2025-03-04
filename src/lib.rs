@@ -204,9 +204,14 @@ impl IFCuts {
             // }
 
             map.insert(
+                "Cut content".to_string(),
+                graph.cut_content(first_initial).to_string(),
+            );
+            map.insert(
                 "Denominator".to_string(),
                 denom.to_atom().to_math_with_indent(4),
             );
+
             let denoms = denom
                 .partial_fraction()
                 .into_iter()
@@ -1364,7 +1369,7 @@ impl DisGraph {
         )
     }
 
-    fn color_and_spin_average(&self, cut: &OrientedCut) -> Atom {
+    pub fn cut_content(&self, cut: &OrientedCut) -> isize {
         let mut cut_content = 0;
         // println!("looking at cut {}", cut);
         cut.iter_edges_relative(&self.graph).for_each(|(a, p)| {
@@ -1384,11 +1389,16 @@ impl DisGraph {
             }
         });
 
+        cut_content
+    }
+
+    fn color_and_spin_average(&self, cut: &OrientedCut) -> Atom {
         let nc = Atom::new_var(symb!("Nc"));
+        let cut_content = self.cut_content(cut);
 
         match cut_content {
             0 => Atom::new_num(1) / ((&nc * &nc - 1) * (Atom::new_var(GS.dim) - 2)),
-            _ => Atom::new_num(1) / (nc * 2).pow(Atom::new_num(cut_content)),
+            _ => Atom::new_num(1) / (nc * 2).pow(Atom::new_num(cut_content as i32)),
             // -1 => Atom::new_num(1) / (nc * 2),
             // _ => {
             // warn!("invalid cut content");
