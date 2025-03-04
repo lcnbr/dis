@@ -3,3 +3,7 @@ target/
 .envrc
 objdump.txt
 
+ampTools2.1.m
+trace_form.log
+tensTools.m
+#numerator_benchmarks.nb
