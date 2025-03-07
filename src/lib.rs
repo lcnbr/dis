@@ -772,7 +772,7 @@ impl DisGraph {
             true,
         )
         .if_split(&self.graph, &|e| e.marked);
-        // i.remove_empty();
+        i.remove_empty();
         i
     }
 
