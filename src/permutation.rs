@@ -721,6 +721,8 @@ pub trait HedgeGraphExt {
     fn hedges_between(&self, a: NodeIndex, b: NodeIndex) -> BitVec;
 
     fn permute_subgraph<S: SubGraph>(&self, subgraph: &S, hedge_perm: &Permutation) -> BitVec;
+
+    fn orientation_ord(&self, hedge: Hedge) -> u8;
 }
 
 pub trait PermutationExt<Orderer: Ord = ()> {
@@ -764,11 +766,20 @@ impl<E, V> HedgeGraphExt for HedgeGraph<E, V> {
         }
         permuted_subgraph
     }
+
+    fn orientation_ord(&self, hedge: Hedge) -> u8 {
+        match self.superficial_hedge_orientation(hedge) {
+            Some(linnet::half_edge::Flow::Sink) => 1,
+            Some(linnet::half_edge::Flow::Source) => 2,
+            None => 0,
+        }
+    }
 }
 
 impl<E, V, O: Ord> PermutationExt<O> for HedgeGraph<E, V> {
     type Output = Permutation;
     type Edges = E;
+
     fn permute_vertices(
         &self,
         perm: &Permutation,
@@ -802,6 +813,7 @@ impl<E, V, O: Ord> PermutationExt<O> for HedgeGraph<E, V> {
                 .unwrap_or(self.node_id(hedge))
                 .0,
             ord(self.get_edge_data(hedge)),
+            self.orientation_ord(hedge),
         )
     }
 
@@ -817,6 +829,7 @@ impl<E, V, O: Ord> PermutationExt<O> for HedgeGraph<E, V> {
                 .unwrap_or(self.node_id(hedge))
                 .0],
             ord(self.get_edge_data(hedge)),
+            self.orientation_ord(hedge),
         )
     }
 }
@@ -1280,6 +1293,31 @@ mod tests {
             graph.dot(&permuted_b_c_edge),
             graph.dot(&permuted_c_a_edge)
         );
+        // let permuted_subgraph = hedgeperm.apply_slice(a.filter);
+    }
+
+    #[test]
+    fn cycle_permutation() {
+        let mut cycle = HedgeGraphBuilder::new();
+
+        let a = cycle.add_node(());
+        let b = cycle.add_node(());
+
+        cycle.add_edge(a, b, (), true);
+        cycle.add_edge(b, a, (), true);
+
+        let graph = cycle.build();
+        let perm = Permutation::from_cycles(&[vec![0, 1]]); //permutes a and b
+
+        let h = Hedge(0);
+        let mut h_sub = graph.empty_filter();
+        h_sub.set(h.0, true);
+
+        let hedge_perm = graph.permute_vertices(&perm, &|a| ());
+        let permuted_h = graph.permute_subgraph(&h_sub, &hedge_perm);
+
+        println!("//origninal:{}", graph.dot(&h_sub));
+        println!("//permuted:{}", graph.dot(&permuted_h));
         // let permuted_subgraph = hedgeperm.apply_slice(a.filter);
     }
 
