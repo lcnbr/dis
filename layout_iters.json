@@ -1,5 +1,5 @@
 {
-  "n_iters": 30,
-  "temp": 10.0,
-  "seed": 12
+    "n_iters": 30000,
+    "temp": 10.0,
+    "seed": 12
 }

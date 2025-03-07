@@ -10,6 +10,7 @@ use std::{
 };
 
 use gamma::Gamma;
+use libc::printf;
 // use libc::GS;
 use linnet::half_edge::{
     drawing::Decoration,
@@ -34,7 +35,7 @@ use indicatif::ProgressBar;
 use itertools::Itertools;
 use log::{debug, warn};
 use pathfinding::matrix::directions::W;
-use permutation::{HedgeGraphExt, Permutation};
+use permutation::{HedgeGraphExt, Permutation, PermutationError};
 use smartstring::{LazyCompact, SmartString};
 use spenso::{
     arithmetic::ScalarMul,
@@ -335,11 +336,10 @@ impl Embeddings {
 
         for cut in iter {
             let mut windings = Vec::new();
+            if !filter(&cut) {
+                continue;
+            }
             for bs in &bases {
-                if !filter(&cut) {
-                    continue;
-                }
-
                 let mut first_non_zero = None;
                 let mut new_windings = Vec::with_capacity(windings.len());
 
@@ -1168,26 +1168,29 @@ impl DisGraph {
             canonized_graph.automorphism_group_size,
             canonized_graph.graph.to_dot(),
         );
-        let mut bases = vec![basis.clone()];
+        let mut bases = vec![];
 
-        let hedges_orbit_generators = orbit_generators
-            .iter()
-            .map(|o| graph.permute_vertices(o, &|a| a.bare_edge.particle.pdg_code))
-            .collect::<Vec<_>>();
+        let all_maps = match Permutation::generate_all(&orbit_generators) {
+            Ok(a) => a,
+            Err(PermutationError::EmptyGenerators) => {
+                vec![Permutation::id(graph.n_nodes())]
+            }
+            Err(e) => panic!("Failed to generate all permutations: {}", e),
+        };
 
-        let all_maps = Permutation::generate_all(&hedges_orbit_generators).unwrap();
+        assert_eq!(
+            all_maps.len(),
+            canonized_graph.automorphism_group_size.to_i64().unwrap() as usize
+        );
 
         for map in &all_maps {
+            let hedge_map = graph.permute_vertices(map, &|a| a.bare_edge.particle.pdg_code);
             bases.push(Vec::from_iter(basis.iter().map(|c| {
-                Cycle::new_unchecked(graph.permute_subgraph(&c.filter, map))
+                Cycle::new_unchecked(graph.permute_subgraph(&c.filter, &hedge_map))
             })));
-            // println!("{}", map);
         }
 
-        for gen in &orbit_generators {
-            bases.push(basis.clone());
-            println!("{}", gen);
-        }
+        println!("number of bases: {}", bases.len());
 
         let sym_group = canonized_graph.automorphism_group_size;
         let mut numerator = AHashMap::new();

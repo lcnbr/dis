@@ -90,7 +90,7 @@ fn main() {
         .enumerate()
         .collect();
 
-    let bar = ProgressBar::new(diagrams.len() as u64);
+    // let bar = ProgressBar::new(diagrams.len() as u64);
     let padding = num_digits(diagrams.len());
 
     fs::create_dir_all(&format!("./outputs/{nloops}lo")).unwrap();
@@ -103,14 +103,14 @@ fn main() {
                 &format!("./outputs/{nloops}lo/supergraph{i:0a$}.typ", a = padding),
             )
             .unwrap();
-        bar.inc(1);
+        // bar.inc(1);
         ifsplit
             .to_other_mathematica_file(
                 &d,
                 &format!("./outputs/{nloops}lo/supergraph{i:0a$}.m", a = padding),
             )
             .unwrap();
-        bar.inc(1);
+        // bar.inc(1);
     });
     DisGraph::to_typst(
         &diagrams,
