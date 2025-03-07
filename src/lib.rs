@@ -1262,6 +1262,7 @@ impl DisGraph {
             canonized_graph.automorphism_group_size,
             canonized_graph.graph.to_dot(),
         );
+
         let mut bases = vec![];
 
         let all_maps = match Permutation::generate_all(&orbit_generators) {
@@ -1272,20 +1273,21 @@ impl DisGraph {
             Err(e) => panic!("Failed to generate all permutations: {}", e),
         };
 
-        assert_eq!(
-            all_maps.len(),
-            canonized_graph.automorphism_group_size.to_i64().unwrap() as usize
-        );
-
         for map in &all_maps {
-            let hedge_map = graph.permute_vertices(map, &|a| a.bare_edge.particle.pdg_code);
-            bases.push(Vec::from_iter(signed_basis.iter().map(|c| MySignedCycle {
-                filter: (graph.permute_subgraph(&c.filter, &hedge_map)),
-                loop_count: Some(1),
-            })));
+            let hedge_maps = graph.permute_vertices(map, &|a| a.bare_edge.particle.pdg_code);
+            for hedge_map in hedge_maps {
+                bases.push(Vec::from_iter(signed_basis.iter().map(|c| MySignedCycle {
+                    filter: (graph.permute_subgraph(&c.filter, &hedge_map)),
+                    loop_count: Some(1),
+                })));
+            }
         }
 
         println!("number of bases: {}", bases.len());
+        assert_eq!(
+            bases.len(),
+            canonized_graph.automorphism_group_size.to_i64().unwrap() as usize
+        );
 
         let sym_group = canonized_graph.automorphism_group_size;
         let mut numerator = AHashMap::new();
