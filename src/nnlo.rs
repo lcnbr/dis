@@ -97,6 +97,14 @@ fn main() {
 
     diagrams.par_iter().progress().for_each(|(i, d)| {
         let ifsplit = d.full_dis_filter_split();
+        println!("{} embeddings for graph: {}", ifsplit.cuts.len(), i);
+
+        let n_cuts = ifsplit
+            .cuts
+            .iter()
+            .fold(0, |acc, a| acc + a.1[0].len() + a.1[1].len());
+
+        println!("{} cuts for graph: {}", n_cuts, i);
         ifsplit
             .to_typst(
                 d,

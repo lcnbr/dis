@@ -1,6 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::BTreeMap,
+    fmt::format,
     fs::File,
     io::Write,
     ops::Neg,
@@ -202,7 +203,12 @@ impl IFCuts {
 
         for (e, cuts) in self.cuts.iter() {
             let mut map = AHashMap::new();
-            let first_initial = &cuts[0][0];
+            let first_initial = &cuts[0].first().unwrap_or_else(|| {
+                cuts[1].first().expect(&format!(
+                    "No initial or final for {:?}: {:?}",
+                    e.windings, cuts
+                ))
+            });
             map.insert("embedding".to_string(), e.windings.to_math_with_indent(4));
             let denom = graph.denominator(first_initial);
 
@@ -333,13 +339,15 @@ impl Embeddings {
         flip_sym: bool,
     ) -> Embeddings {
         let mut cuts = BTreeMap::new();
+        let mut len = 0;
 
         for cut in iter {
             let mut windings = Vec::new();
             if !filter(&cut) {
                 continue;
             }
-            for bs in &bases {
+            len += 1;
+            for bs in bases.iter() {
                 let mut first_non_zero = None;
                 let mut new_windings = Vec::with_capacity(windings.len());
 
@@ -367,6 +375,7 @@ impl Embeddings {
                 .push(cut);
         }
 
+        println!("{} embeddings from {} cuts", cuts.keys().len(), len);
         Embeddings { cuts, bases }
     }
 }
@@ -701,7 +710,7 @@ impl DisGraph {
             true,
         )
         .if_split(&self.graph, &|e| e.marked);
-        i.remove_empty();
+        // i.remove_empty();
         i
     }
 
