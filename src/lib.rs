@@ -384,10 +384,10 @@ impl Embeddings {
         // println!("cycle: {:?}", cycle);
         for h in cycle.filter.included_iter() {
             let a = SignOrZero::from(cut.relative_orientation(h)) * 1;
-            winding_number += a;
+            winding_number -= a;
             let b = SignOrZero::from(cut.relative_orientation(graph.graph.involution.inv(h))) * 1;
             // println!("a: {}, b: {}", a, b);
-            winding_number -= b;
+            winding_number += b;
         }
         winding_number
     }
@@ -769,7 +769,7 @@ impl DisGraph {
                     && alligned_electron
                     && !electron_disconnects
             },
-            true,
+            false,
         )
         .if_split(&self.graph, &|e| e.marked);
         i.remove_empty();
