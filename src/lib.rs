@@ -769,7 +769,7 @@ impl DisGraph {
                     && alligned_electron
                     && !electron_disconnects
             },
-            true,
+            false,
         )
         .if_split(&self.graph, &|e| e.marked);
         i.remove_empty();

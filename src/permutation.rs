@@ -1303,8 +1303,8 @@ mod tests {
         let a = cycle.add_node(());
         let b = cycle.add_node(());
 
-        cycle.add_edge(a, b, (), true);
-        cycle.add_edge(b, a, (), true);
+        cycle.add_edge(a, b, (), false);
+        cycle.add_edge(b, a, (), false);
 
         let graph = cycle.build();
         let perm = Permutation::from_cycles(&[vec![0, 1]]); //permutes a and b
@@ -1316,8 +1316,8 @@ mod tests {
         let hedge_perm = graph.permute_vertices(&perm, &|a| ());
         let permuted_h = graph.permute_subgraph(&h_sub, &hedge_perm);
 
-        println!("//origninal:{}", graph.dot(&h_sub));
-        println!("//permuted:{}", graph.dot(&permuted_h));
+        println!("//origninal:\n{}", graph.dot(&h_sub));
+        println!("//permuted:\n{}", graph.dot(&permuted_h));
         // let permuted_subgraph = hedgeperm.apply_slice(a.filter);
     }
 
