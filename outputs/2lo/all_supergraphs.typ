@@ -95,8 +95,8 @@ cetz.draw.hobby((-0.74, -0.05),(0.20, 0.65),(0.22, -0.53),stroke:stroke,mark: (e
 edge(node5.pos,(0.67, -0.68),node1.pos,decoration:"wave",angle:0.37rad)
 cetz.draw.content((0.71, -0.79),angle:0.37rad,[k(1)])
 cetz.draw.hobby((1.06, 0.54),(0.86, -0.64),(-0.32, -0.39),stroke:stroke,mark: (end: ">"))
-edge(node3.pos,(-0.73, -0.55),node2.pos,decoration:"coil",angle:5.26rad)
-cetz.draw.content((-0.83, -0.61),angle:5.26rad,[k(2)])
+edge(node3.pos,(-0.73, -0.55),node2.pos,decoration:"coil",angle:2.12rad)
+cetz.draw.content((-0.83, -0.61),angle:2.12rad,[k(2)])
 cetz.draw.hobby((-0.79, 0.14),(-0.65, -0.73),(0.23, -0.79),stroke:stroke,mark: (end: ">"))
 edge(node2.pos,(-0.40, 1.00),node4.pos,decoration:"arrow",angle:3.85rad)
 cetz.draw.content((-0.48, 1.09),angle:3.85rad,[k(2)+k(3)])
@@ -122,7 +122,7 @@ pagebreak()
                             = d1
  overall factor: -1
                             
- symmetry group: 1]
+ symmetry group: 2]
 grid(columns: cols,gutter: 20pt,box[#d10 ],)
 pagebreak()
 }

@@ -32,6 +32,9 @@ use indexmap::{IndexMap, IndexSet};
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use log::{debug, warn};
+use pathfinding::matrix::directions::W;
+use permutation::Permutation;
+use smartstring::{LazyCompact, SmartString};
 use spenso::{
     arithmetic::ScalarMul,
     contraction::Contract,
@@ -61,10 +64,11 @@ use symbolica::{
 };
 
 pub mod gamma;
+pub mod permutation;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Embeddings {
     pub cuts: BTreeMap<Embedding, Vec<OrientedCut>>,
-    pub basis: Vec<Cycle>,
+    pub bases: Vec<Vec<Cycle>>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -74,7 +78,7 @@ pub struct Embedding {
 
 pub struct IFCuts {
     pub cuts: BTreeMap<Embedding, [Vec<OrientedCut>; 2]>,
-    pub basis: Vec<Cycle>,
+    pub basis: Vec<Vec<Cycle>>,
 }
 
 impl IFCuts {
@@ -314,46 +318,53 @@ impl Embeddings {
 
         IFCuts {
             cuts,
-            basis: self.basis,
+            basis: self.bases,
         }
     }
 
     pub fn classify(
         iter: impl IntoIterator<Item = OrientedCut>,
-        basis: Vec<Cycle>,
+        bases: Vec<Vec<Cycle>>,
         filter: impl Fn(&OrientedCut) -> bool,
         flip_sym: bool,
     ) -> Embeddings {
         let mut cuts = BTreeMap::new();
 
         for cut in iter {
-            if !filter(&cut) {
-                continue;
-            }
             let mut windings = Vec::new();
-
-            let mut first_non_zero = None;
-
-            for cycle in basis.iter() {
-                let mut winding_number = cut.winding_number(cycle);
-                if flip_sym {
-                    if let Some(sign) = first_non_zero {
-                        winding_number *= sign as i32;
-                    } else if winding_number > 0 {
-                        first_non_zero = Some(Sign::Positive);
-                    } else if winding_number < 0 {
-                        first_non_zero = Some(Sign::Negative);
-                        winding_number *= -1;
-                    };
+            for bs in &bases {
+                if !filter(&cut) {
+                    continue;
                 }
-                windings.push(winding_number);
+
+                let mut first_non_zero = None;
+                let mut new_windings = Vec::with_capacity(windings.len());
+
+                for b in bs {
+                    let mut winding_number = cut.winding_number(b);
+                    if flip_sym {
+                        if let Some(sign) = first_non_zero {
+                            winding_number *= sign as i32;
+                        } else if winding_number > 0 {
+                            first_non_zero = Some(Sign::Positive);
+                        } else if winding_number < 0 {
+                            first_non_zero = Some(Sign::Negative);
+                            winding_number *= -1;
+                        };
+                    }
+                    new_windings.push(winding_number);
+                }
+
+                if new_windings <= windings || windings.is_empty() {
+                    windings = new_windings;
+                }
             }
             cuts.entry(Embedding { windings })
                 .or_insert_with(Vec::new)
                 .push(cut);
         }
 
-        Embeddings { cuts, basis }
+        Embeddings { cuts, bases }
     }
 }
 
@@ -565,10 +576,11 @@ pub struct DisGraph {
     marked_electron_edge: (EdgeId, usize),
     symmetry_group: Integer,
     lmb_photon: (EdgeId, usize),
+    orbit_generators: Vec<Permutation>,
     numerator: AHashMap<String, Atom>,
     denominator: DenominatorDis,
     overall_prefactor: Atom,
-    basis: Vec<Cycle>,
+    bases: Vec<Vec<Cycle>>,
 }
 
 impl DisGraph {
@@ -635,7 +647,7 @@ impl DisGraph {
     pub fn full_dis_filter_split(&self) -> IFCuts {
         let mut i = Embeddings::classify(
             OrientedCut::all_initial_state_cuts(&self.graph),
-            self.basis.clone(),
+            self.bases.clone(),
             |c| {
                 let contains_electron = self
                     .graph
@@ -704,18 +716,29 @@ impl DisGraph {
             match edge.edge_type {
                 EdgeType::Virtual => {
                     let source = map[&edge.vertices[0]];
+                    let oriented = edge.particle.spin == 2;
                     let sink = map[&edge.vertices[1]];
-                    builder.add_edge(source, sink, (i, edge.clone()), true);
+                    builder.add_edge(source, sink, (i, edge.clone()), oriented);
                 }
                 EdgeType::Incoming => {
                     // let source = map[&edge.vertices[0]];
                     let sink = map[&edge.vertices[1]];
-                    builder.add_external_edge(sink, (i, edge.clone()), true, Flow::Sink);
+                    builder.add_external_edge(
+                        sink,
+                        (i, edge.clone()),
+                        edge.particle.spin == 2,
+                        Flow::Sink,
+                    );
                 }
                 EdgeType::Outgoing => {
                     let source = map[&edge.vertices[0]];
                     // let sink = map[&edge.vertices[1]];
-                    builder.add_external_edge(source, (i, edge.clone()), true, Flow::Source);
+                    builder.add_external_edge(
+                        source,
+                        (i, edge.clone()),
+                        edge.particle.spin == 2,
+                        Flow::Source,
+                    );
                 }
             }
         }
@@ -804,7 +827,7 @@ impl DisGraph {
                     internal_index: vec![],
                 },
             ),
-            true,
+            false,
             Flow::Sink,
         );
 
@@ -821,7 +844,7 @@ impl DisGraph {
                     internal_index: vec![],
                 },
             ),
-            true,
+            false,
             Flow::Source,
         );
 
@@ -1105,13 +1128,51 @@ impl DisGraph {
         let symbolica_graph: symbolica::graph::Graph<_, _> = graph
             .clone()
             .map(
-                |v| v.bare_vertex.name,
+                |v| {
+                    match v.bare_vertex.vertex_info {
+                        VertexInfo::ExternalVertexInfo(e) => {
+                            // match e. {
+
+                            //     }//needs direction
+
+                            SmartString::from(e.particle.pdg_code.to_string())
+                        }
+                        VertexInfo::InteractonVertexInfo(i) => {
+                            // match i. {
+
+                            //     }//needs direction
+                            i.vertex_rule.name.clone()
+                        }
+                    }
+                },
                 |_, d| d.map(|d| d.bare_edge.particle.pdg_code),
             )
             .try_into()
             .unwrap();
 
-        let sym_group = symbolica_graph.canonize().automorphism_group_size;
+        println!("//Symbolica Graph: \n{}", symbolica_graph.to_dot());
+
+        let canonized_graph = symbolica_graph.canonize();
+
+        let orbit_generators = canonized_graph
+            .orbit_generators
+            .iter()
+            .map(|a| permutation::Permutation::from_cycles(a))
+            .collect::<Vec<_>>();
+
+        println!(
+            "//Orbit Generators: group of size {}\n//graph:\n{}",
+            canonized_graph.automorphism_group_size,
+            canonized_graph.graph.to_dot(),
+        );
+        let mut bases = vec![basis.clone()];
+
+        for gen in &orbit_generators {
+            bases.push(basis.clone());
+            println!("{}", gen);
+        }
+
+        let sym_group = canonized_graph.automorphism_group_size;
         let mut numerator = AHashMap::new();
         numerator.insert("F2".into(), f2);
         numerator.insert("FL".into(), fl);
@@ -1123,7 +1184,8 @@ impl DisGraph {
             denominator: DenominatorDis::new(props),
             lmb_photon: seen_pdg22.unwrap(),
             marked_electron_edge: seen_pdg11.unwrap(),
-            basis,
+            bases,
+            orbit_generators,
             symmetry_group: sym_group,
             overall_prefactor: Atom::parse(&bare.overall_factor).unwrap(),
         }
