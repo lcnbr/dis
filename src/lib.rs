@@ -408,7 +408,7 @@ impl Embeddings {
                 continue;
             }
             len += 1;
-            for bs in bases.first() {
+            for bs in bases.iter() {
                 let mut first_non_zero = None;
                 let mut new_windings = Vec::with_capacity(windings.len());
 
