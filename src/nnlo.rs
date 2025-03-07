@@ -102,7 +102,7 @@ fn main() {
         let n_cuts = ifsplit
             .cuts
             .iter()
-            .fold(0, |acc, a| acc + a.1[0].len() + a.1[1].len());
+            .fold(0, |acc, a| acc + a.1 .1[0].len() + a.1 .1[1].len());
 
         println!("{} cuts for graph: {}", n_cuts, i);
         ifsplit

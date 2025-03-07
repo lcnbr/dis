@@ -119,17 +119,18 @@ impl MySignedCycle {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Embeddings {
-    pub cuts: BTreeMap<Embedding, Vec<OrientedCut>>,
+    pub cuts: BTreeMap<Embedding, Vec<(OrientedCut, usize)>>,
     pub bases: Vec<Vec<MySignedCycle>>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct Embedding {
+    // pub basid: usize,
     pub windings: Vec<i32>,
 }
 
 pub struct IFCuts {
-    pub cuts: BTreeMap<Embedding, [Vec<OrientedCut>; 2]>,
+    pub cuts: BTreeMap<Embedding, (usize, [Vec<OrientedCut>; 2])>,
     pub basis: Vec<Vec<MySignedCycle>>,
 }
 
@@ -148,14 +149,14 @@ impl IFCuts {
         let number_of_layouts = self
             .cuts
             .iter()
-            .map(|a| a.1[0].len() + a.1[1].len())
+            .map(|a| a.1 .1[0].len() + a.1 .1[1].len())
             .fold(0, |acc, a| acc + a as u64);
 
         let bar = ProgressBar::new(number_of_layouts);
 
         for (i, (e, cuts)) in self.cuts.iter().enumerate() {
-            let first_initial = cuts[0].get(0);
-            let first_final = cuts[1].get(0);
+            let first_initial = cuts.1[0].get(0);
+            let first_final = cuts.1[1].get(0);
             let denom_init = first_initial.map(|cut| dis_graph.denominator(cut));
             let denom_final = first_final.map(|cut| dis_graph.denominator(cut));
             let denoms = denom_init.as_ref().map(DenominatorDis::partial_fraction);
@@ -167,7 +168,7 @@ impl IFCuts {
                 }
             }
 
-            let layout_emb_i: Vec<_> = cuts[0]
+            let layout_emb_i: Vec<_> = cuts.1[0]
                 .iter()
                 .map(|c| {
                     let l = dis_cut_layout(
@@ -179,25 +180,26 @@ impl IFCuts {
                         20.,
                     );
                     bar.inc(1);
-                    (c.to_string(), l)
+                    (format!("{}", c.to_string()), l)
                 })
                 .collect();
 
-            let layout_emb_f = cuts[1]
+            let layout_emb_f = cuts.1[1]
                 .iter()
                 .map(|c| {
                     let l = dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.);
                     bar.inc(1);
-                    (c.to_string(), l)
+                    (format!("{}", c.to_string()), l)
                 })
                 .collect();
 
             layouts.push((
                 format!("embedding{}i", i + 1),
                 format!(
-                    "= embedding {} {:?} \n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
+                    "= embedding {} {:?} with multiplicity {}\n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
                     i + 1,
                     e.windings,
+                    cuts.0,
                     denom_init.as_ref().map(DenominatorDis::to_atom).unwrap_or(Atom::new_num(0))
                         .printer(symbolica::printer::PrintOptions::mathematica()),
                     sum.printer(symbolica::printer::PrintOptions {
@@ -238,7 +240,8 @@ impl IFCuts {
     }
 
     pub fn remove_empty(&mut self) {
-        self.cuts.retain(|_, v| !v[0].is_empty() & !v[1].is_empty());
+        self.cuts
+            .retain(|_, v| !v.1[0].is_empty() & !v.1[1].is_empty());
     }
 
     pub fn to_other_mathematica_file(
@@ -250,23 +253,23 @@ impl IFCuts {
 
         for (e, cuts) in self.cuts.iter() {
             let mut map = AHashMap::new();
-            let first_initial = &cuts[0].first().unwrap_or_else(|| {
-                cuts[1].first().expect(&format!(
+            let first_initial = &cuts.1[0].first().unwrap_or_else(|| {
+                cuts.1[1].first().expect(&format!(
                     "No initial or final for {:?}: {:?}",
                     e.windings, cuts
                 ))
             });
             map.insert("embedding".to_string(), e.windings.to_math_with_indent(4));
-            let denom = graph.denominator(first_initial);
+            let denom = graph.denominator(&first_initial);
 
-            let numers: AHashMap<_, _> = graph.numerator(first_initial);
+            let numers: AHashMap<_, _> = graph.numerator(&first_initial);
             // for n in &numers {
             //     println!(":{n}");
             // }
 
             map.insert(
                 "Cut content".to_string(),
-                graph.cut_content(first_initial).to_string(),
+                graph.cut_content(&first_initial).to_string(),
             );
             map.insert(
                 "Denominator".to_string(),
@@ -305,7 +308,7 @@ impl IFCuts {
 
         for (e, cuts) in self.cuts.iter() {
             let mut map = AHashMap::new();
-            let first_initial = &cuts[0][0];
+            let first_initial = &cuts.1[0][0];
             map.insert("embedding".to_string(), e.windings.to_math());
             let denom = graph.denominator(first_initial);
             let numers = graph.numerator(first_initial);
@@ -354,22 +357,26 @@ impl Embeddings {
             .into_iter()
             .map(|(k, v)| {
                 let mut split = [Vec::new(), Vec::new()];
-                for cut in v {
-                    let mut is_in = false;
-                    for (_, e) in cut.iter_edges(graph) {
-                        if filter(e.as_ref().data.unwrap()) {
-                            is_in = true;
+                let mut ids = AHashSet::new();
+                for (cut, i) in v {
+                    ids.insert(i);
+                    if i == 0 {
+                        let mut is_in = false;
+                        for (_, e) in cut.iter_edges(graph) {
+                            if filter(e.as_ref().data.unwrap()) {
+                                is_in = true;
+                            }
                         }
-                    }
 
-                    if is_in {
-                        split[0].push(cut);
-                    } else {
-                        split[1].push(cut);
+                        if is_in {
+                            split[0].push(cut);
+                        } else {
+                            split[1].push(cut);
+                        }
                     }
                 }
 
-                (k, split)
+                (k, (ids.len(), split))
             })
             .collect();
 
@@ -404,11 +411,12 @@ impl Embeddings {
 
         for cut in iter {
             let mut windings = Vec::new();
+            let mut basid = 0;
             if !filter(&cut) {
                 continue;
             }
             len += 1;
-            for bs in bases.iter() {
+            for (i, bs) in bases.iter().enumerate() {
                 let mut first_non_zero = None;
                 let mut new_windings = Vec::with_capacity(windings.len());
 
@@ -429,11 +437,12 @@ impl Embeddings {
 
                 if new_windings <= windings || windings.is_empty() {
                     windings = new_windings;
+                    basid = i;
                 }
             }
             cuts.entry(Embedding { windings })
                 .or_insert_with(Vec::new)
-                .push(cut);
+                .push((cut, basid));
         }
 
         println!("{} embeddings from {} cuts", cuts.keys().len(), len);
@@ -769,7 +778,7 @@ impl DisGraph {
                     && alligned_electron
                     && !electron_disconnects
             },
-            false,
+            true,
         )
         .if_split(&self.graph, &|e| e.marked);
         i.remove_empty();

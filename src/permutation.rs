@@ -812,8 +812,8 @@ impl<E, V, O: Ord> PermutationExt<O> for HedgeGraph<E, V> {
             self.involved_node_id(hedge)
                 .unwrap_or(self.node_id(hedge))
                 .0,
-            ord(self.get_edge_data(hedge)),
             self.orientation_ord(hedge),
+            ord(self.get_edge_data(hedge)),
         )
     }
 
@@ -828,8 +828,8 @@ impl<E, V, O: Ord> PermutationExt<O> for HedgeGraph<E, V> {
                 .involved_node_id(hedge)
                 .unwrap_or(self.node_id(hedge))
                 .0],
-            ord(self.get_edge_data(hedge)),
             self.orientation_ord(hedge),
+            ord(self.get_edge_data(hedge)),
         )
     }
 }

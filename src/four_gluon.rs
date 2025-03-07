@@ -93,7 +93,7 @@ fn main() {
     for (i, (e, cuts)) in ifsplit.cuts.iter().enumerate() {
         println!("Embedding {}:{:?}", i + 1, e.windings);
 
-        let first_initial = &cuts[0][0];
+        let first_initial = &cuts.1[0][0];
 
         let denom = dis_graph.denominator(first_initial);
         let _num: Vec<_> = dis_graph
