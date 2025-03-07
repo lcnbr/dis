@@ -16,7 +16,7 @@ use libc::printf;
 use linnet::half_edge::{
     drawing::Decoration,
     layout::{FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph},
-    subgraph::{Cycle, Inclusion, OrientedCut, SubGraph, SubGraphOps},
+    subgraph::{Inclusion, OrientedCut, SubGraph, SubGraphOps},
     EdgeData, EdgeId, Flow, Hedge, HedgeGraph, HedgeGraphBuilder, InvolutiveMapping, NodeIndex,
     Orientation, SignOrZero,
 };
@@ -70,10 +70,57 @@ use crate::permutation::PermutationExt;
 
 pub mod gamma;
 pub mod permutation;
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct MySignedCycle {
+    pub filter: BitVec,
+    pub loop_count: Option<usize>,
+}
+
+impl MySignedCycle {
+    pub fn from_cycle<N, E>(
+        cycle: linnet::half_edge::subgraph::Cycle,
+        according_to: Hedge,
+        graph: &HedgeGraph<N, E>,
+    ) -> Option<Self> {
+        if !cycle.is_circuit(graph) {
+            return None;
+        }
+
+        if !cycle.filter.includes(&according_to) {
+            return None;
+        }
+
+        let mut filter = graph.empty_filter();
+
+        let mut current_hedge = according_to;
+
+        loop {
+            if filter.includes(&current_hedge) {
+                break;
+            }
+            filter.set(current_hedge.0, true);
+
+            current_hedge = graph.involution.inv(
+                graph
+                    .hairs_from_id(graph.node_id(current_hedge))
+                    .hairs
+                    .included_iter()
+                    .find(|h| cycle.filter.includes(h) && (*h != current_hedge))?,
+            );
+        }
+
+        Some(MySignedCycle {
+            filter,
+            loop_count: cycle.loop_count,
+        })
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Embeddings {
     pub cuts: BTreeMap<Embedding, Vec<OrientedCut>>,
-    pub bases: Vec<Vec<Cycle>>,
+    pub bases: Vec<Vec<MySignedCycle>>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -83,7 +130,7 @@ pub struct Embedding {
 
 pub struct IFCuts {
     pub cuts: BTreeMap<Embedding, [Vec<OrientedCut>; 2]>,
-    pub basis: Vec<Vec<Cycle>>,
+    pub basis: Vec<Vec<MySignedCycle>>,
 }
 
 impl IFCuts {
@@ -332,9 +379,23 @@ impl Embeddings {
         }
     }
 
+    pub fn winding(cut: &OrientedCut, cycle: &MySignedCycle, graph: &DisGraph) -> i32 {
+        let mut winding_number = 0;
+        // println!("cycle: {:?}", cycle);
+        for h in cycle.filter.included_iter() {
+            let a = SignOrZero::from(cut.relative_orientation(h)) * 1;
+            winding_number += a;
+            let b = SignOrZero::from(cut.relative_orientation(graph.graph.involution.inv(h))) * 1;
+            // println!("a: {}, b: {}", a, b);
+            winding_number -= b;
+        }
+        winding_number
+    }
+
     pub fn classify(
+        graph: &DisGraph,
         iter: impl IntoIterator<Item = OrientedCut>,
-        bases: Vec<Vec<Cycle>>,
+        bases: Vec<Vec<MySignedCycle>>,
         filter: impl Fn(&OrientedCut) -> bool,
         flip_sym: bool,
     ) -> Embeddings {
@@ -352,7 +413,7 @@ impl Embeddings {
                 let mut new_windings = Vec::with_capacity(windings.len());
 
                 for b in bs {
-                    let mut winding_number = cut.winding_number(b);
+                    let mut winding_number = Self::winding(&cut, b, graph);
                     if flip_sym {
                         if let Some(sign) = first_non_zero {
                             winding_number *= sign as i32;
@@ -592,7 +653,7 @@ pub struct DisGraph {
     numerator: AHashMap<String, Atom>,
     denominator: DenominatorDis,
     overall_prefactor: Atom,
-    bases: Vec<Vec<Cycle>>,
+    bases: Vec<Vec<MySignedCycle>>,
 }
 
 impl DisGraph {
@@ -658,6 +719,7 @@ impl DisGraph {
 
     pub fn full_dis_filter_split(&self) -> IFCuts {
         let mut i = Embeddings::classify(
+            self,
             OrientedCut::all_initial_state_cuts(&self.graph),
             self.bases.clone(),
             |c| {
@@ -937,6 +999,20 @@ impl DisGraph {
         // println!("aligning tree");
         h.align_to_tree_underlying(&tree);
 
+        let signed_basis: Vec<_> = basis
+            .iter()
+            .map(|c| {
+                let according_to = tree
+                    .tree
+                    .filter
+                    .intersection(&c.filter)
+                    .included_iter()
+                    .find(|i| h.underlying_hedge_orientation(*i) == Flow::Sink)
+                    .unwrap();
+                MySignedCycle::from_cycle(c.clone(), according_to, &h).unwrap()
+            })
+            .collect();
+
         // println!("{}", h.base_dot());
         // println!("{}", h.dot(&tree.tree));
 
@@ -1194,8 +1270,9 @@ impl DisGraph {
 
         for map in &all_maps {
             let hedge_map = graph.permute_vertices(map, &|a| a.bare_edge.particle.pdg_code);
-            bases.push(Vec::from_iter(basis.iter().map(|c| {
-                Cycle::new_unchecked(graph.permute_subgraph(&c.filter, &hedge_map))
+            bases.push(Vec::from_iter(signed_basis.iter().map(|c| MySignedCycle {
+                filter: (graph.permute_subgraph(&c.filter, &hedge_map)),
+                loop_count: Some(1),
             })));
         }
 
