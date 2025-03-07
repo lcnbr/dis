@@ -1,11 +1,12 @@
 use std::{fmt, ops::Index};
 
+use ahash::{AHashMap, AHashSet};
 use bitvec::vec::BitVec;
-use libc::PENDIN;
 use linnet::half_edge::{
     subgraph::{InternalSubGraph, SubGraph, SubGraphOps},
     Hedge, HedgeGraph, NodeIndex,
 };
+use thiserror::Error;
 
 /// A permutation of `0..n`, with the ability to apply itself (or its inverse) to slices.
 ///
@@ -22,7 +23,7 @@ use linnet::half_edge::{
 /// let permuted = p.apply_slice(&data);
 /// assert_eq!(permuted, vec![30, 10, 20, 40]);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Permutation {
     map: Vec<usize>,
     inv: Vec<usize>,
@@ -675,68 +676,76 @@ impl Permutation {
     pub fn from_cycles(cycles: &[Vec<usize>]) -> Self {
         Self::from_cycles_ordered(cycles, CycleOrder::LastFirst)
     }
+
+    pub fn length(&self) -> usize {
+        self.map.len()
+    }
+
+    pub fn generate_all(generators: &[Permutation]) -> Result<Vec<Permutation>, PermutationError> {
+        let size = if let Some(generator) = generators.first() {
+            generator.length()
+        } else {
+            return Err(PermutationError::EmptyGenerators);
+        };
+        let mut all = AHashSet::new();
+        let mut stack = vec![Permutation::id(size)];
+        for g in generators {
+            if g.length() != size {
+                return Err(PermutationError::InvalidGeneratorLength);
+            }
+        }
+
+        while let Some(current) = stack.pop() {
+            for g in generators {
+                let next = current.compose(g);
+                if all.insert(next.clone()) {
+                    stack.push(next);
+                }
+            }
+        }
+
+        Ok(all.drain().collect())
+    }
 }
 
-pub trait PermutationExt {
-    // fn from_disjoint_cycles(cycles: &[Vec<usize>]) -> Result<Self, String>;
-    //
-    type Output;
-    fn permute_vertices(&self, perm: &Permutation) -> Self::Output;
+#[derive(Error, Debug)]
+pub enum PermutationError {
+    #[error("Invalid generator length")]
+    InvalidGeneratorLength,
 
-    fn sort_by(&self, hedge: Hedge) -> impl Ord;
+    #[error("Empty generators")]
+    EmptyGenerators,
+}
 
-    fn sort_by_perm(&self, hedge: Hedge, perm: &Permutation) -> impl Ord;
-
+pub trait HedgeGraphExt {
     fn hedges_between(&self, a: NodeIndex, b: NodeIndex) -> BitVec;
 
     fn permute_subgraph<S: SubGraph>(&self, subgraph: &S, hedge_perm: &Permutation) -> BitVec;
 }
 
-impl<E: Ord, V> PermutationExt for HedgeGraph<E, V> {
-    type Output = Permutation;
+pub trait PermutationExt<Orderer: Ord = ()> {
+    // fn from_disjoint_cycles(cycles: &[Vec<usize>]) -> Result<Self, String>;
+    //
+    type Output;
+    type Edges;
 
-    fn permute_vertices(&self, perm: &Permutation) -> Self::Output {
-        let transpositions = perm.map();
-        let mut map = (0..self.n_hedges()).collect::<Vec<_>>();
+    fn permute_vertices(
+        &self,
+        perm: &Permutation,
+        ord: &impl Fn(&Self::Edges) -> Orderer,
+    ) -> Self::Output;
 
-        for (from, &to) in transpositions.iter().enumerate() {
-            let from_hairs = &self.hairs_from_id(linnet::half_edge::NodeIndex(from)).hairs;
-            let mut from_hedges = from_hairs.included_iter().collect::<Vec<_>>();
-            let to_hairs = &self.hairs_from_id(linnet::half_edge::NodeIndex(to)).hairs;
-            let mut to_hedges = to_hairs.included_iter().collect::<Vec<_>>();
+    fn sort_by(&self, hedge: Hedge, ord: &impl Fn(&Self::Edges) -> Orderer) -> impl Ord;
 
-            from_hedges.sort_by(|a, b| self.sort_by(*a).cmp(&self.sort_by(*b)));
+    fn sort_by_perm(
+        &self,
+        hedge: Hedge,
+        perm: &Permutation,
+        ord: &impl Fn(&Self::Edges) -> Orderer,
+    ) -> impl Ord;
+}
 
-            to_hedges.sort_by(|a, b| {
-                self.sort_by_perm(*a, perm)
-                    .cmp(&self.sort_by_perm(*b, perm))
-            });
-            for (from_hedge, to_hedge) in from_hedges.iter().zip(to_hedges.iter()) {
-                map[from_hedge.0] = to_hedge.0;
-            }
-        }
-        Permutation::from_map(map)
-    }
-
-    fn sort_by(&self, hedge: Hedge) -> impl Ord {
-        (
-            self.involved_node_id(hedge)
-                .unwrap_or(self.node_id(hedge))
-                .0,
-            self.get_edge_data(hedge),
-        )
-    }
-
-    fn sort_by_perm(&self, hedge: Hedge, perm: &Permutation) -> impl Ord {
-        (
-            perm[self
-                .involved_node_id(hedge)
-                .unwrap_or(self.node_id(hedge))
-                .0],
-            self.get_edge_data(hedge),
-        )
-    }
-
+impl<E, V> HedgeGraphExt for HedgeGraph<E, V> {
     fn hedges_between(&self, a: NodeIndex, b: NodeIndex) -> BitVec {
         let a_ext =
             InternalSubGraph::cleaned_filter_optimist(self.hairs_from_id(a).hairs.clone(), self)
@@ -757,6 +766,61 @@ impl<E: Ord, V> PermutationExt for HedgeGraph<E, V> {
     }
 }
 
+impl<E, V, O: Ord> PermutationExt<O> for HedgeGraph<E, V> {
+    type Output = Permutation;
+    type Edges = E;
+    fn permute_vertices(
+        &self,
+        perm: &Permutation,
+        ord: &impl Fn(&Self::Edges) -> O,
+    ) -> Self::Output {
+        let transpositions = perm.map();
+        let mut map = (0..self.n_hedges()).collect::<Vec<_>>();
+
+        for (from, &to) in transpositions.iter().enumerate() {
+            let from_hairs = &self.hairs_from_id(linnet::half_edge::NodeIndex(from)).hairs;
+            let mut from_hedges = from_hairs.included_iter().collect::<Vec<_>>();
+            let to_hairs = &self.hairs_from_id(linnet::half_edge::NodeIndex(to)).hairs;
+            let mut to_hedges = to_hairs.included_iter().collect::<Vec<_>>();
+
+            from_hedges.sort_by(|a, b| self.sort_by(*a, ord).cmp(&self.sort_by(*b, ord)));
+
+            to_hedges.sort_by(|a, b| {
+                self.sort_by_perm(*a, perm, ord)
+                    .cmp(&self.sort_by_perm(*b, perm, ord))
+            });
+            for (from_hedge, to_hedge) in from_hedges.iter().zip(to_hedges.iter()) {
+                map[from_hedge.0] = to_hedge.0;
+            }
+        }
+        Permutation::from_map(map)
+    }
+
+    fn sort_by(&self, hedge: Hedge, ord: &impl Fn(&Self::Edges) -> O) -> impl Ord {
+        (
+            self.involved_node_id(hedge)
+                .unwrap_or(self.node_id(hedge))
+                .0,
+            ord(self.get_edge_data(hedge)),
+        )
+    }
+
+    fn sort_by_perm(
+        &self,
+        hedge: Hedge,
+        perm: &Permutation,
+        ord: &impl Fn(&Self::Edges) -> O,
+    ) -> impl Ord {
+        (
+            perm[self
+                .involved_node_id(hedge)
+                .unwrap_or(self.node_id(hedge))
+                .0],
+            ord(self.get_edge_data(hedge)),
+        )
+    }
+}
+
 impl Index<usize> for Permutation {
     type Output = usize;
 
@@ -767,7 +831,7 @@ impl Index<usize> for Permutation {
 
 #[cfg(test)]
 mod tests {
-    use linnet::half_edge::{subgraph::InternalSubGraph, HedgeGraphBuilder};
+    use linnet::half_edge::{subgraph::InternalSubGraph, Flow, HedgeGraphBuilder};
 
     use super::*;
 
@@ -1110,7 +1174,7 @@ mod tests {
         let b_c_edge = graph.hedges_between(b, c);
         let c_a_edge = graph.hedges_between(c, a);
 
-        let hedge_perm = graph.permute_vertices(&perm);
+        let hedge_perm = graph.permute_vertices(&perm, &|a| ());
         let permuted_b_c_edge = graph.permute_subgraph(&b_c_edge, &hedge_perm);
         let permuted_a_b_edge = graph.permute_subgraph(&a_b_edge, &hedge_perm);
         let permuted_c_a_edge = graph.permute_subgraph(&c_a_edge, &hedge_perm);
@@ -1125,5 +1189,119 @@ mod tests {
         //     graph.dot(&permuted_subgraph)
         // )
         // let permuted_subgraph = hedgeperm.apply_slice(cleaned_subgraph.filter);
+    }
+
+    #[test]
+    fn test_permute_graph_double_edges() {
+        let mut triangle = HedgeGraphBuilder::new();
+
+        let a = triangle.add_node(());
+        let b = triangle.add_node(());
+        let c = triangle.add_node(());
+
+        triangle.add_edge(a, b, (), false);
+
+        triangle.add_external_edge(a, (), false, Flow::Sink);
+        triangle.add_edge(b, c, (), false);
+        triangle.add_external_edge(c, (), false, Flow::Source);
+        triangle.add_edge(c, a, (), false);
+        triangle.add_edge(c, a, (), false);
+        let graph = triangle.build();
+        let perm = Permutation::from_cycles(&[vec![0, 2], vec![1]]); //permutes a and c
+
+        let a_b_edge = graph.hedges_between(a, b);
+        let b_c_edge = graph.hedges_between(b, c);
+        let c_a_edge = graph.hedges_between(c, a);
+
+        let hedge_perm = graph.permute_vertices(&perm, &|a| ());
+        let permuted_b_c_edge = graph.permute_subgraph(&b_c_edge, &hedge_perm);
+        let permuted_a_b_edge = graph.permute_subgraph(&a_b_edge, &hedge_perm);
+        let permuted_c_a_edge = graph.permute_subgraph(&c_a_edge, &hedge_perm);
+
+        assert_eq!(a_b_edge, permuted_b_c_edge);
+        assert_eq!(b_c_edge, permuted_a_b_edge);
+        assert_eq!(c_a_edge, permuted_c_a_edge);
+
+        println!(
+            "//a-c\n{}\n//a-b\n{}\n//b-c\n{}",
+            graph.dot(&c_a_edge),
+            graph.dot(&a_b_edge),
+            graph.dot(&b_c_edge)
+        );
+        println!(
+            "//permuted a-b\n{}\n//permuted b-c\n{}\n//permuted c-a\n{}",
+            graph.dot(&permuted_a_b_edge),
+            graph.dot(&permuted_b_c_edge),
+            graph.dot(&permuted_c_a_edge)
+        );
+        // let permuted_subgraph = hedgeperm.apply_slice(a.filter);
+    }
+
+    #[test]
+    fn test_permute_double_triangle() {
+        let mut doubletriangle = HedgeGraphBuilder::new();
+
+        let a = doubletriangle.add_node(());
+        let b = doubletriangle.add_node(());
+        let c = doubletriangle.add_node(());
+        let d = doubletriangle.add_node(());
+
+        doubletriangle.add_edge(a, b, (), false);
+
+        doubletriangle.add_edge(b, c, (), false);
+        doubletriangle.add_edge(c, d, (), false);
+        doubletriangle.add_edge(d, a, (), false);
+        doubletriangle.add_edge(c, a, (), false);
+        let graph = doubletriangle.build();
+        let perm = Permutation::from_cycles(&[vec![0, 2], vec![3]]); //permutes a and c
+
+        let a_b_edge = graph.hedges_between(a, b);
+        let b_c_edge = graph.hedges_between(b, c);
+        let c_a_edge = graph.hedges_between(c, a);
+
+        let hedge_perm = graph.permute_vertices(&perm, &|a| ());
+        let permuted_b_c_edge = graph.permute_subgraph(&b_c_edge, &hedge_perm);
+        let permuted_a_b_edge = graph.permute_subgraph(&a_b_edge, &hedge_perm);
+        let permuted_c_a_edge = graph.permute_subgraph(&c_a_edge, &hedge_perm);
+
+        assert_eq!(a_b_edge, permuted_b_c_edge);
+        assert_eq!(b_c_edge, permuted_a_b_edge);
+        assert_eq!(c_a_edge, permuted_c_a_edge);
+
+        println!(
+            "//a-c\n{}\n//a-b\n{}\n//b-c\n{}",
+            graph.dot(&c_a_edge),
+            graph.dot(&a_b_edge),
+            graph.dot(&b_c_edge)
+        );
+        println!(
+            "//permuted a-b\n{}\n//permuted b-c\n{}\n//permuted c-a\n{}",
+            graph.dot(&permuted_a_b_edge),
+            graph.dot(&permuted_b_c_edge),
+            graph.dot(&permuted_c_a_edge)
+        );
+        // let permuted_subgraph = hedgeperm.apply_slice(a.filter);
+    }
+
+    #[test]
+    fn generate_all() {
+        fn generator_pair(n: usize) -> [Permutation; 2] {
+            let mut map = Vec::new();
+            for i in 0..n {
+                map.push((i + 1) % n)
+            }
+            [
+                Permutation::from_map(map),
+                Permutation::from_cycles(&[vec![0, n - 1]]),
+            ]
+        }
+
+        let all_2 = Permutation::generate_all(&generator_pair(2)).unwrap();
+
+        let all_3 = Permutation::generate_all(&generator_pair(3)).unwrap();
+        let all_4 = Permutation::generate_all(&generator_pair(4)).unwrap();
+        assert_eq!(all_2.len(), 2);
+        assert_eq!(all_3.len(), 6);
+        assert_eq!(all_4.len(), 24);
     }
 }

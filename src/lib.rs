@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     collections::BTreeMap,
     fs::File,
     io::Write,
@@ -33,7 +34,7 @@ use indicatif::ProgressBar;
 use itertools::Itertools;
 use log::{debug, warn};
 use pathfinding::matrix::directions::W;
-use permutation::Permutation;
+use permutation::{HedgeGraphExt, Permutation};
 use smartstring::{LazyCompact, SmartString};
 use spenso::{
     arithmetic::ScalarMul,
@@ -62,6 +63,8 @@ use symbolica::{
     symb,
     tensors::matrix::Matrix,
 };
+
+use crate::permutation::PermutationExt;
 
 pub mod gamma;
 pub mod permutation;
@@ -1167,6 +1170,20 @@ impl DisGraph {
         );
         let mut bases = vec![basis.clone()];
 
+        let hedges_orbit_generators = orbit_generators
+            .iter()
+            .map(|o| graph.permute_vertices(o, &|a| a.bare_edge.particle.pdg_code))
+            .collect::<Vec<_>>();
+
+        let all_maps = Permutation::generate_all(&hedges_orbit_generators).unwrap();
+
+        for map in &all_maps {
+            bases.push(Vec::from_iter(basis.iter().map(|c| {
+                Cycle::new_unchecked(graph.permute_subgraph(&c.filter, map))
+            })));
+            // println!("{}", map);
+        }
+
         for gen in &orbit_generators {
             bases.push(basis.clone());
             println!("{}", gen);
@@ -1592,6 +1609,18 @@ pub struct DisEdge {
     emr_idx: usize,
     emr_momentum: Atom,
 }
+
+// impl PartialEq for DisEdge {
+//     fn eq(&self, other: &Self) -> bool {
+
+//     }
+// }
+
+// impl PartialOrd for DisEdge {
+//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+//         self.bare_edge.particle.pdg_code.partial_cmp(&other.bare_edge.particle.pdg_code.)
+//     }
+// }
 
 impl DisEdge {
     pub fn decoration(&self) -> Decoration {
