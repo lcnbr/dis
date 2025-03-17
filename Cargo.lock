@@ -1178,8 +1178,8 @@ checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
 
 [[package]]
 name = "gammalooprs"
-version = "0.3.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=d9b91ea32e9bb26d72aedaea33f96e5fa1e16416#d9b91ea32e9bb26d72aedaea33f96e5fa1e16416"
+version = "0.3.2"
+source = "git+https://github.com/alphal00p/gammaloop?rev=ccfefbc2a26d485d778794d4322f35854524cdf1#ccfefbc2a26d485d778794d4322f35854524cdf1"
 dependencies = [
  "ahash",
  "argmin",

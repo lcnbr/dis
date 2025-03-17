@@ -830,7 +830,7 @@ impl DisGraph {
 
         let mut outer_ring_builder = HedgeGraphBuilder::new();
 
-        let epemavertex = model.get_vertex_rule(&"V_98".into());
+        let epemavertex = model.get_vertex_rule("V_98");
 
         let o1 = outer_ring_builder.add_node((
             10000,

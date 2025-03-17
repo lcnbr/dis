@@ -42,6 +42,7 @@ fn main() {
     let mut coupling = HashMap::new();
     coupling.insert("QED".into(), 2);
     let options = FeynGenOptions {
+        max_multiplicity_for_fast_cut_filter: 1,
         generation_type: GenerationType::Amplitude,
         initial_pdgs: vec![22],
         final_pdgs: vec![22],

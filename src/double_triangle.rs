@@ -13,16 +13,16 @@ fn main() {
 
     let epema = NodeColorWithVertexRule {
         external_tag: 0,
-        vertex_rule: model.get_vertex_rule(&"V_98".into()),
+        vertex_rule: model.get_vertex_rule("V_98"),
     };
 
     let dda = NodeColorWithVertexRule {
         external_tag: 0,
-        vertex_rule: model.get_vertex_rule(&"V_71".into()),
+        vertex_rule: model.get_vertex_rule("V_71"),
     };
     let ddg = NodeColorWithVertexRule {
         external_tag: 0,
-        vertex_rule: model.get_vertex_rule(&"V_74".into()),
+        vertex_rule: model.get_vertex_rule("V_74"),
     };
 
     let l1 = symbolica_graph.add_node(epema.clone());
@@ -32,10 +32,10 @@ fn main() {
     let l5 = symbolica_graph.add_node(ddg.clone());
     let l6 = symbolica_graph.add_node(ddg.clone());
 
-    let eminus = EdgeColor::from_particle(model.get_particle(&"e-".to_string().into()));
-    let a = EdgeColor::from_particle(model.get_particle(&"a".to_string().into()));
-    let d = EdgeColor::from_particle(model.get_particle(&"d".to_string().into()));
-    let g = EdgeColor::from_particle(model.get_particle(&"g".to_string().into()));
+    let eminus = EdgeColor::from_particle(model.get_particle("e-"));
+    let a = EdgeColor::from_particle(model.get_particle("a"));
+    let d = EdgeColor::from_particle(model.get_particle("d"));
+    let g = EdgeColor::from_particle(model.get_particle("g"));
     symbolica_graph.add_edge(l1, l2, true, eminus).unwrap();
     symbolica_graph.add_edge(l2, l1, true, eminus).unwrap();
     symbolica_graph.add_edge(l2, l4, true, a).unwrap();

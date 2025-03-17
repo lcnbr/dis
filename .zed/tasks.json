@@ -18,7 +18,10 @@
     {
         "label": "Run Rust main function",
         "command": "cargo run -p $env.ZED_CUSTOM_RUST_PACKAGE --bin $env.ZED_CUSTOM_RUST_BIN_NAME --no-default-features --release",
-        "tags": ["rust-main"]
+        "tags": ["rust-main"],
+        "shell": {
+            "program": "nu"
+        }
     },
     {
         "label": "Run Rust main function debug",
