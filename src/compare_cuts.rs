@@ -10,6 +10,102 @@ use linnet::{
         HedgeGraph,
     },
 };
+
+#[test]
+pub fn validate() {
+    let cut: HedgeGraph<DotEdgeData, DotVertexData> = dot!(
+        digraph {
+           node [shape=circle,height=0.1,label=""];  overlap="scale"; layout="neato";
+           0 [label = "i",nodetype=i];
+          1 [label = "i",nodetype=i];
+          5 [label = "i",nodetype=i];
+          4 [label = "i",nodetype=i];
+          2 [label = "i",nodetype=i];
+          3 [label = "i",nodetype=i];
+        1 -> 0[ dir=back color="red:blue;0.5",pdg=11,orient=Undirected,edgeid=0,label=""];
+        ext2 [shape=none, label="" flow=source];
+         ext2 -> 1[dir=back color="blue",pdg=11,orient=Reversed,edgeid=1,label="Reversed:e1"];
+        ext3 [shape=none, label="" flow=sink];
+         ext3 -> 0[dir=forward color="red",pdg=11,orient=Reversed,edgeid=1,label="Reversed:e1"];
+        0 -> 4[ dir=none color="red:blue;0.5",pdg=22,orient=Undirected,edgeid=8,label=""];
+        5 -> 1[ dir=none color="red:blue;0.5",pdg=22,orient=Undirected,edgeid=2,label=""];
+        3 -> 2[ dir=none color="red:blue;0.5",pdg=21,orient=Undirected,edgeid=6,label=""];
+        ext10 [shape=none, label="" flow=source];
+         ext10 -> 4[dir=back color="blue",pdg=1,orient=Default,edgeid=7,label="Default:e7"];
+        ext11 [shape=none, label="" flow=sink];
+         ext11 -> 2[dir=forward color="red",pdg=1,orient=Default,edgeid=7,label="Default:e7"];
+        ext12 [shape=none, label="" flow=source];
+         ext12 -> 2[dir=back color="blue",pdg=1,orient=Default,edgeid=5,label="Default:e5"];
+        ext13 [shape=none, label="" flow=sink];
+         ext13 -> 5[dir=forward color="red",pdg=1,orient=Default,edgeid=5,label="Default:e5"];
+        4 -> 3[ dir=back color="red:blue;0.5",pdg=1,orient=Undirected,edgeid=4,label=""];
+        3 -> 5[ dir=back color="red:blue;0.5",pdg=1,orient=Undirected,edgeid=3,label=""];
+        }
+    )
+    .unwrap();
+
+    println!("{}", cut.dot_display(&cut.full_filter()));
+    let cut = cut.map(
+        |_, _, _, a| {
+            // println!("processing node{}", a);
+            let nodetype = &a.statements["nodetype"];
+            if nodetype == "i" {
+                DisCompVertex::Internal
+            } else {
+                panic!("Invalid node type {}", nodetype)
+            }
+        },
+        |_, _, _, e| {
+            e.map(|d| {
+                let pdg: isize = d.statements["pdg"].parse().unwrap();
+                let orient = match d.statements["orient"].as_str() {
+                    "Default" => Orientation::Default,
+                    "Reversed" => Orientation::Reversed,
+                    "Undirected" => Orientation::Undirected,
+                    a => panic!("Invalid orientation {}", a),
+                };
+                let edgeid: usize = d.statements["edgeid"].parse().unwrap();
+
+                (pdg, orient, EdgeIndex::from(edgeid))
+            })
+        },
+    );
+    // println!(
+    //     "//OriginalCut:\n{}",
+    //     cut.dot_impl(
+    //         &cut.full_filter(),
+    //         "",
+    //         &|a| {
+    //             let label = match a.1 {
+    //                 Orientation::Default => format!("Default:{}", a.2),
+    //                 Orientation::Reversed => format!("Reversed:{}", a.2),
+    //                 Orientation::Undirected => "".to_string(),
+    //             };
+    //             Some(format!(
+    //                 "pdg={},orient={:?},edgeid={},label=\"{}\"",
+    //                 a.0,
+    //                 a.1,
+    //                 usize::from(a.2),
+    //                 label
+    //             ))
+    //         },
+    //         &|b| { Some(format!("label = \"{}\",nodetype={}", b, b)) }
+    //     )
+    // );
+
+    // println!("STSRITENRNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
+    let hairy_false = CutGraph::from_hairy(cut.clone(), false);
+    // println!("//From_hairy false: \n{}", hairy_false);
+    // println!("//canonized:\n{}", hairy_false.canonize());
+
+    // println!("STSRITENRNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
+    let hairy_true = CutGraph::from_hairy(cut.clone(), true);
+    // println!("//From_hairy true: \n{}", hairy_true);
+    // println!("//canonized:\n{}", hairy_true.canonize());
+
+    assert_eq!(hairy_true.canonize(), hairy_false.canonize())
+}
+
 #[test]
 pub fn works() {
     // HedgeGraph<(isize, Orientation, EdgeIndex), DisCompVertex>;

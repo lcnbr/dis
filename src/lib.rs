@@ -306,6 +306,16 @@ impl VacuumGraph {
         let h = <HedgeGraph<_, _> as GlHedgeGraphExt<_, _>>::from_sym(sym)
             .map(|_, _, _, v| *v, |_, _, _, v| v.map(|d| d.clone()));
 
+        // println!(
+        //     "//MappedSewed graph\n{}",
+        //     h.dot_impl(
+        //         &h.full_filter(),
+        //         "",
+        //         &|a| Some(format!("label=\"{}:{:?}\"", a.data, a.cut)),
+        //         &|a| { Some(format!("label=\"{a}\"")) }
+        //     )
+        // );
+
         Self { graph: h }
     }
 }
@@ -347,6 +357,7 @@ impl CutGraph {
                     let o = self.graph.orientation(hair);
                     let flow = self.graph.flow(hair);
                     if matches!(o, Orientation::Undirected) {
+                        // println!("Hiiiii");
                         let newo = match flow {
                             Flow::Source => Orientation::Default,
                             Flow::Sink => Orientation::Reversed,
@@ -360,6 +371,7 @@ impl CutGraph {
                     let o = self.graph.orientation(hair);
                     let flow = self.graph.flow(hair);
                     if matches!(o, Orientation::Undirected) {
+                        // println!("Helloww");
                         let newo = match flow {
                             Flow::Source => Orientation::Reversed,
                             Flow::Sink => Orientation::Default,
@@ -427,6 +439,16 @@ impl CutGraph {
             .concretize(&excised)
             .map(|_, _, _, d| *d, |_, _, _, d| d.map(|d| (d.0, d.1)));
 
+        // println!(
+        //     "//Excised graph\n{}",
+        //     excised.dot_impl(
+        //         &excised.full_filter(),
+        //         "",
+        //         &|a| Some(format!("label=\"{}:{:?}\"", a.0, a.1)),
+        //         &|a| { Some(format!("label=\"{a}\"")) }
+        //     )
+        // );
+
         // connect the hairs if they have left right matching data
         excised
             .sew(
@@ -448,6 +470,16 @@ impl CutGraph {
             )
             .unwrap();
 
+        // println!(
+        //     "//Sewed graph\n{}",
+        //     excised.dot_impl(
+        //         &excised.full_filter(),
+        //         "",
+        //         &|a| Some(format!("label=\"{}:{:?}\"", a.0, a.1)),
+        //         &|a| { Some(format!("label=\"{a}\"")) }
+        //     )
+        // );
+
         let mut vacc = excised.map(
             |_, _, _, d| d,
             |_, _, _, d| {
@@ -459,7 +491,27 @@ impl CutGraph {
             },
         );
 
+        // println!(
+        //     "//MappedSewed graph\n{}",
+        //     vacc.dot_impl(
+        //         &vacc.full_filter(),
+        //         "",
+        //         &|a| Some(format!("label=\"{}:{:?}\"", a.data, a.cut)),
+        //         &|a| { Some(format!("label=\"{a}\"")) }
+        //     )
+        // );
+
         vacc.align_underlying_to_superficial();
+
+        // println!(
+        //     "//Aligned MappedSewed graph\n{}",
+        //     vacc.dot_impl(
+        //         &vacc.full_filter(),
+        //         "",
+        //         &|a| Some(format!("label=\"{}:{:?}\"", a.data, a.cut)),
+        //         &|a| { Some(format!("v={a}")) }
+        //     )
+        // );
 
         VacuumGraph { graph: vacc }
     }
@@ -468,9 +520,79 @@ impl CutGraph {
         mut graph: HedgeGraph<(isize, Orientation, EdgeIndex), DisCompVertex>,
         with_alignment: bool,
     ) -> Self {
+        // println!(
+        //     "//From Hairy original graph:\n{}",
+        //     graph.dot_impl(
+        //         &graph.full_filter(),
+        //         "",
+        //         &|a| {
+        //             let label = match a.1 {
+        //                 Orientation::Default => format!("Default:{}", a.2),
+        //                 Orientation::Reversed => format!("Reversed:{}", a.2),
+        //                 Orientation::Undirected => "".to_string(),
+        //             };
+        //             Some(format!(
+        //                 "pdg={},orient={:?},edgeid={},label=\"{}\"",
+        //                 a.0,
+        //                 a.1,
+        //                 usize::from(a.2),
+        //                 label
+        //             ))
+        //         },
+        //         &|b| { Some(format!("label = \"{}\",nodetype={}", b, b)) }
+        //     )
+        // );
         if with_alignment {
+            graph = graph.map(
+                |_, _, _, v| v,
+                |i, v, p, mut e| {
+                    let orientation = e.orientation;
+                    if let HedgePair::Unpaired { hedge, flow } = p {
+                        match (flow, orientation) {
+                            (Flow::Source, Orientation::Default) => {}
+                            (Flow::Sink, Orientation::Default) => {}
+                            (Flow::Source, Orientation::Reversed) => {
+                                e.data.1 = e.data.1.reverse();
+                            }
+                            (Flow::Sink, Orientation::Reversed) => {
+                                e.data.1 = e.data.1.reverse();
+                            }
+                            _ => {
+                                // panic!(
+                                //     "Unexpected hedge pair:{:?}{:?}{}",
+                                //     flow, orientation, hedge
+                                // );
+                            }
+                        }
+                    }
+                    e
+                },
+            );
             graph.align_underlying_to_superficial();
         }
+
+        // println!(
+        //     "//From Hairy aligned graph:\n{}",
+        //     graph.dot_impl(
+        //         &graph.full_filter(),
+        //         "",
+        //         &|a| {
+        //             let label = match a.1 {
+        //                 Orientation::Default => format!("Default:{}", a.2),
+        //                 Orientation::Reversed => format!("Reversed:{}", a.2),
+        //                 Orientation::Undirected => "".to_string(),
+        //             };
+        //             Some(format!(
+        //                 "pdg={},orient={:?},edgeid={},label=\"{}\"",
+        //                 a.0,
+        //                 a.1,
+        //                 usize::from(a.2),
+        //                 label
+        //             ))
+        //         },
+        //         &|b| { Some(format!("label = \"{}\",nodetype={}", b, b)) }
+        //     )
+        // );
         let externals = graph.external_filter();
         let mut saturator = HedgeGraphBuilder::new();
         // let mut signature = BTreeSet::new();
@@ -480,9 +602,7 @@ impl CutGraph {
             let orientation = graph.orientation(i);
             let n = match (flow, o) {
                 (Flow::Source, Orientation::Default) => {
-                    let n_data = DisCompVertex::Left(edgeid);
-                    // signature.insert(n_data.clone());
-                    Some(saturator.add_node(n_data))
+                    Some(saturator.add_node(DisCompVertex::Left(edgeid)))
                 }
                 (Flow::Source, Orientation::Reversed) => {
                     Some(saturator.add_node(DisCompVertex::Right(edgeid)))
@@ -511,6 +631,15 @@ impl CutGraph {
             .map(|_, _, _, v| v, |_, _, _, e| e.map(|d| d.0));
         saturated.align_underlying_to_superficial();
 
+        // println!(
+        //     "//Saturated aligned graph\n{}",
+        //     saturated.dot_impl(
+        //         &saturated.full_filter(),
+        //         "",
+        //         &|a| Some(format!("label={}", a)),
+        //         &|a| { Some(format!("label={a}")) }
+        //     )
+        // );
         Self { graph: saturated }
     }
 }

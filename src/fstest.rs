@@ -126,7 +126,7 @@ fn main() {
     let fs_diagrams: Vec<_> = chain_dis_generate(&[d, dx, g, dd, ddx, dg, dxg], &model);
 
     println!("{}", fs_diagrams.len());
-    let mut fs_can: IndexMap<CutGraph, usize> = IndexMap::new();
+    let mut fs_can: IndexMap<CutGraph, (usize, Option<CutGraph>)> = IndexMap::new();
 
     for p in &fs_diagrams {
         let cuto = CutGraph::from_bare(p);
@@ -137,14 +137,14 @@ fn main() {
 
         entry
             .and_modify(|a| {
-                *a += 1;
-                println!("//Seen {} {} times", id, a);
+                a.0 += 1;
+                println!("//Seen {} {} times", id, a.0);
             })
             .or_insert_with(|| {
                 println!("//Not seen {}", id);
                 println!("//original\n{}", cuto);
                 println!("//canonical\n{}", cutc);
-                1
+                (1, Some(cuto))
             });
     }
 
@@ -169,14 +169,14 @@ fn main() {
         let all = ifsplit.collect_all_cuts(d);
 
         for h in all {
-            let cut = CutGraph::from_hairy(h.clone(), false).canonize();
+            let cut = CutGraph::from_hairy(h.clone(), true).canonize();
             let entry = fs_can.entry(cut.clone());
             let id = entry.index();
 
             entry
                 .and_modify(|a| {
-                    *a += 1;
-                    println!("//Seen {} {} times", id, a);
+                    a.0 += 1;
+                    println!("//Seen {} {} times", id, a.0);
                 })
                 .or_insert_with(|| {
                     println!("//Not seen {}", id);
@@ -188,23 +188,35 @@ fn main() {
                             "",
                             &|a| {
                                 let label = match a.1 {
-                                    Orientation::Default => format!("Default:{}:{}", a.2, a.0),
-                                    Orientation::Reversed => format!("Reversed:{}:{}", a.2, a.0),
-                                    Orientation::Undirected => format!("{}", a.0),
+                                    Orientation::Default => format!("Default:{}", a.2),
+                                    Orientation::Reversed => format!("Reversed:{}", a.2),
+                                    Orientation::Undirected => "".to_string(),
                                 };
                                 Some(format!(
-                                    "pdg ={},orient={:?},edgeid={},label=\"{}\"",
-                                    a.0, a.1, a.2, label
+                                    "pdg={},orient={:?},edgeid={},label=\"{}\"",
+                                    a.0,
+                                    a.1,
+                                    usize::from(a.2),
+                                    label
                                 ))
                             },
-                            &|b| { Some(format!("label = \"{}\"", b)) }
+                            &|b| { Some(format!("label = \"{}\",nodetype={}", b, b)) }
                         )
                     );
                     println!("//canonical\n{}", cut);
 
-                    1
+                    (1, None)
                 });
         }
         // bar.inc(1);
     });
+
+    for (i, (k, v)) in fs_can.iter().enumerate() {
+        if v.0 == 1 {
+            if let Some(c) = &v.1 {
+                println!("//{i}");
+                println!("//original\n{}", c);
+            }
+        }
+    }
 }
