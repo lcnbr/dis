@@ -3,8 +3,9 @@ use std::{collections::BTreeMap, fmt, ops::Index};
 use ahash::{AHashMap, AHashSet};
 use bitvec::vec::BitVec;
 use linnet::half_edge::{
+    involution::Hedge,
     subgraph::{InternalSubGraph, SubGraph, SubGraphOps},
-    Hedge, HedgeGraph, NodeIndex,
+    HedgeGraph, NodeIndex,
 };
 use thiserror::Error;
 
@@ -759,7 +760,7 @@ impl<E, V> HedgeGraphExt for HedgeGraph<E, V> {
     }
 
     fn permute_subgraph<S: SubGraph>(&self, subgraph: &S, hedge_perm: &Permutation) -> BitVec {
-        let mut permuted_subgraph = self.empty_filter();
+        let mut permuted_subgraph: BitVec = self.empty_subgraph();
 
         for h in subgraph.included_iter() {
             permuted_subgraph.set(hedge_perm[h.0], true);
@@ -769,8 +770,8 @@ impl<E, V> HedgeGraphExt for HedgeGraph<E, V> {
 
     fn orientation_ord(&self, hedge: Hedge) -> u8 {
         match self.superficial_hedge_orientation(hedge) {
-            Some(linnet::half_edge::Flow::Sink) => 1,
-            Some(linnet::half_edge::Flow::Source) => 2,
+            Some(linnet::half_edge::involution::Flow::Sink) => 1,
+            Some(linnet::half_edge::involution::Flow::Source) => 2,
             None => 0,
         }
     }
@@ -829,8 +830,7 @@ impl<E, V, O: Ord> PermutationExt<O> for HedgeGraph<E, V> {
                 .values()
                 .flat_map(|values| {
                     if values.len() > 1
-                        && self.node_id(self.involution.inv(values[0])).0
-                            <= self.node_id(values[0]).0
+                        && self.node_id(self.inv(values[0])).0 <= self.node_id(values[0]).0
                     //insure no double counting of inter-edge permutation
                     {
                         let gen_pair = generator_pair(values.len());
@@ -931,7 +931,7 @@ impl Index<usize> for Permutation {
 
 #[cfg(test)]
 mod tests {
-    use linnet::half_edge::{subgraph::InternalSubGraph, Flow, HedgeGraphBuilder};
+    use linnet::half_edge::{builder::HedgeGraphBuilder, involution::Flow};
     use symbolica::graph::Graph;
 
     use super::*;
@@ -1472,7 +1472,7 @@ mod tests {
         let perm = Permutation::from_cycles(&[vec![0, 1]]); //permutes a and b
 
         let h = Hedge(0);
-        let mut h_sub = graph.empty_filter();
+        let mut h_sub: BitVec = graph.empty_subgraph();
         h_sub.set(h.0, true);
 
         let hedge_perm = graph.permute_vertices(&perm, &|a| ());
@@ -1499,7 +1499,7 @@ mod tests {
         let perm = Permutation::from_cycles(&[vec![0, 1]]); //permutes a and b
 
         let h = Hedge(0);
-        let mut h_sub = graph.empty_filter();
+        let mut h_sub: BitVec = graph.empty_subgraph();
         h_sub.set(h.0, true);
 
         let hedge_perm = graph.permute_vertices(&perm, &|a| ());

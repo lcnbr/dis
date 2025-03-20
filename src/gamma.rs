@@ -12,8 +12,7 @@ use spenso::{
 use symbolica::{
     atom::{Atom, AtomCore, AtomView, FunctionBuilder, Symbol},
     function,
-    id::{Context, Match, Pattern, Replacement},
-    printer::PrintOptions,
+    id::{Context, Replacement},
     symb,
 };
 

@@ -11,6 +11,11 @@ description = "An implementation of the Local Unitarity method for computing dif
 path = "src/lib.rs"
 
 
+
+[[bin]]
+name = "compare_cuts"
+path = "src/compare_cuts.rs"
+
 [[bin]]
 name = "fstest"
 path = "src/fstest.rs"
@@ -115,14 +120,18 @@ by_address = "1.2.1"
 indicatif = "0.17.9"
 
 linnet = { git = "https://github.com/alphal00p/linnet", features = [
-    "symbolica",
+    # "symbolica",
     "drawing",
-] }
+] , rev="09d5f5f0da1f91f5c772eecd9022c6c01313bb09"}
+fern = "0.7.1"
+humantime = "2.2.0"
 
 [patch.crates-io]
 spenso = { git = "https://github.com/alphal00p/spenso", rev = "47a35775325a4d061af05e2fc00904b221d8bf83" }
 symbolica = { git = "https://github.com/alphal00p/symbolica", rev = "3f1a5d17abde15df49ca092f311fcd685c1d56fc" }
 [patch."https://github.com/alphal00p/gammaloop"]
-# gammalooprs={path="../gammaloop"}
-# linnet = { path = "../linnet" }
+gammalooprs={path="../main_gammaloop/gammaloop"}
+
+[patch."https://github.com/alphal00p/linnet"]
+linnet = { path = "../linnet" }
 # spenso = { path = "../alphal00p/spenso" }

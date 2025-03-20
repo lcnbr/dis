@@ -5,13 +5,15 @@ use std::{
 
 use _gammaloop::{
     feyngen::{
-        diagram_generator::FeynGen, FeynGenFilter, FeynGenOptions, GenerationType,
-        SelfEnergyFilterOptions, SnailFilterOptions, TadpolesFilterOptions,
+        diagram_generator::FeynGen, FeynGenFilter, FeynGenFilters, FeynGenOptions, GenerationType,
+        SelfEnergyFilterOptions, SewedFilterOptions, SnailFilterOptions, TadpolesFilterOptions,
     },
+    graph::BareGraph,
+    model::Model,
     numerator::GlobalPrefactor,
 };
 use ahash::{HashMap, HashMapExt};
-use dis::{load_generic_model, DisGraph};
+use dis::{gen::photon_self_energy_gen, load_generic_model, DisGraph};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressIterator};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
@@ -39,46 +41,7 @@ fn main() {
         }
     }
     let model = load_generic_model("sm");
-    let mut coupling = HashMap::new();
-    coupling.insert("QED".into(), 2);
-    let options = FeynGenOptions {
-        max_multiplicity_for_fast_cut_filter: 1,
-        generation_type: GenerationType::Amplitude,
-        initial_pdgs: vec![22],
-        final_pdgs: vec![22],
-        loop_count_range: (nloops, nloops),
-        allow_symmetrization_of_external_fermions_in_amplitudes: false,
-        symmetrize_final_states: true,
-        symmetrize_initial_states: true,
-        symmetrize_left_right_states: true,
-        amplitude_filters: _gammaloop::feyngen::FeynGenFilters(vec![
-            FeynGenFilter::ParticleVeto(vec![
-                23, 24, 9000001, 9000002, 9000003, 9000004, 12, 14, 16, 2, 4, 6, 3, 5, 25, 250,
-                251, 11, 13, 15,
-            ]),
-            FeynGenFilter::SelfEnergyFilter(SelfEnergyFilterOptions::default()),
-            FeynGenFilter::ZeroSnailsFilter(SnailFilterOptions::default()),
-            FeynGenFilter::TadpolesFilter(TadpolesFilterOptions::default()),
-            FeynGenFilter::CouplingOrders(coupling),
-        ]),
-        cross_section_filters: _gammaloop::feyngen::FeynGenFilters(vec![]),
-    };
-    let diagram_gen = FeynGen::new(options);
-
-    let diagrams: Vec<_> = diagram_gen
-        .generate(
-            &model,
-            &_gammaloop::feyngen::NumeratorAwareGraphGroupingOption::OnlyDetectZeroes,
-            true,
-            "DIS".into(),
-            None,
-            None,
-            None,
-            GlobalPrefactor::default(),
-            None,
-        )
-        .unwrap();
-
+    let diagrams = photon_self_energy_gen(nloops, &model);
     println!("Generated {} supergraphs", diagrams.len());
 
     let bar = ProgressBar::new(diagrams.len() as u64);

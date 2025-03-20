@@ -1,9 +1,9 @@
 use std::{
-    cmp::Ordering,
-    collections::BTreeMap,
-    fmt::format,
+    collections::{BTreeMap, BTreeSet},
+    fmt::Display,
     fs::File,
     io::Write,
+    iter::empty,
     ops::Neg,
     path::Path,
     str::FromStr,
@@ -11,21 +11,25 @@ use std::{
 };
 
 use gamma::Gamma;
-use libc::printf;
 // use libc::GS;
 use linnet::half_edge::{
+    builder::HedgeGraphBuilder,
     drawing::Decoration,
+    involution::{EdgeData, EdgeIndex, Flow, Hedge, HedgePair, Orientation},
     layout::{FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph},
+    nodestorage::NodeStorageOps,
     subgraph::{Inclusion, OrientedCut, SubGraph, SubGraphOps},
-    EdgeData, EdgeId, Flow, Hedge, HedgeGraph, HedgeGraphBuilder, InvolutiveMapping, NodeIndex,
-    Orientation, SignOrZero,
+    EdgeAccessors, HedgeGraph, NodeIndex,
 };
 
 use _gammaloop::{
-    graph::{BareGraph, Edge, EdgeType, Vertex, VertexInfo},
+    graph::{
+        BareGraph, Edge, EdgeType, ExternalVertexInfo, HedgeGraphExt as GlHedgeGraphExt, Vertex,
+        VertexInfo,
+    },
     model::{normalise_complex, Model},
-    momentum::{Sign, Signature},
-    numerator::{ufo::UFO, AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
+    momentum::{Sign, SignOrZero, Signature},
+    numerator::{AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
     utils::GS,
 };
 use ahash::{AHashMap, AHashSet};
@@ -34,10 +38,9 @@ use cgmath::{Angle, Rad};
 use indexmap::{IndexMap, IndexSet};
 use indicatif::ProgressBar;
 use itertools::Itertools;
-use log::{debug, warn};
-use pathfinding::matrix::directions::W;
+use log::debug;
 use permutation::{HedgeGraphExt, Permutation, PermutationError};
-use smartstring::{LazyCompact, SmartString};
+use smartstring::SmartString;
 use spenso::{
     arithmetic::ScalarMul,
     contraction::Contract,
@@ -91,7 +94,7 @@ impl MySignedCycle {
             return None;
         }
 
-        let mut filter = graph.empty_filter();
+        let mut filter: BitVec = graph.empty_subgraph();
 
         let mut current_hedge = according_to;
 
@@ -101,7 +104,7 @@ impl MySignedCycle {
             }
             filter.set(current_hedge.0, true);
 
-            current_hedge = graph.involution.inv(
+            current_hedge = graph.inv(
                 graph
                     .hairs_from_id(graph.node_id(current_hedge))
                     .hairs
@@ -134,7 +137,417 @@ pub struct IFCuts {
     pub basis: Vec<Vec<MySignedCycle>>,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord, Copy)]
+pub enum DisCompVertex {
+    Internal,
+    Left(EdgeIndex),
+    Right(EdgeIndex),
+}
+
+impl DisCompVertex {
+    pub fn from_bare(graph: &BareGraph, vertex_id: usize) -> Self {
+        match &graph.vertices[vertex_id].vertex_info {
+            VertexInfo::ExternalVertexInfo(a) => {
+                let ext_id = graph
+                    .external_connections
+                    .iter()
+                    .find_map(|o| {
+                        if let (Some(i), Some(f)) = o {
+                            if i == &vertex_id || f == &vertex_id {
+                                Some(*i)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(vertex_id);
+
+                match a.direction {
+                    EdgeType::Incoming => DisCompVertex::Right(EdgeIndex::from(ext_id)),
+                    EdgeType::Outgoing => DisCompVertex::Left(EdgeIndex::from(ext_id)),
+                    _ => panic!("Invalid edgetype"),
+                }
+            }
+            VertexInfo::InteractonVertexInfo(_) => DisCompVertex::Internal,
+        }
+    }
+}
+
+impl Display for DisCompVertex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DisCompVertex::Internal => write!(f, "i"),
+            DisCompVertex::Left(edgeid) => write!(f, "l{}", edgeid),
+            DisCompVertex::Right(edgeid) => write!(f, "r{}", edgeid),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Hash, Eq)]
+pub struct CutEdge<Data> {
+    data: Data,
+    cut: Orientation,
+}
+
+// impl<Data: Ord> Ord for CutEdge<Data> {
+//     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+//         self.data.cmp(&other.data)
+//     }
+// }
+
+// impl<Data: PartialOrd> PartialOrd for CutEdge<Data> {
+//     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+//         self.data.partial_cmp(&other.data)
+//     }
+// }
+
+// impl<Data: std::hash::Hash> std::hash::Hash for CutEdge<Data> {
+//     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+//         self.data.hash(state);
+//     }
+// }
+
+// impl<Data: PartialEq> PartialEq for CutEdge<Data> {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.data.eq(&other.data)
+//     }
+// }
+
+impl<Data: Display> Display for CutEdge<Data> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.cut {
+            Orientation::Undirected => write!(f, "-{}", self.data),
+            Orientation::Default => write!(f, ">{}", self.data),
+            Orientation::Reversed => write!(f, "<{}", self.data),
+        }
+    }
+}
+
+impl<Data> CutEdge<Data> {
+    pub fn from_comp_vertex(data: Data, cut: DisCompVertex) -> Self {
+        let cut = match cut {
+            DisCompVertex::Internal => Orientation::Undirected,
+            DisCompVertex::Left(_) => Orientation::Default,
+            DisCompVertex::Right(_) => Orientation::Reversed,
+        };
+        CutEdge { data, cut }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CutGraph {
+    pub graph: HedgeGraph<isize, DisCompVertex>,
+    // signature: BTreeSet<(isize, Orientation, EdgeIndex)>,
+}
+
+impl Display for CutGraph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "//CutGraph\n{}",
+            self.graph.dot_label(&self.graph.full_filter())
+        )
+    }
+}
+
+pub struct VacuumGraph {
+    graph: HedgeGraph<CutEdge<isize>, DisCompVertex>,
+}
+
+impl Display for VacuumGraph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "//VacuumGraph\n{}",
+            self.graph.dot_display(&self.graph.full_filter())
+        )
+    }
+}
+
+impl VacuumGraph {
+    pub fn cut(mut self) -> CutGraph {
+        // -> HedgeGraph<isize, DisCompVertex> {
+        let mut cut = OrientedCut::empty(self.graph.n_hedges());
+
+        for (p, _, d) in self.graph.iter_all_edges() {
+            match d.data.cut {
+                Orientation::Reversed => cut.set(p, Flow::Sink),
+                Orientation::Default => cut.set(p, Flow::Source),
+                _ => {}
+            }
+        }
+
+        // self.graph.align_underlying_to_superficial();
+
+        CutGraph::from_hairy(
+            cut.to_owned_graph(&self.graph).map(
+                |_, _, _, _| DisCompVertex::Internal,
+                |_, _, _, e| {
+                    e.map(|(e, o, a)| {
+                        // if !matches!(o, Orientation::Undirected) {
+                        //     // signature.insert((e.data, o, a));
+                        // }
+                        (e.data, o, a)
+                    })
+                },
+            ),
+            true,
+        )
+    }
+
+    pub fn canonize(self) -> Self {
+        let sym = <HedgeGraph<_, _> as GlHedgeGraphExt<_, _>>::to_sym(&self.graph)
+            .unwrap()
+            .canonize()
+            .graph;
+
+        let h = <HedgeGraph<_, _> as GlHedgeGraphExt<_, _>>::from_sym(sym)
+            .map(|_, _, _, v| *v, |_, _, _, v| v.map(|d| d.clone()));
+
+        Self { graph: h }
+    }
+}
+
+impl CutGraph {
+    pub fn from_bare(graph: &BareGraph) -> Self {
+        let mut newh = graph.hedge_representation.map_data_ref(
+            &|_, v, _| DisCompVertex::from_bare(graph, *v),
+            &|_, _, _, e| {
+                let o = e.orientation;
+                let p = &graph.edges[*e.data].particle;
+                if p.spin == 2 {
+                    if p.pdg_code < 0 {
+                        EdgeData::new(p.pdg_code.abs(), o.reverse())
+                    } else {
+                        EdgeData::new(p.pdg_code.abs(), o)
+                    }
+                } else {
+                    EdgeData::new(p.pdg_code.abs(), Orientation::Undirected)
+                }
+            },
+        );
+
+        newh.align_underlying_to_superficial();
+
+        Self { graph: newh }
+    }
+
+    pub fn canonize(mut self) -> Self {
+        let nodes = self.graph.nodes(&self.graph.full_filter());
+
+        // Iterate over external nodes, and if they are undirected (e.g. gluons), orient them,
+        // outgoing for left vertices
+        // incoming for right vertices
+        for n in nodes {
+            match self.graph[n] {
+                DisCompVertex::Left(_) => {
+                    let hair = self.graph[&n].hairs.included_iter().next().unwrap();
+                    let o = self.graph.orientation(hair);
+                    let flow = self.graph.flow(hair);
+                    if matches!(o, Orientation::Undirected) {
+                        let newo = match flow {
+                            Flow::Source => Orientation::Default,
+                            Flow::Sink => Orientation::Reversed,
+                        };
+
+                        self.graph.set_orientation(hair, newo)
+                    }
+                }
+                DisCompVertex::Right(_) => {
+                    let hair = self.graph[&n].hairs.included_iter().next().unwrap();
+                    let o = self.graph.orientation(hair);
+                    let flow = self.graph.flow(hair);
+                    if matches!(o, Orientation::Undirected) {
+                        let newo = match flow {
+                            Flow::Source => Orientation::Reversed,
+                            Flow::Sink => Orientation::Default,
+                        };
+
+                        self.graph.set_orientation(hair, newo)
+                    }
+                }
+                _ => {}
+            }
+        }
+        // Now all external edges on non fermions should be all outgoing for left vertices
+        // and incoming for right vertices
+        self.graph.align_underlying_to_superficial();
+
+        let vac = self.to_marked_vacuum().canonize();
+
+        // Now cut again:
+        vac.cut()
+    }
+
+    pub fn to_marked_vacuum(self) -> VacuumGraph {
+        // mark all edges that connect to external vertices with the node data
+        let mapped = self.graph.map(
+            |_, _, _, v| v,
+            |_, b, d, e| {
+                let mut cut_orientation = DisCompVertex::Internal;
+                if let HedgePair::Paired { source, sink } = d {
+                    let source_node = b.get_node_data(b.node_id_ref(source));
+                    let sink_node = b.get_node_data(b.node_id_ref(sink));
+
+                    match (source_node, sink_node) {
+                        (DisCompVertex::Left(z), _) => {
+                            cut_orientation = DisCompVertex::Left(*z);
+                        }
+                        (DisCompVertex::Right(z), _) => {
+                            cut_orientation = DisCompVertex::Right(*z);
+                        }
+                        (_, DisCompVertex::Left(z)) => {
+                            cut_orientation = DisCompVertex::Left(*z);
+                        }
+                        (_, DisCompVertex::Right(z)) => {
+                            cut_orientation = DisCompVertex::Right(*z);
+                        }
+                        _ => {}
+                    }
+                }
+
+                e.map(|d| (d, cut_orientation))
+            },
+        );
+        // a subgraph without the external vertices
+        let mut excised: BitVec = mapped.empty_subgraph();
+
+        for (n, d) in mapped.iter_nodes() {
+            if !matches!(d, DisCompVertex::Internal) {
+                excised.union_with(&n.hairs)
+            }
+        }
+
+        excised = excised.complement(&mapped);
+
+        // Turn the subgraph into an actual graph
+        let mut excised = mapped
+            .concretize(&excised)
+            .map(|_, _, _, d| *d, |_, _, _, d| d.map(|d| (d.0, d.1)));
+
+        // connect the hairs if they have left right matching data
+        excised
+            .sew(
+                |lf, ld, rf, rd| {
+                    lf == -rf
+                        && match (ld.data.1, rd.data.1) {
+                            (DisCompVertex::Left(x), DisCompVertex::Right(y)) => x == y,
+                            (DisCompVertex::Right(x), DisCompVertex::Left(y)) => x == y,
+                            _ => false,
+                        }
+                },
+                |lf, ld, rf, rd| {
+                    if lf == Flow::Source {
+                        (lf, ld)
+                    } else {
+                        (lf, rd)
+                    }
+                },
+            )
+            .unwrap();
+
+        let mut vacc = excised.map(
+            |_, _, _, d| d,
+            |_, _, _, d| {
+                let o = d.orientation;
+                // if matches!(o, Orientation::Undirected) {
+                //     o = Orientation::Default
+                // }
+                EdgeData::new(CutEdge::from_comp_vertex(d.data.0, d.data.1), o)
+            },
+        );
+
+        vacc.align_underlying_to_superficial();
+
+        VacuumGraph { graph: vacc }
+    }
+
+    pub fn from_hairy(
+        mut graph: HedgeGraph<(isize, Orientation, EdgeIndex), DisCompVertex>,
+        with_alignment: bool,
+    ) -> Self {
+        if with_alignment {
+            graph.align_underlying_to_superficial();
+        }
+        let externals = graph.external_filter();
+        let mut saturator = HedgeGraphBuilder::new();
+        // let mut signature = BTreeSet::new();
+        for i in externals.included_iter() {
+            let flow = graph.flow(i);
+            let (pdg, o, edgeid) = graph[[&i]];
+            let orientation = graph.orientation(i);
+            let n = match (flow, o) {
+                (Flow::Source, Orientation::Default) => {
+                    let n_data = DisCompVertex::Left(edgeid);
+                    // signature.insert(n_data.clone());
+                    Some(saturator.add_node(n_data))
+                }
+                (Flow::Source, Orientation::Reversed) => {
+                    Some(saturator.add_node(DisCompVertex::Right(edgeid)))
+                }
+                (Flow::Sink, Orientation::Default) => {
+                    Some(saturator.add_node(DisCompVertex::Right(edgeid)))
+                }
+                (Flow::Sink, Orientation::Reversed) => {
+                    Some(saturator.add_node(DisCompVertex::Left(edgeid)))
+                }
+                _ => None,
+            };
+            if let Some(n) = n {
+                saturator.add_external_edge(n, (pdg, o, edgeid), orientation, -flow);
+            }
+        }
+
+        let saturator = saturator.build();
+        let mut saturated = graph
+            .join(
+                saturator,
+                |fl, dl, fr, dr| dl == dr && fr != fl,
+                |fl, dl, fr, dr| (fl, dl),
+            )
+            .unwrap()
+            .map(|_, _, _, v| v, |_, _, _, e| e.map(|d| d.0));
+        saturated.align_underlying_to_superficial();
+
+        Self { graph: saturated }
+    }
+}
+
 impl IFCuts {
+    // pub fn vertex_rule_
+
+    pub fn collect_all_cuts<'a>(
+        &'a self,
+        dis_graph: &'a DisGraph,
+    ) -> Vec<HedgeGraph<(isize, Orientation, EdgeIndex), DisCompVertex>> {
+        // fn vertex_map(inv:&Involution, h:&HedgeNode, id:NodeIndex, data:()) -> (){
+
+        // }
+
+        self.cuts
+            .iter()
+            .flat_map(|(_, c)| {
+                c.1[0]
+                    .iter()
+                    .map(|c| {
+                        c.clone().to_owned_graph(&dis_graph.graph).map(
+                            |_, _, _, _| DisCompVertex::Internal,
+                            |_, _, _, e| e.map(|(e, o, a)| (e.bare_edge.particle.pdg_code, o, a)),
+                        )
+                    })
+                    .chain(c.1[1].iter().map(|c| {
+                        c.clone().to_owned_graph(&dis_graph.graph).map(
+                            |_, _, _, _| DisCompVertex::Internal,
+                            |_, _, _, e| e.map(|(e, o, a)| (e.bare_edge.particle.pdg_code, o, a)),
+                        )
+                    }))
+                    .collect_vec()
+            })
+            .collect()
+    }
+
     pub fn to_typst(&self, dis_graph: &DisGraph, filename: &str) -> std::io::Result<()> {
         let file = std::fs::File::open("fancy_settings.json").unwrap();
         let fancy_settings = serde_json::from_reader::<_, FancySettings>(file).unwrap();
@@ -363,7 +776,7 @@ impl Embeddings {
                     if i == 0 {
                         let mut is_in = false;
                         for (_, e) in cut.iter_edges(graph) {
-                            if filter(e.as_ref().data.unwrap()) {
+                            if filter(e.as_ref().data) {
                                 is_in = true;
                             }
                         }
@@ -392,7 +805,7 @@ impl Embeddings {
         for h in cycle.filter.included_iter() {
             let a = SignOrZero::from(cut.relative_orientation(h)) * 1;
             winding_number -= a;
-            let b = SignOrZero::from(cut.relative_orientation(graph.graph.involution.inv(h))) * 1;
+            let b = SignOrZero::from(cut.relative_orientation(graph.graph.inv(h))) * 1;
             // println!("a: {}, b: {}", a, b);
             winding_number += b;
         }
@@ -520,19 +933,19 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
 
         let mut eatoms: Vec<_> = vec![];
         let i = Atom::new_var(Atom::I);
-        for (j, e) in graph.iter_egdes(subgraph) {
+        for (j, p, e) in graph.iter_edges(subgraph) {
             // println!("emr:")
-            let edge = &e.data.as_ref().unwrap().bare_edge;
+            let edge = &e.data.bare_edge;
             // println!("Edgeid :{edge_id}");
             // println!("EMR Id:{}", e.data.unwrap().emr_idx);
             let in_slots = edge.in_slot(bare);
             let out_slots = edge.out_slot(bare);
             eatoms.push(match j {
-                EdgeId::Paired { .. } => {
-                    let [n, c] = edge.color_separated_numerator(bare, e.data.unwrap().emr_idx);
+                HedgePair::Paired { .. } => {
+                    let [n, c] = edge.color_separated_numerator(bare, e.data.emr_idx);
                     [&n * &i, c]
                 }
-                EdgeId::Split { split, .. } => match split {
+                HedgePair::Split { split, .. } => match split {
                     Flow::Source => {
                         let [lorentz, spin, color] = in_slots.dual().kroneker(&out_slots);
                         // println!("Slit source{lorentz}{spin}{color}");
@@ -545,8 +958,8 @@ impl NumeratorFromHedgeGraph for Numerator<UnInit> {
                         [lorentz * spin, color]
                     }
                 },
-                EdgeId::Unpaired { .. } => {
-                    let [n, c] = edge.color_separated_numerator(bare, e.data.unwrap().emr_idx);
+                HedgePair::Unpaired { .. } => {
+                    let [n, c] = edge.color_separated_numerator(bare, e.data.emr_idx);
                     [&n * &i, c]
                 }
             });
@@ -654,10 +1067,10 @@ pub fn numerator_dis_apply(num: &mut Atom) {
 }
 #[allow(dead_code)]
 pub struct DisGraph {
-    graph: HedgeGraph<DisEdge, DisVertex>,
-    marked_electron_edge: (EdgeId, usize),
+    pub graph: HedgeGraph<DisEdge, DisVertex>,
+    marked_electron_edge: (HedgePair, usize),
     symmetry_group: Integer,
-    lmb_photon: (EdgeId, usize),
+    lmb_photon: (HedgePair, usize),
     orbit_generators: Vec<Permutation>,
     numerator: AHashMap<String, Atom>,
     denominator: DenominatorDis,
@@ -734,11 +1147,11 @@ impl DisGraph {
             |c| {
                 let contains_electron = self
                     .graph
-                    .iter_egdes(c)
-                    .filter(|(_, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 11)
+                    .iter_edges(c)
+                    .filter(|(_, _, d)| d.data.bare_edge.particle.pdg_code.abs() == 11)
                     .count();
                 let alligned_electron = c.iter_edges_relative(&self.graph).all(|(o, d)| {
-                    if d.data.as_ref().unwrap().bare_edge.particle.pdg_code.abs() == 11 {
+                    if d.data.bare_edge.particle.pdg_code.abs() == 11 {
                         match (o, d.orientation) {
                             (Orientation::Default, Orientation::Default) => true,
                             (Orientation::Reversed, Orientation::Reversed) => true,
@@ -752,8 +1165,8 @@ impl DisGraph {
                 // println!("aligned_electron:{}", alligned_electron);
                 let contains_photon = self
                     .graph
-                    .iter_egdes(c)
-                    .any(|(_, d)| d.data.unwrap().bare_edge.particle.pdg_code.abs() == 22);
+                    .iter_edges(c)
+                    .any(|(_, _, d)| d.data.bare_edge.particle.pdg_code.abs() == 22);
 
                 let mut complement = c.reference.complement(&self.graph);
 
@@ -935,12 +1348,12 @@ impl DisGraph {
 
         let mut elec_node = None;
 
-        if let Some((elec, _)) = g
-            .iter_egdes(&g.full_filter())
-            .find(|(_, n)| n.data.unwrap().1.particle.pdg_code.abs() == 11)
+        if let Some((elec, _, _)) = g
+            .iter_edges(&g.full_filter())
+            .find(|(_, _, n)| n.data.1.particle.pdg_code.abs() == 11)
         {
-            if let EdgeId::Paired { source, .. } = elec {
-                elec_node = Some(g.involution.hedge_data(source).clone());
+            if let HedgePair::Paired { source, .. } = elec {
+                elec_node = Some(g.node_id(source));
             }
         }
 
@@ -986,6 +1399,8 @@ impl DisGraph {
             )
             .unwrap();
 
+        println!("{}", h.base_dot());
+
         DisGraph::from_hedge(h, bare, basis_start, hedge_in_basis)
     }
 
@@ -998,22 +1413,17 @@ impl DisGraph {
         // println!("finding basis");
 
         let (basis, tree) = h
-            .paton_cycle_basis(
-                &h.full_graph(),
-                &h.hairs_from_id(basis_start),
-                hedge_in_basis,
-            )
+            .paton_cycle_basis(&h.full_graph(), &basis_start, hedge_in_basis)
             .unwrap();
 
         // println!("aligning tree");
-        h.align_to_tree_underlying(&tree);
+        h.align_underlying_to_tree(&tree);
 
         let signed_basis: Vec<_> = basis
             .iter()
             .map(|c| {
                 let according_to = tree
-                    .tree
-                    .filter
+                    .tree_subgraph
                     .intersection(&c.filter)
                     .included_iter()
                     .find(|i| h.underlying_hedge_orientation(*i) == Flow::Sink)
@@ -1033,21 +1443,21 @@ impl DisGraph {
 
         let mut edge_n = 0;
         let graph = h.map(
-            |(bare_vertex_id, bare_vertex)| {
+            |_, _, _, (bare_vertex_id, bare_vertex)| {
                 let v = DisVertex {
                     bare_vertex_id,
                     bare_vertex,
                 };
                 v
             },
-            |e, d| {
+            |_, _, e, d| {
                 let mut mom_e = Atom::new_num(0);
 
                 let mut first_cycle = None;
                 let mut only_cycle = true;
 
                 for (i, c) in basis.iter().enumerate() {
-                    if let EdgeId::Paired { source, .. } = e {
+                    if let HedgePair::Paired { source, .. } = e {
                         if c.filter.includes(&source) {
                             if first_cycle.is_none() {
                                 first_cycle = Some(i);
@@ -1058,7 +1468,7 @@ impl DisGraph {
                         }
                     }
                 }
-                d.and_then(|bare_edge| {
+                d.map(|bare_edge| {
                     let marked = if only_cycle {
                         if let Some(i) = first_cycle {
                             match bare_edge.1.particle.pdg_code.abs() {
@@ -1089,25 +1499,25 @@ impl DisGraph {
 
                     let emr_mom = function!(DIS_SYMBOLS.emr_mom, edge_n as i32);
 
-                    let a = Some(DisEdge {
+                    let a = DisEdge {
                         bare_edge: bare_edge.1,
                         bare_edge_id: bare_edge.0,
                         marked,
                         lmb_momentum: mom_e,
                         emr_idx: edge_n,
                         emr_momentum: emr_mom,
-                    });
+                    };
                     edge_n += 1;
                     a
                 })
             },
         );
 
-        let mut outer_graph = graph.empty_filter();
+        let mut outer_graph: BitVec = graph.empty_subgraph();
 
-        for (i, e) in graph.iter_egdes(&graph.full_filter()) {
-            if let EdgeId::Paired { source, sink } = i {
-                if e.data.as_ref().unwrap().bare_edge.particle.pdg_code.abs() == 11 {
+        for (i, _, e) in graph.iter_edges(&graph.full_filter()) {
+            if let HedgePair::Paired { source, sink } = i {
+                if e.data.bare_edge.particle.pdg_code.abs() == 11 {
                     outer_graph.set(source.0, true);
                     for i in graph.node_hairs(sink).included_iter() {
                         outer_graph.set(i.0, true);
@@ -1123,7 +1533,7 @@ impl DisGraph {
             "//innergraph :\n{}",
             graph.dot_impl(
                 &inner_graph,
-                "".into(),
+                "",
                 &|e| Some(format!(
                     "label=\"{}:{}\"",
                     e.bare_edge.particle.name, e.bare_edge_id
@@ -1211,10 +1621,10 @@ impl DisGraph {
         // }
 
         let mut props = vec![];
-        for (j, e) in graph.iter_egdes(&inner_graph) {
-            let edge = &e.data.as_ref().unwrap().bare_edge;
-            let i = e.data.as_ref().unwrap().emr_idx;
-            if matches!(j, EdgeId::Paired { .. }) {
+        for (j, _, e) in graph.iter_edges(&inner_graph) {
+            let edge = &e.data.bare_edge;
+            let i = e.data.emr_idx;
+            if matches!(j, HedgePair::Paired { .. }) {
                 let mass = edge.particle.mass.expression.clone();
                 let emr_mom = function!(DIS_SYMBOLS.emr_mom, i as i32);
                 props.push(Prop::new(mass, emr_mom));
@@ -1222,30 +1632,28 @@ impl DisGraph {
             };
         }
 
-        let symbolica_graph: symbolica::graph::Graph<_, _> = graph
-            .clone()
-            .map(
-                |v| {
-                    match v.bare_vertex.vertex_info {
-                        VertexInfo::ExternalVertexInfo(e) => {
-                            // match e. {
+        let rulepdg_graph = graph.map_data_ref(
+            &|_, v, _| {
+                match &v.bare_vertex.vertex_info {
+                    VertexInfo::ExternalVertexInfo(e) => {
+                        // match e. {
 
-                            //     }//needs direction
+                        //     }//needs direction
 
-                            SmartString::from(e.particle.pdg_code.to_string())
-                        }
-                        VertexInfo::InteractonVertexInfo(i) => {
-                            // match i. {
-
-                            //     }//needs direction
-                            i.vertex_rule.name.clone()
-                        }
+                        SmartString::from(e.particle.pdg_code.to_string())
                     }
-                },
-                |_, d| d.map(|d| d.bare_edge.particle.pdg_code),
-            )
-            .try_into()
-            .unwrap();
+                    VertexInfo::InteractonVertexInfo(i) => {
+                        // match i. {
+
+                        //     }//needs direction
+                        i.vertex_rule.name.clone()
+                    }
+                }
+            },
+            &|_, _, _, d| d.map(|d| d.bare_edge.particle.pdg_code),
+        );
+        let symbolica_graph: symbolica::graph::Graph<_, _> =
+            <HedgeGraph<_, _> as GlHedgeGraphExt<_, _>>::to_sym(&rulepdg_graph).unwrap();
 
         println!("//Symbolica Graph: \n{}", symbolica_graph.to_dot());
 
@@ -1505,14 +1913,11 @@ impl DisGraph {
 
         let mut elec_node = None;
 
-        if let Some((elec, _)) = h.iter_egdes(&h.full_filter()).find(|(_, n)| {
-            bare.edges[**n.as_ref().data.unwrap()]
-                .particle
-                .pdg_code
-                .abs()
-                == 11
-        }) {
-            if let EdgeId::Paired { source, .. } = elec {
+        if let Some((elec, _, _)) = h
+            .iter_edges(&h.full_filter())
+            .find(|(_, _, n)| bare.edges[*n.data].particle.pdg_code.abs() == 11)
+        {
+            if let HedgePair::Paired { source, .. } = elec {
                 elec_node = Some(h.node_hairs(source).clone());
             }
         }
@@ -1534,13 +1939,8 @@ impl DisGraph {
 
         DisGraph::from_hedge(
             h.map(
-                |v| (v, bare.vertices[v].clone()),
-                |_, d| {
-                    EdgeData::new(
-                        (d.data.unwrap(), bare.edges[d.data.unwrap()].clone()),
-                        d.orientation,
-                    )
-                },
+                |_, _, _, v| (v, bare.vertices[v].clone()),
+                |_, _, _, d| d.map(|data| (data, bare.edges[data].clone())),
             ),
             bare,
             basis_start,
@@ -1552,7 +1952,7 @@ impl DisGraph {
         let mut cut_content = 0;
         // println!("looking at cut {}", cut);
         cut.iter_edges_relative(&self.graph).for_each(|(a, p)| {
-            let particle = &p.data.as_ref().unwrap().bare_edge.particle;
+            let particle = &p.data.bare_edge.particle;
             if particle.color.abs() == 3 && particle.spin == 2 {
                 match a.relative_to(p.orientation.try_into().unwrap()) {
                     Orientation::Default => {
@@ -1626,8 +2026,8 @@ impl DisGraph {
         }
 
         let mut emr_to_lmb_cut = AHashMap::new();
-        for (_, d) in self.graph.iter_egdes(&self.graph.full_graph()) {
-            let data = d.data.unwrap();
+        for (_, _, d) in self.graph.iter_edges(&self.graph.full_graph()) {
+            let data = d.data;
 
             // println!(
             //     "{}->{}",
@@ -1654,18 +2054,8 @@ impl DisGraph {
         let photon_momenta = function!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
 
         for (o, cut_edge) in cut.iter_edges_relative(&self.graph) {
-            if cut_edge
-                .data
-                .as_ref()
-                .unwrap()
-                .bare_edge
-                .particle
-                .pdg_code
-                .abs()
-                != 11
-            {
-                sum = sum
-                    + SignOrZero::from(o) * cut_edge.as_ref().data.unwrap().lmb_momentum.clone();
+            if cut_edge.data.bare_edge.particle.pdg_code.abs() != 11 {
+                sum = sum + SignOrZero::from(o) * cut_edge.data.lmb_momentum.clone();
             }
         }
         sum = sum - Atom::new_var(DIS_SYMBOLS.cut_mom);
@@ -1926,8 +2316,8 @@ impl ToMathematica for Topology {
         let mut numbering_map = IndexSet::new();
         let mut nodelist = Vec::new();
 
-        for (e, _) in self.graph.iter_egdes(&self.graph.external_filter()) {
-            if let EdgeId::Unpaired { hedge, flow } = e {
+        for (e, _, _) in self.graph.iter_edges(&self.graph.external_filter()) {
+            if let HedgePair::Unpaired { hedge, flow } = e {
                 let (a, _) = numbering_map.insert_full(hedge);
                 nodelist.push(vec![format!("{}p[{}]", -SignOrZero::from(flow), a)]);
             } else {
@@ -1939,13 +2329,13 @@ impl ToMathematica for Topology {
         for (n, _) in self.graph.iter_nodes() {
             let mut list = vec![];
 
-            for (e, _) in self.graph.iter_egdes(&n.hairs) {
+            for (e, _, _) in self.graph.iter_edges(&n.hairs) {
                 match e {
-                    EdgeId::Split { source, split, .. } => {
+                    HedgePair::Split { source, split, .. } => {
                         let (a, _) = numbering_map.insert_full(source);
                         list.push(format!("{}l[{}]", SignOrZero::from(split), a - ext_shift));
                     }
-                    EdgeId::Unpaired { hedge, flow } => {
+                    HedgePair::Unpaired { hedge, flow } => {
                         let (a, _) = numbering_map.insert_full(hedge);
                         list.push(format!("{}p[{}]", SignOrZero::from(flow), a));
                     }
@@ -1958,20 +2348,19 @@ impl ToMathematica for Topology {
 
         let mut massmap = AHashMap::new();
 
-        for (e, d) in self.graph.iter_egdes(&self.graph.full_filter()) {
+        for (e, _, d) in self.graph.iter_edges(&self.graph.full_filter()) {
             match e {
-                EdgeId::Paired { source, .. } => {
+                HedgePair::Paired { source, .. } => {
                     let (a, _) = numbering_map.insert_full(source);
                     let k = format!("l[{}]", a - ext_shift);
                     massmap.insert(k, "0".to_string());
                 }
-                EdgeId::Unpaired { hedge, .. } => {
+                HedgePair::Unpaired { hedge, .. } => {
                     let (a, _) = numbering_map.insert_full(hedge);
                     let k = format!("p[{a}]");
                     massmap.insert(
                         k,
                         d.data
-                            .unwrap()
                             .propagator
                             .mass
                             .as_ref()
@@ -2118,14 +2507,14 @@ impl Topology {
         let mut numbering_map = IndexSet::new();
         let extsymb = symb!("p");
 
-        for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
-            if let EdgeId::Unpaired { hedge, flow } = e {
+        for (e, _, d) in self.graph.iter_edges(&self.graph.external_filter()) {
+            if let HedgePair::Unpaired { hedge, flow } = e {
                 let (a, _) = numbering_map.insert_full(hedge);
                 let p = function!(extsymb, a as i32);
 
                 map.push((
                     p,
-                    SignOrZero::from(flow) * d.data.unwrap().propagator.momentum.clone(),
+                    SignOrZero::from(flow) * d.data.propagator.momentum.clone(),
                 ));
             } else {
                 panic!("ahhhh");
@@ -2137,7 +2526,7 @@ impl Topology {
     pub fn dot(&self) -> String {
         self.graph.dot_impl(
             &self.graph.full_filter(),
-            "".into(),
+            "",
             &|e| Some(format!("label=\"{}\"", e.propagator.momentum)),
             &|_| None,
         )
@@ -2148,9 +2537,9 @@ impl Topology {
         if self.graph.n_externals() < 4 {
             let mut signatures = vec![];
 
-            for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
-                if let EdgeId::Unpaired { .. } = e {
-                    let momentum = &d.data.unwrap().propagator.momentum;
+            for (e, _, d) in self.graph.iter_edges(&self.graph.external_filter()) {
+                if let HedgePair::Unpaired { .. } = e {
+                    let momentum = &d.data.propagator.momentum;
 
                     let p = momentum
                         .pattern_match(&Atom::new_var(DIS_SYMBOLS.cut_mom).to_pattern(), None, None)
@@ -2219,8 +2608,8 @@ impl Topology {
                             .find(|(n, _)| {
                                 let nid = self.graph.id_from_hairs(n).unwrap();
                                 if seen_nodes.insert(nid) {
-                                    self.graph.iter_egdes(*n).any(|(eid, _)| {
-                                        if let EdgeId::Unpaired { hedge, .. } = eid {
+                                    self.graph.iter_edges(*n).any(|(eid, _, _)| {
+                                        if let HedgePair::Unpaired { hedge, .. } = eid {
                                             e = Some(hedge);
                                             true
                                         } else {
@@ -2239,31 +2628,29 @@ impl Topology {
                 let mut flow = None;
 
                 {
-                    if let InvolutiveMapping::Identity { data, .. } =
-                        &mut self.graph.involution[e.unwrap()]
-                    {
-                        let mut a = data.take();
-                        if first {
-                            flow = Some(a.orientation);
-                        } else {
-                            flow = Some(a.orientation.reverse());
-                        }
-                        let mut d = a.data.take().unwrap();
+                    if self.graph.hedge_pair(e.unwrap()).is_unpaired() {
+                        let a = self.graph[&e.unwrap()];
+                        let o = self.graph.orientation(a);
+                        let d = &mut self.graph[a];
 
                         if first {
-                            d.propagator.momentum = d.propagator.momentum - &additional_momenta;
+                            flow = Some(o.try_into().unwrap());
                         } else {
-                            d.propagator.momentum = d.propagator.momentum + &additional_momenta;
+                            flow = Some(o.reverse().try_into().unwrap());
                         }
 
-                        *data = EdgeData::new(d, a.orientation);
+                        if first {
+                            d.propagator.momentum = &d.propagator.momentum - &additional_momenta;
+                        } else {
+                            d.propagator.momentum = &d.propagator.momentum + &additional_momenta;
+                        }
                     }
                 }
 
                 self.graph = self
                     .graph
                     .clone()
-                    .add_dangling_edge(node, new_edge.clone(), flow.unwrap())
+                    .add_dangling_edge(node, new_edge.clone(), flow.unwrap(), false)
                     .unwrap()
                     .1;
                 if first {
@@ -2288,14 +2675,14 @@ impl Topology {
 
         // println!("{}", self.dot());
 
-        for (e, d) in self.graph.iter_egdes(&self.graph.external_filter()) {
+        for (e, _, d) in self.graph.iter_edges(&self.graph.external_filter()) {
             // println!("loop");
 
-            if let EdgeId::Unpaired { hedge, flow } = e {
+            if let HedgePair::Unpaired { hedge, flow } = e {
                 let (a, _) = numbering_map.insert_full(hedge);
                 let p = SignOrZero::from(flow) * function!(extsymb, a as i32);
 
-                eqs.push(&d.data.unwrap().propagator.momentum - &p);
+                eqs.push(&d.data.propagator.momentum - &p);
                 vars.push(p);
             } else {
                 panic!("ahhhh");
@@ -2332,12 +2719,12 @@ impl Topology {
 
         let mut numbering_map = IndexSet::new();
         for (n, _) in self.graph.iter_nodes() {
-            for (e, d) in self.graph.iter_egdes(&n.hairs) {
-                if let EdgeId::Split { source, .. } = e {
+            for (e, _, d) in self.graph.iter_edges(&n.hairs) {
+                if let HedgePair::Split { source, .. } = e {
                     let (a, new) = numbering_map.insert_full(source);
                     if new {
                         let mut lmbs = AHashSet::new();
-                        for i in d.data.unwrap().propagator.momentum.pattern_match(
+                        for i in d.data.propagator.momentum.pattern_match(
                             &function!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern(),
                             None,
                             None,
@@ -2365,8 +2752,8 @@ impl Topology {
     pub fn prefactor(&self) -> Atom {
         let mut p = self.prefactor.clone();
 
-        for (_, d) in self.graph.iter_egdes(&!self.graph.external_filter()) {
-            let d = d.data.unwrap();
+        for (_, _, d) in self.graph.iter_edges(&!self.graph.external_filter()) {
+            let d = d.data;
             if d.power > 1 {
                 p = p / (d.propagator.to_atom().npow((d.power - 1) as i32))
             }
@@ -2535,9 +2922,9 @@ impl Topology {
 
             let mut cut_map = AHashMap::new();
 
-            for (i, c) in graph.iter_egdes(&graph.full_filter()) {
-                let s = c.data.unwrap().signature.clone();
-                if let EdgeId::Paired { sink, .. } = i {
+            for (i, _, c) in graph.iter_edges(&graph.full_filter()) {
+                let s = c.data.signature.clone();
+                if let HedgePair::Paired { sink, .. } = i {
                     cut_map.insert(s, sink);
                 }
             }
@@ -2591,8 +2978,8 @@ impl Topology {
                 .join(
                     dot,
                     |_, b, _, v| {
-                        let b = b.data.unwrap().signature.clone();
-                        let v = v.data.unwrap().signature.clone();
+                        let b = b.data.signature.clone();
+                        let v = v.data.signature.clone();
                         // println!("join{}{}", b, v);
                         b == v && v != ext_signature
                     },
@@ -2607,17 +2994,14 @@ impl Topology {
 
             for (n, _) in skeleton.iter_node_data(&full) {
                 let mut sum = Atom::new_num(0);
-                for (i, d) in skeleton.iter_egdes(n) {
+                for (i, _, d) in skeleton.iter_edges(n) {
                     match i {
-                        EdgeId::Split { split, .. } => {
-                            sum = sum
-                                + SignOrZero::from(split)
-                                    * d.as_ref().data.unwrap().propagator.momentum.clone();
+                        HedgePair::Split { split, .. } => {
+                            sum =
+                                sum + SignOrZero::from(split) * d.data.propagator.momentum.clone();
                         }
-                        EdgeId::Unpaired { flow, .. } => {
-                            sum = sum
-                                - SignOrZero::from(flow)
-                                    * d.as_ref().data.unwrap().propagator.momentum.clone();
+                        HedgePair::Unpaired { flow, .. } => {
+                            sum = sum - SignOrZero::from(flow) * d.data.propagator.momentum.clone();
                         }
                         _ => {}
                     }
@@ -2635,20 +3019,15 @@ impl Topology {
                         .hairs_from_id(n)
                         .hairs
                         .included_iter()
-                        .find(|i| skeleton.involution.is_identity(*i));
+                        .find(|i| skeleton.hedge_pair(*i).is_unpaired());
 
                     if let Some(e) = ext {
-                        if let InvolutiveMapping::Identity { data, .. } =
-                            &mut skeleton.involution[e]
-                        {
-                            let d = data.take();
-                            let mut current_data = d.data.unwrap();
-                            let o = d.orientation;
+                        if skeleton.hedge_pair(e).is_unpaired() {
+                            let did = skeleton[&e];
+                            let d = &mut skeleton[did];
 
-                            let out = &current_data.propagator.momentum + h;
-                            current_data.propagator.momentum = out;
-
-                            *data = EdgeData::new(current_data, o);
+                            let out = &d.propagator.momentum + h;
+                            d.propagator.momentum = out;
                         }
                     } else {
                         skeleton = skeleton
@@ -2664,6 +3043,7 @@ impl Topology {
                                     power: 1,
                                 },
                                 Flow::Source,
+                                false,
                             )
                             .unwrap()
                             .1;
@@ -2682,6 +3062,7 @@ impl Topology {
                                 power: 1,
                             },
                             Flow::Source,
+                            false,
                         )
                         .unwrap()
                         .1;
@@ -2976,9 +3357,12 @@ pub fn dis_cut_layout<'a>(
 
     // let file = std::fs::File::open("layout_params.json").unwrap();
     // let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
-    let mut pos = cut.layout(&graph.graph, params, iter_params, edge_len, &|e| {
-        e.emr_momentum.replace_all_multiple(&c)
-    });
+    let pos = cut.layout(&graph.graph, params, iter_params, edge_len);
+
+    let mut pos = pos.map(
+        |_, _, _, a| a,
+        |_, _, _, a| a.map(|l| l.map(|d| (d.0, d.1, d.0.emr_momentum.replace_all_multiple(&c)))),
+    );
 
     if let Some(settings) = settings {
         pos.to_fancy(settings);
@@ -3018,3 +3402,4 @@ pub fn write_layout<'a>(
             .as_str(),
     )
 }
+pub mod gen;
