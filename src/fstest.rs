@@ -142,8 +142,8 @@ fn main() {
             })
             .or_insert_with(|| {
                 println!("//Not seen {}", id);
-                println!("//original\n{}", cuto);
-                println!("//canonical\n{}", cutc);
+                // println!("//original\n{}", cuto);
+                // println!("//canonical\n{}", cutc);
                 (1, Some(cuto))
             });
     }
