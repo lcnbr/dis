@@ -1103,6 +1103,10 @@ mod tests {
 
     #[test]
     fn test_transpositions() {
+        let p = Permutation::sort([2, 1, 0, 3]);
+        let transpositions = p.transpositions();
+        println!("{:?}", transpositions);
+
         let p = Permutation::from_map(vec![2, 0, 1, 3]);
         let transpositions = p.transpositions();
         assert_eq!(transpositions, vec![(0, 1), (0, 2)]);

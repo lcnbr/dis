@@ -12,9 +12,9 @@ path = "src/lib.rs"
 
 
 
-[[bin]]
-name = "compare_cuts"
-path = "src/compare_cuts.rs"
+# [[bin]]
+# name = "compare_cuts"
+# path = "src/compare_cuts.rs"
 
 [[bin]]
 name = "fstest"
@@ -125,14 +125,15 @@ linnet = { git = "https://github.com/alphal00p/linnet", features = [
 ] , rev="9f7d265be48adcba0509d594d37819b484f322d2"}
 fern = "0.7.1"
 humantime = "2.2.0"
+similar-asserts = "1.7.0"
 
 [patch.crates-io]
 spenso = { git = "https://github.com/alphal00p/spenso", rev = "47a35775325a4d061af05e2fc00904b221d8bf83" }
 symbolica = { git = "https://github.com/alphal00p/symbolica", rev = "3f1a5d17abde15df49ca092f311fcd685c1d56fc" }
 [patch."https://github.com/alphal00p/gammaloop"]
-# gammalooprs={path="../main_gammaloop/gammaloop"}
+gammalooprs={path="../main_gammaloop/gammaloop"}
 
 [patch."https://github.com/alphal00p/linnet"]
 
-# linnet = { path = "../linnet" }
+linnet = { path = "../linnet" }
 # spenso = { path = "../alphal00p/spenso" }

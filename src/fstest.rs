@@ -12,14 +12,14 @@ use _gammaloop::{
 use ahash::{AHashSet, HashMap, HashMapExt};
 use dis::{
     gen::{chain_dis_generate, dis_options, photon_self_energy_gen},
-    load_generic_model, CutGraph, DisCompVertex, DisGraph, IFCuts,
+    load_generic_model, DisCompVertex, DisCutGraph, DisGraph, IFCuts,
 };
 use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
 
 use libc::SIGHUP;
 use linnet::half_edge::{
-    involution::{EdgeData, Orientation},
+    involution::{EdgeData, Flow, Orientation},
     HedgeGraph,
 };
 use log::{debug, error, info, trace, warn, LevelFilter};
@@ -36,7 +36,7 @@ fn setup_logger() -> Result<(), fern::InitError> {
     fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
-                "[{} {} {}] {}",
+                "//[{} {} {}] {}",
                 humantime::format_rfc3339_seconds(SystemTime::now()),
                 record.level(),
                 record.target(),
@@ -112,6 +112,15 @@ fn main() {
         &model,
     );
 
+    let dxdx = dis_options(
+        &["e-", "d~", "d~"],
+        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
+        2,
+        1,
+        1,
+        &model,
+    );
+
     let ddx = dis_options(
         &["e-", "d", "d~"],
         &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
@@ -121,15 +130,26 @@ fn main() {
         &model,
     );
 
+    // let ddxg = dis_options(
+    //     &["e-", "d", "d~"],
+    //     &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
+    //     2,
+    //     1,
+    //     1,
+    //     &model,
+    // );
+
     // let diagram_gen = FeynGen::new(options);
 
-    let fs_diagrams: Vec<_> = chain_dis_generate(&[d, dx, g, dd, ddx, dg, dxg], &model);
+    let fs_diagrams: Vec<_> = chain_dis_generate(&[d, dx, g, dd, dxdx, ddx, dg, dxg], &model);
 
-    println!("{}", fs_diagrams.len());
-    let mut fs_can: IndexMap<CutGraph, (usize, Option<CutGraph>)> = IndexMap::new();
+    info!("Number of fs diagrams: {}", fs_diagrams.len());
+    let mut fs_can: IndexMap<DisCutGraph, (usize, Option<DisCutGraph>)> = IndexMap::new();
 
     for p in &fs_diagrams {
-        let cuto = CutGraph::from_bare(p);
+        let cuto = DisCutGraph::from_bare(p);
+
+        // println!("//original\n{}", cuto);
         let cutc = cuto.clone().canonize();
 
         let entry = fs_can.entry(cutc.clone());
@@ -138,19 +158,28 @@ fn main() {
         entry
             .and_modify(|a| {
                 a.0 += 1;
-                println!("//Seen {} {} times", id, a.0);
+                info!("//Seen {} {} times", id, a.0);
             })
             .or_insert_with(|| {
-                println!("//Not seen {}", id);
-                // println!("//original\n{}", cuto);
-                // println!("//canonical\n{}", cutc);
+                info!("//Not seen {}", id);
+                info!("//original\n{}", cuto);
+                info!("//canonical\n{}", cutc);
                 (1, Some(cuto))
             });
     }
 
+    for (i, (k, v)) in fs_can.iter().enumerate() {
+        if v.0 == 2 {
+            if let Some(c) = &v.1 {
+                info!("//{i}");
+                info!("//original\n{}", c);
+            }
+        }
+    }
+
     let self_energies = photon_self_energy_gen(2, &model);
 
-    println!("{}", self_energies.len());
+    info!("{}", self_energies.len());
 
     // let bar = ProgressBar::new(diagrams.len() as u64);
     let diagrams: Vec<_> = self_energies
@@ -162,60 +191,42 @@ fn main() {
         .enumerate()
         .collect();
 
-    println!("Now comparing");
+    info!("Now comparing");
     diagrams.iter().for_each(|(i, d)| {
         let ifsplit = d.full_dis_filter_split();
 
         let all = ifsplit.collect_all_cuts(d);
 
         for h in all {
-            let cut = CutGraph::from_hairy(h.clone(), true).canonize();
+            let cut = h.clone().canonize();
             let entry = fs_can.entry(cut.clone());
             let id = entry.index();
 
             entry
                 .and_modify(|a| {
                     a.0 += 1;
-                    println!("//Seen {} {} times", id, a.0);
+                    info!("//Seen {} {} times", id, a.0);
                 })
                 .or_insert_with(|| {
-                    println!("//Not seen {}", id);
+                    info!("//Not seen {}", id);
 
-                    println!(
-                        "//OriginalCut:\n{}",
-                        h.dot_impl(
-                            &h.full_filter(),
-                            "",
-                            &|a| {
-                                let label = match a.1 {
-                                    Orientation::Default => format!("Default:{}", a.2),
-                                    Orientation::Reversed => format!("Reversed:{}", a.2),
-                                    Orientation::Undirected => "".to_string(),
-                                };
-                                Some(format!(
-                                    "pdg={},orient={:?},edgeid={},label=\"{}\"",
-                                    a.0,
-                                    a.1,
-                                    usize::from(a.2),
-                                    label
-                                ))
-                            },
-                            &|b| { Some(format!("label = \"{}\",nodetype={}", b, b)) }
-                        )
-                    );
-                    println!("//canonical\n{}", cut);
+                    info!("//OriginalCut:\n{}", h);
+                    info!("//canonical\n{}", cut);
 
-                    (1, None)
+                    (1, Some(h))
                 });
         }
         // bar.inc(1);
     });
 
+    info!("Finished comparing");
+
     for (i, (k, v)) in fs_can.iter().enumerate() {
         if v.0 == 1 {
+            info!("//{i}");
+            info!("//canonical\n{}", k);
             if let Some(c) = &v.1 {
-                println!("//{i}");
-                println!("//original\n{}", c);
+                info!("//original\n{}", c);
             }
         }
     }

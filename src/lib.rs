@@ -1,9 +1,8 @@
 use std::{
-    collections::{BTreeMap, BTreeSet},
-    fmt::Display,
+    collections::BTreeMap,
+    fmt::{format, Display},
     fs::File,
     io::Write,
-    iter::empty,
     ops::Neg,
     path::Path,
     str::FromStr,
@@ -12,21 +11,21 @@ use std::{
 
 use gamma::Gamma;
 // use libc::GS;
-use linnet::half_edge::{
-    builder::HedgeGraphBuilder,
-    drawing::Decoration,
-    involution::{EdgeData, EdgeIndex, Flow, Hedge, HedgePair, Orientation},
-    layout::{FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph},
-    nodestorage::NodeStorageOps,
-    subgraph::{Inclusion, OrientedCut, SubGraph, SubGraphOps},
-    EdgeAccessors, HedgeGraph, NodeIndex,
+use linnet::{
+    dot_parser::{DotEdgeData, DotVertexData},
+    half_edge::{
+        builder::HedgeGraphBuilder,
+        drawing::Decoration,
+        involution::{EdgeData, EdgeIndex, Flow, Hedge, HedgePair, Orientation},
+        layout::{FancySettings, LayoutIters, LayoutParams, LayoutSettings, PositionalHedgeGraph},
+        nodestorage::NodeStorageOps,
+        subgraph::{cut::PossiblyCutEdge, Inclusion, OrientedCut, SubGraph, SubGraphOps},
+        EdgeAccessors, HedgeGraph, NodeIndex,
+    },
 };
 
 use _gammaloop::{
-    graph::{
-        BareGraph, Edge, EdgeType, ExternalVertexInfo, HedgeGraphExt as GlHedgeGraphExt, Vertex,
-        VertexInfo,
-    },
+    graph::{BareGraph, Edge, EdgeType, HedgeGraphExt as GlHedgeGraphExt, Vertex, VertexInfo},
     model::{normalise_complex, Model},
     momentum::{Sign, SignOrZero, Signature},
     numerator::{AppliedFeynmanRule, GlobalPrefactor, Numerator, UnInit},
@@ -144,6 +143,56 @@ pub enum DisCompVertex {
     Right(EdgeIndex),
 }
 
+impl From<DisCompVertex> for DotVertexData {
+    fn from(pdg: DisCompVertex) -> Self {
+        let mut vertex = DotVertexData::empty();
+        match pdg {
+            DisCompVertex::Internal => vertex.add_statement("node_type", "i"),
+            DisCompVertex::Left(i) => {
+                vertex.add_statement("node_type", "left");
+                let i: usize = i.into();
+                vertex.add_statement("edge_id", i);
+            }
+            DisCompVertex::Right(i) => {
+                vertex.add_statement("node_type", "right");
+                let i: usize = i.into();
+                vertex.add_statement("edge_id", i);
+            }
+        };
+        vertex
+    }
+}
+
+impl TryFrom<DotVertexData> for DisCompVertex {
+    type Error = String;
+    fn try_from(dot_edge_data: DotVertexData) -> Result<Self, Self::Error> {
+        let node_type: String = dot_edge_data
+            .get("node_type")
+            .ok_or("Missing 'node_type' attribute")?
+            .unwrap();
+        match node_type.as_str() {
+            "left" => {
+                let edge_id: usize = dot_edge_data
+                    .get("edge_id")
+                    .ok_or("Missing 'edge_id' attribute for left node_type")?
+                    .map_err(|a| "Cannot parse")?;
+
+                Ok(DisCompVertex::Left(edge_id.into()))
+            }
+            "right" => {
+                let edge_id: usize = dot_edge_data
+                    .get("edge_id")
+                    .ok_or("Missing 'edge_id' attribute for right node_type")?
+                    .map_err(|a| "Cannot parse")?;
+
+                Ok(DisCompVertex::Right(edge_id.into()))
+            }
+            "i" => Ok(DisCompVertex::Internal),
+            _ => Err("Invalid 'node_type' value".to_string()),
+        }
+    }
+}
+
 impl DisCompVertex {
     pub fn from_bare(graph: &BareGraph, vertex_id: usize) -> Self {
         match &graph.vertices[vertex_id].vertex_info {
@@ -164,9 +213,10 @@ impl DisCompVertex {
                     })
                     .unwrap_or(vertex_id);
 
+                // println!("{}{}{}", a.direction, a.particle.name, a.particle.pdg_code);
                 match a.direction {
-                    EdgeType::Incoming => DisCompVertex::Right(EdgeIndex::from(ext_id)),
-                    EdgeType::Outgoing => DisCompVertex::Left(EdgeIndex::from(ext_id)),
+                    EdgeType::Incoming => DisCompVertex::Left(EdgeIndex::from(ext_id)),
+                    EdgeType::Outgoing => DisCompVertex::Right(EdgeIndex::from(ext_id)),
                     _ => panic!("Invalid edgetype"),
                 }
             }
@@ -236,68 +286,132 @@ impl<Data> CutEdge<Data> {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Pdg {
+    pub pdg: isize,
+}
+
+impl Display for Pdg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "pdgid:{}", self.pdg)
+    }
+}
+
+impl From<Pdg> for DotEdgeData {
+    fn from(pdg: Pdg) -> Self {
+        let mut statements = BTreeMap::new();
+        statements.insert("pdg".to_owned(), pdg.pdg.to_string());
+        DotEdgeData { statements }
+    }
+}
+
+impl TryFrom<DotEdgeData> for Pdg {
+    type Error = String;
+    fn try_from(dot_edge_data: DotEdgeData) -> Result<Self, Self::Error> {
+        let pdg = dot_edge_data
+            .statements
+            .get("pdg")
+            .ok_or("Missing 'pdg' attribute")?;
+        let pdg = pdg.parse().map_err(|_| "Invalid 'pdg' value".to_string())?;
+        Ok(Pdg { pdg })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CutGraph {
-    pub graph: HedgeGraph<isize, DisCompVertex>,
+pub struct DisCutGraph {
+    pub graph: HedgeGraph<PossiblyCutEdge<Pdg>, DisCompVertex>,
     // signature: BTreeSet<(isize, Orientation, EdgeIndex)>,
 }
 
-impl Display for CutGraph {
+impl Display for DisCutGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "//CutGraph\n{}",
-            self.graph.dot_label(&self.graph.full_filter())
-        )
+        let out = self.graph.dot_impl(
+            &self.graph.full_filter(),
+            "",
+            &|d| {
+                let serialized_data = DotEdgeData::from(d.clone());
+                let label = match d.flow() {
+                    None => d.edge_data().pdg.to_string(),
+                    Some(Flow::Source) => format!("\"Left:{}:{}\"", d.edge_data().pdg, d.index),
+                    Some(Flow::Sink) => format!("\"Right:{}:{}\"", d.edge_data().pdg, d.index),
+                };
+
+                Some(format!("{serialized_data}label={label}"))
+            },
+            &|d| {
+                let sd = DotVertexData::from(d.clone());
+
+                Some(format!("{sd}"))
+            },
+        );
+
+        write!(f, "{}", out)
     }
 }
 
 pub struct VacuumGraph {
-    graph: HedgeGraph<CutEdge<isize>, DisCompVertex>,
+    pub graph: HedgeGraph<PossiblyCutEdge<Pdg>, DisCompVertex>,
 }
 
 impl Display for VacuumGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "//VacuumGraph\n{}",
-            self.graph.dot_display(&self.graph.full_filter())
-        )
+        let out = self.graph.dot_impl(
+            &self.graph.full_filter(),
+            "",
+            &|d| {
+                let serialized_data = DotEdgeData::from(d.clone());
+                let label = match d.flow() {
+                    None => d.edge_data().pdg.to_string(),
+                    Some(Flow::Source) => format!("\"Left{}\"", d.edge_data().pdg),
+                    Some(Flow::Sink) => format!("\"Right{}\"", d.edge_data().pdg),
+                };
+
+                Some(format!("{serialized_data}label={label}"))
+            },
+            &|d| {
+                let sd = DotVertexData::from(d.clone());
+
+                Some(format!("{sd}"))
+            },
+        );
+
+        write!(f, "{}", out)
     }
 }
 
 impl VacuumGraph {
-    pub fn cut(mut self) -> CutGraph {
+    pub fn cut(mut self) -> DisCutGraph {
         // -> HedgeGraph<isize, DisCompVertex> {
-        let mut cut = OrientedCut::empty(self.graph.n_hedges());
+        self.graph.split_copy();
+        DisCutGraph { graph: self.graph }
+    }
 
-        for (p, _, d) in self.graph.iter_all_edges() {
-            match d.data.cut {
-                Orientation::Reversed => cut.set(p, Flow::Sink),
-                Orientation::Default => cut.set(p, Flow::Source),
+    pub fn canonize(mut self) -> Self {
+        let cut = self.graph.cut();
+
+        for l in cut.iter_left_hedges() {
+            let orientation = self.graph.orientation(l);
+            let flow = self.graph.flow(l);
+
+            match orientation {
+                Orientation::Reversed => {
+                    match flow {
+                        Flow::Source => self.graph.set_flow(l, Flow::Sink),
+                        Flow::Sink => self.graph.set_flow(l, Flow::Source),
+                    }
+                    self.graph[[&l]].reverse_mut()
+                }
+                Orientation::Undirected => {
+                    if let Flow::Sink = flow {
+                        self.graph.set_flow(l, Flow::Source);
+                        self.graph[[&l]].reverse_mut();
+                    }
+                    self.graph.set_orientation(l, Orientation::Default);
+                }
                 _ => {}
             }
         }
 
-        // self.graph.align_underlying_to_superficial();
-
-        CutGraph::from_hairy(
-            cut.to_owned_graph(&self.graph).map(
-                |_, _, _, _| DisCompVertex::Internal,
-                |_, _, _, e| {
-                    e.map(|(e, o, a)| {
-                        // if !matches!(o, Orientation::Undirected) {
-                        //     // signature.insert((e.data, o, a));
-                        // }
-                        (e.data, o, a)
-                    })
-                },
-            ),
-            true,
-        )
-    }
-
-    pub fn canonize(self) -> Self {
         let sym = <HedgeGraph<_, _> as GlHedgeGraphExt<_, _>>::to_sym(&self.graph)
             .unwrap()
             .canonize()
@@ -320,357 +434,311 @@ impl VacuumGraph {
     }
 }
 
-impl CutGraph {
+impl DisCutGraph {
+    /// Only on cut graphs
+    pub fn only_default_orientations(&mut self) {
+        let cut = self.graph.cut();
+
+        for l in cut.iter_left_hedges() {
+            let orientation = self.graph.orientation(l);
+            let flow = self.graph.flow(l);
+
+            match orientation {
+                Orientation::Reversed => match flow {
+                    Flow::Source => self.graph.set_flow(l, Flow::Sink),
+                    Flow::Sink => self.graph.set_flow(l, Flow::Source),
+                },
+                Orientation::Undirected => {
+                    if let Flow::Sink = flow {
+                        self.graph.set_flow(l, Flow::Source);
+                        self.graph[[&l]].cut(Flow::Source);
+                    }
+                    self.graph.set_orientation(l, Orientation::Default);
+                }
+                _ => {}
+            }
+        }
+
+        for l in cut.iter_right_hedges() {
+            let orientation = self.graph.orientation(l);
+            let flow = self.graph.flow(l);
+
+            match orientation {
+                Orientation::Reversed => match flow {
+                    Flow::Source => self.graph.set_flow(l, Flow::Sink),
+                    Flow::Sink => self.graph.set_flow(l, Flow::Source),
+                },
+                Orientation::Undirected => {
+                    if let Flow::Sink = flow {
+                        self.graph.set_flow(l, Flow::Source);
+                        self.graph[[&l]].cut(Flow::Source);
+                    }
+                    self.graph.set_orientation(l, Orientation::Default);
+                }
+                _ => {}
+            }
+        }
+    }
+
     pub fn from_bare(graph: &BareGraph) -> Self {
-        let mut newh = graph.hedge_representation.map_data_ref(
+        let mut pointer_graph = graph.hedge_representation.clone();
+        pointer_graph.align_underlying_to_superficial();
+
+        let mut newh = pointer_graph.map_data_ref(
             &|_, v, _| DisCompVertex::from_bare(graph, *v),
-            &|_, _, _, e| {
+            &|g, id, pair, e| {
                 let o = e.orientation;
                 let p = &graph.edges[*e.data].particle;
-                if p.spin == 2 {
+                let pdg = Pdg {
+                    pdg: p.pdg_code.abs(),
+                };
+                let newo = if p.spin == 2 {
                     if p.pdg_code < 0 {
-                        EdgeData::new(p.pdg_code.abs(), o.reverse())
+                        o.reverse()
                     } else {
-                        EdgeData::new(p.pdg_code.abs(), o)
+                        o
                     }
                 } else {
-                    EdgeData::new(p.pdg_code.abs(), Orientation::Undirected)
-                }
+                    Orientation::Undirected
+                };
+                let edgedata = if let HedgePair::Paired { source, sink } = pair {
+                    let src = g.node_id(source);
+                    let sk = g.node_id(sink);
+
+                    let source_node = DisCompVertex::from_bare(graph, g[src]);
+                    let sink_node = DisCompVertex::from_bare(graph, g[sk]);
+
+                    match (source_node, sink_node) {
+                        (DisCompVertex::Left(z), _) => {
+                            let mut edge = PossiblyCutEdge::uncut(pdg, z);
+                            edge.cut(Flow::Sink);
+                            edge
+                        }
+                        (DisCompVertex::Right(z), _) => {
+                            let mut edge = PossiblyCutEdge::uncut(pdg, z);
+                            edge.cut(Flow::Source);
+                            edge
+                        }
+                        (_, DisCompVertex::Left(z)) => {
+                            let mut edge = PossiblyCutEdge::uncut(pdg, z);
+                            edge.cut(Flow::Sink);
+                            edge
+                        }
+                        (_, DisCompVertex::Right(z)) => {
+                            let mut edge = PossiblyCutEdge::uncut(pdg, z);
+                            edge.cut(Flow::Source);
+                            edge
+                        }
+                        _ => PossiblyCutEdge::uncut(pdg, id),
+                    }
+                } else {
+                    PossiblyCutEdge::uncut(pdg, id)
+                };
+
+                EdgeData::new(edgedata, newo)
             },
+        );
+
+        println!(
+            "//from_map\n{}",
+            newh.dot_impl(
+                &newh.full_filter(),
+                "",
+                &|d| {
+                    let serialized_data = DotEdgeData::from(d.clone());
+                    let label = match d.flow() {
+                        None => d.edge_data().pdg.to_string(),
+                        Some(Flow::Source) => format!("\"Left{}\"", d.edge_data().pdg),
+                        Some(Flow::Sink) => format!("\"Right{}\"", d.edge_data().pdg),
+                    };
+
+                    Some(format!("{serialized_data}label={label}"))
+                },
+                &|d| {
+                    let sd = DotVertexData::from(d.clone());
+
+                    Some(format!("{sd}label={}", d))
+                },
+            )
         );
 
         newh.align_underlying_to_superficial();
 
-        Self { graph: newh }
+        // println!(
+        //     "//aligned\n{}",
+        //     newh.dot_impl(
+        //         &newh.full_filter(),
+        //         "",
+        //         &|d| {
+        //             let serialized_data = DotEdgeData::from(d.clone());
+        //             let label = match d.flow() {
+        //                 None => d.edge_data().pdg.to_string(),
+        //                 Some(Flow::Source) => format!("\"Left{}\"", d.edge_data().pdg),
+        //                 Some(Flow::Sink) => format!("\"Right{}\"", d.edge_data().pdg),
+        //             };
+
+        //             Some(format!("{serialized_data}label={label}"))
+        //         },
+        //         &|d| {
+        //             let sd = DotVertexData::from(d.clone());
+
+        //             Some(format!("{sd}label={}", d))
+        //         },
+        //     )
+        // );
+
+        let mut excised: BitVec = newh.empty_subgraph();
+
+        for (n, d) in newh.iter_nodes() {
+            if !matches!(d, DisCompVertex::Internal) {
+                excised.union_with(&n.hairs)
+            }
+        }
+
+        excised = excised.complement(&newh);
+
+        // Turn the subgraph into an actual graph
+        let mut excised = newh
+            .concretize(&excised)
+            .map(|_, _, _, d| *d, |_, b, d, e| e.map(|d| d.clone()));
+
+        // println!(
+        //     "//excised\n{}",
+        //     excised.dot_impl(
+        //         &excised.full_filter(),
+        //         "",
+        //         &|d| {
+        //             let serialized_data = DotEdgeData::from(d.clone());
+        //             let label = match d.flow() {
+        //                 None => d.edge_data().pdg.to_string(),
+        //                 Some(Flow::Source) => format!("\"Left{}\"", d.edge_data().pdg),
+        //                 Some(Flow::Sink) => format!("\"Right{}\"", d.edge_data().pdg),
+        //             };
+
+        //             Some(format!("{serialized_data}label={label}"))
+        //         },
+        //         &|d| {
+        //             let sd = DotVertexData::from(d.clone());
+
+        //             Some(format!("{sd}label={}", d))
+        //         },
+        //     )
+        // );
+
+        excised.align_underlying_to_superficial();
+
+        Self { graph: excised }
     }
 
-    pub fn canonize(mut self) -> Self {
+    pub fn canonize(self) -> Self {
+        let i = self.canonize_impl();
+        let j = i.clone().canonize_impl();
+        similar_asserts::assert_eq!(i, j, "{}\n//not equal to {}", i, j);
+        i
+    }
+
+    fn canonize_impl(mut self) -> Self {
         let nodes = self.graph.nodes(&self.graph.full_filter());
 
         // Iterate over external nodes, and if they are undirected (e.g. gluons), orient them,
         // outgoing for left vertices
         // incoming for right vertices
-        for n in nodes {
-            match self.graph[n] {
-                DisCompVertex::Left(_) => {
-                    let hair = self.graph[&n].hairs.included_iter().next().unwrap();
-                    let o = self.graph.orientation(hair);
-                    let flow = self.graph.flow(hair);
-                    if matches!(o, Orientation::Undirected) {
-                        // println!("Hiiiii");
-                        let newo = match flow {
-                            Flow::Source => Orientation::Default,
-                            Flow::Sink => Orientation::Reversed,
-                        };
+        // for n in nodes {
+        //     match self.graph[n] {
+        //         DisCompVertex::Left(_) => {
+        //             let hair = self.graph[&n].hairs.included_iter().next().unwrap();
+        //             let o = self.graph.orientation(hair);
+        //             let flow = self.graph.flow(hair);
+        //             if matches!(o, Orientation::Undirected) {
+        //                 // println!("Hiiiii");
+        //                 let newo = match flow {
+        //                     Flow::Source => Orientation::Default,
+        //                     Flow::Sink => Orientation::Reversed,
+        //                 };
 
-                        self.graph.set_orientation(hair, newo)
-                    }
-                }
-                DisCompVertex::Right(_) => {
-                    let hair = self.graph[&n].hairs.included_iter().next().unwrap();
-                    let o = self.graph.orientation(hair);
-                    let flow = self.graph.flow(hair);
-                    if matches!(o, Orientation::Undirected) {
-                        // println!("Helloww");
-                        let newo = match flow {
-                            Flow::Source => Orientation::Reversed,
-                            Flow::Sink => Orientation::Default,
-                        };
+        //                 self.graph.set_orientation(hair, newo)
+        //             }
+        //         }
+        //         DisCompVertex::Right(_) => {
+        //             let hair = self.graph[&n].hairs.included_iter().next().unwrap();
+        //             let o = self.graph.orientation(hair);
+        //             let flow = self.graph.flow(hair);
+        //             if matches!(o, Orientation::Undirected) {
+        //                 // println!("Helloww");
+        //                 let newo = match flow {
+        //                     Flow::Source => Orientation::Reversed,
+        //                     Flow::Sink => Orientation::Default,
+        //                 };
 
-                        self.graph.set_orientation(hair, newo)
-                    }
-                }
-                _ => {}
-            }
-        }
+        //                 self.graph.set_orientation(hair, newo)
+        //             }
+        //         }
+        //         _ => {}
+        //     }
+        // }
+
+        // println!("//arrows on non-fermions\n{self}");
         // Now all external edges on non fermions should be all outgoing for left vertices
         // and incoming for right vertices
         self.graph.align_underlying_to_superficial();
 
+        // println!("//aligned to arrows\n{self}");
         let vac = self.to_marked_vacuum().canonize();
 
         // Now cut again:
         vac.cut()
     }
 
-    pub fn to_marked_vacuum(self) -> VacuumGraph {
-        // mark all edges that connect to external vertices with the node data
-        let mapped = self.graph.map(
-            |_, _, _, v| v,
-            |_, b, d, e| {
-                let mut cut_orientation = DisCompVertex::Internal;
-                if let HedgePair::Paired { source, sink } = d {
-                    let source_node = b.get_node_data(b.node_id_ref(source));
-                    let sink_node = b.get_node_data(b.node_id_ref(sink));
-
-                    match (source_node, sink_node) {
-                        (DisCompVertex::Left(z), _) => {
-                            cut_orientation = DisCompVertex::Left(*z);
-                        }
-                        (DisCompVertex::Right(z), _) => {
-                            cut_orientation = DisCompVertex::Right(*z);
-                        }
-                        (_, DisCompVertex::Left(z)) => {
-                            cut_orientation = DisCompVertex::Left(*z);
-                        }
-                        (_, DisCompVertex::Right(z)) => {
-                            cut_orientation = DisCompVertex::Right(*z);
-                        }
-                        _ => {}
-                    }
-                }
-
-                e.map(|d| (d, cut_orientation))
-            },
-        );
-        // a subgraph without the external vertices
-        let mut excised: BitVec = mapped.empty_subgraph();
-
-        for (n, d) in mapped.iter_nodes() {
-            if !matches!(d, DisCompVertex::Internal) {
-                excised.union_with(&n.hairs)
-            }
-        }
-
-        excised = excised.complement(&mapped);
-
-        // Turn the subgraph into an actual graph
-        let mut excised = mapped
-            .concretize(&excised)
-            .map(|_, _, _, d| *d, |_, _, _, d| d.map(|d| (d.0, d.1)));
-
-        // println!(
-        //     "//Excised graph\n{}",
-        //     excised.dot_impl(
-        //         &excised.full_filter(),
-        //         "",
-        //         &|a| Some(format!("label=\"{}:{:?}\"", a.0, a.1)),
-        //         &|a| { Some(format!("label=\"{a}\"")) }
-        //     )
-        // );
-
-        // connect the hairs if they have left right matching data
-        excised
-            .sew(
-                |lf, ld, rf, rd| {
-                    lf == -rf
-                        && match (ld.data.1, rd.data.1) {
-                            (DisCompVertex::Left(x), DisCompVertex::Right(y)) => x == y,
-                            (DisCompVertex::Right(x), DisCompVertex::Left(y)) => x == y,
-                            _ => false,
-                        }
-                },
-                |lf, ld, rf, rd| {
-                    if lf == Flow::Source {
-                        (lf, ld)
-                    } else {
-                        (lf, rd)
-                    }
-                },
-            )
-            .unwrap();
-
-        // println!(
-        //     "//Sewed graph\n{}",
-        //     excised.dot_impl(
-        //         &excised.full_filter(),
-        //         "",
-        //         &|a| Some(format!("label=\"{}:{:?}\"", a.0, a.1)),
-        //         &|a| { Some(format!("label=\"{a}\"")) }
-        //     )
-        // );
-
-        let mut vacc = excised.map(
-            |_, _, _, d| d,
-            |_, _, _, d| {
-                let o = d.orientation;
-                // if matches!(o, Orientation::Undirected) {
-                //     o = Orientation::Default
-                // }
-                EdgeData::new(CutEdge::from_comp_vertex(d.data.0, d.data.1), o)
-            },
-        );
-
-        // println!(
-        //     "//MappedSewed graph\n{}",
-        //     vacc.dot_impl(
-        //         &vacc.full_filter(),
-        //         "",
-        //         &|a| Some(format!("label=\"{}:{:?}\"", a.data, a.cut)),
-        //         &|a| { Some(format!("label=\"{a}\"")) }
-        //     )
-        // );
-
-        vacc.align_underlying_to_superficial();
-
-        // println!(
-        //     "//Aligned MappedSewed graph\n{}",
-        //     vacc.dot_impl(
-        //         &vacc.full_filter(),
-        //         "",
-        //         &|a| Some(format!("label=\"{}:{:?}\"", a.data, a.cut)),
-        //         &|a| { Some(format!("v={a}")) }
-        //     )
-        // );
-
-        VacuumGraph { graph: vacc }
-    }
-
-    pub fn from_hairy(
-        mut graph: HedgeGraph<(isize, Orientation, EdgeIndex), DisCompVertex>,
-        with_alignment: bool,
-    ) -> Self {
-        // println!(
-        //     "//From Hairy original graph:\n{}",
-        //     graph.dot_impl(
-        //         &graph.full_filter(),
-        //         "",
-        //         &|a| {
-        //             let label = match a.1 {
-        //                 Orientation::Default => format!("Default:{}", a.2),
-        //                 Orientation::Reversed => format!("Reversed:{}", a.2),
-        //                 Orientation::Undirected => "".to_string(),
-        //             };
-        //             Some(format!(
-        //                 "pdg={},orient={:?},edgeid={},label=\"{}\"",
-        //                 a.0,
-        //                 a.1,
-        //                 usize::from(a.2),
-        //                 label
-        //             ))
-        //         },
-        //         &|b| { Some(format!("label = \"{}\",nodetype={}", b, b)) }
-        //     )
-        // );
-        if with_alignment {
-            graph = graph.map(
-                |_, _, _, v| v,
-                |i, v, p, mut e| {
-                    let orientation = e.orientation;
-                    if let HedgePair::Unpaired { hedge, flow } = p {
-                        match (flow, orientation) {
-                            (Flow::Source, Orientation::Default) => {}
-                            (Flow::Sink, Orientation::Default) => {}
-                            (Flow::Source, Orientation::Reversed) => {
-                                e.data.1 = e.data.1.reverse();
-                            }
-                            (Flow::Sink, Orientation::Reversed) => {
-                                e.data.1 = e.data.1.reverse();
-                            }
-                            _ => {
-                                // panic!(
-                                //     "Unexpected hedge pair:{:?}{:?}{}",
-                                //     flow, orientation, hedge
-                                // );
-                            }
-                        }
-                    }
-                    e
-                },
-            );
-            graph.align_underlying_to_superficial();
-        }
-
-        // println!(
-        //     "//From Hairy aligned graph:\n{}",
-        //     graph.dot_impl(
-        //         &graph.full_filter(),
-        //         "",
-        //         &|a| {
-        //             let label = match a.1 {
-        //                 Orientation::Default => format!("Default:{}", a.2),
-        //                 Orientation::Reversed => format!("Reversed:{}", a.2),
-        //                 Orientation::Undirected => "".to_string(),
-        //             };
-        //             Some(format!(
-        //                 "pdg={},orient={:?},edgeid={},label=\"{}\"",
-        //                 a.0,
-        //                 a.1,
-        //                 usize::from(a.2),
-        //                 label
-        //             ))
-        //         },
-        //         &|b| { Some(format!("label = \"{}\",nodetype={}", b, b)) }
-        //     )
-        // );
-        let externals = graph.external_filter();
-        let mut saturator = HedgeGraphBuilder::new();
-        // let mut signature = BTreeSet::new();
-        for i in externals.included_iter() {
-            let flow = graph.flow(i);
-            let (pdg, o, edgeid) = graph[[&i]];
-            let orientation = graph.orientation(i);
-            let n = match (flow, o) {
-                (Flow::Source, Orientation::Default) => {
-                    Some(saturator.add_node(DisCompVertex::Left(edgeid)))
-                }
-                (Flow::Source, Orientation::Reversed) => {
-                    Some(saturator.add_node(DisCompVertex::Right(edgeid)))
-                }
-                (Flow::Sink, Orientation::Default) => {
-                    Some(saturator.add_node(DisCompVertex::Right(edgeid)))
-                }
-                (Flow::Sink, Orientation::Reversed) => {
-                    Some(saturator.add_node(DisCompVertex::Left(edgeid)))
-                }
-                _ => None,
-            };
-            if let Some(n) = n {
-                saturator.add_external_edge(n, (pdg, o, edgeid), orientation, -flow);
-            }
-        }
-
-        let saturator = saturator.build();
-        let mut saturated = graph
-            .join(
-                saturator,
-                |fl, dl, fr, dr| dl == dr && fr != fl,
-                |fl, dl, fr, dr| (fl, dl),
-            )
-            .unwrap()
-            .map(|_, _, _, v| v, |_, _, _, e| e.map(|d| d.0));
-        saturated.align_underlying_to_superficial();
-
-        // println!(
-        //     "//Saturated aligned graph\n{}",
-        //     saturated.dot_impl(
-        //         &saturated.full_filter(),
-        //         "",
-        //         &|a| Some(format!("label={}", a)),
-        //         &|a| { Some(format!("label={a}")) }
-        //     )
-        // );
-        Self { graph: saturated }
+    pub fn to_marked_vacuum(mut self) -> VacuumGraph {
+        self.graph.glue_back();
+        VacuumGraph { graph: self.graph }
     }
 }
 
 impl IFCuts {
     // pub fn vertex_rule_
 
-    pub fn collect_all_cuts<'a>(
-        &'a self,
-        dis_graph: &'a DisGraph,
-    ) -> Vec<HedgeGraph<(isize, Orientation, EdgeIndex), DisCompVertex>> {
-        // fn vertex_map(inv:&Involution, h:&HedgeNode, id:NodeIndex, data:()) -> (){
-
-        // }
-
+    pub fn collect_all_cuts<'a>(&'a self, dis_graph: &'a DisGraph) -> Vec<DisCutGraph> {
         self.cuts
             .iter()
             .flat_map(|(_, c)| {
                 c.1[0]
                     .iter()
                     .map(|c| {
-                        c.clone().to_owned_graph(&dis_graph.graph).map(
+                        let mut graph = c.clone().to_owned_graph_ref(&dis_graph.graph).map(
                             |_, _, _, _| DisCompVertex::Internal,
-                            |_, _, _, e| e.map(|(e, o, a)| (e.bare_edge.particle.pdg_code, o, a)),
-                        )
+                            |_, _, _, e| {
+                                e.map(|(e)| {
+                                    e.map(|e| {
+                                        (Pdg {
+                                            pdg: e.bare_edge.particle.pdg_code,
+                                        })
+                                    })
+                                })
+                            },
+                        );
+
+                        graph.align_underlying_to_superficial();
+
+                        DisCutGraph { graph }
                     })
                     .chain(c.1[1].iter().map(|c| {
-                        c.clone().to_owned_graph(&dis_graph.graph).map(
+                        let mut graph = c.clone().to_owned_graph_ref(&dis_graph.graph).map(
                             |_, _, _, _| DisCompVertex::Internal,
-                            |_, _, _, e| e.map(|(e, o, a)| (e.bare_edge.particle.pdg_code, o, a)),
-                        )
+                            |_, _, _, e| {
+                                e.map(|(e)| {
+                                    e.map(|e| {
+                                        (Pdg {
+                                            pdg: e.bare_edge.particle.pdg_code,
+                                        })
+                                    })
+                                })
+                            },
+                        );
+
+                        graph.align_underlying_to_superficial();
+
+                        DisCutGraph { graph }
                     }))
                     .collect_vec()
             })
@@ -1279,7 +1347,7 @@ impl DisGraph {
                     .iter_edges(c)
                     .filter(|(_, _, d)| d.data.bare_edge.particle.pdg_code.abs() == 11)
                     .count();
-                let alligned_electron = c.iter_edges_relative(&self.graph).all(|(o, d)| {
+                let alligned_electron = c.iter_edges(&self.graph).all(|(o, d)| {
                     if d.data.bare_edge.particle.pdg_code.abs() == 11 {
                         match (o, d.orientation) {
                             (Orientation::Default, Orientation::Default) => true,
@@ -1297,7 +1365,7 @@ impl DisGraph {
                     .iter_edges(c)
                     .any(|(_, _, d)| d.data.bare_edge.particle.pdg_code.abs() == 22);
 
-                let mut complement = c.reference.complement(&self.graph);
+                let mut complement = c.left.complement(&self.graph);
 
                 for i in self.graph.full_filter().included_iter() {
                     if self
@@ -2080,7 +2148,7 @@ impl DisGraph {
     pub fn cut_content(&self, cut: &OrientedCut) -> isize {
         let mut cut_content = 0;
         // println!("looking at cut {}", cut);
-        cut.iter_edges_relative(&self.graph).for_each(|(a, p)| {
+        cut.iter_edges(&self.graph).for_each(|(a, p)| {
             let particle = &p.data.bare_edge.particle;
             if particle.color.abs() == 3 && particle.spin == 2 {
                 match a.relative_to(p.orientation.try_into().unwrap()) {
@@ -2182,9 +2250,11 @@ impl DisGraph {
         // let electron_momenta = function!(DIS_SYMBOLS.loop_mom, self.marked_electron_edge.1 as i32);
         let photon_momenta = function!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
 
-        for (o, cut_edge) in cut.iter_edges_relative(&self.graph) {
-            if cut_edge.data.bare_edge.particle.pdg_code.abs() != 11 {
-                sum = sum + SignOrZero::from(o) * cut_edge.data.lmb_momentum.clone();
+        for cut_edge in cut.iter_left_hedges() {
+            if self.graph[[&cut_edge]].bare_edge.particle.pdg_code.abs() != 11 {
+                sum = sum
+                    + SignOrZero::from(self.graph.flow(cut_edge))
+                        * self.graph[[&cut_edge]].lmb_momentum.clone();
             }
         }
         sum = sum - Atom::new_var(DIS_SYMBOLS.cut_mom);
@@ -3480,7 +3550,7 @@ pub fn dis_cut_layout<'a>(
     iter_params: LayoutIters,
     settings: Option<&FancySettings>,
     edge_len: f64,
-) -> PositionalHedgeGraph<(&'a DisEdge, Orientation, Atom), &'a DisVertex> {
+) -> PositionalHedgeGraph<(&'a DisEdge, Option<Flow>, Atom), &'a DisVertex> {
     let c = graph.emr_to_lmb_and_cut(&cut);
     // let layout_graph = graph.graph.map_edges_ref(f)
 
@@ -3490,7 +3560,17 @@ pub fn dis_cut_layout<'a>(
 
     let mut pos = pos.map(
         |_, _, _, a| a,
-        |_, _, _, a| a.map(|l| l.map(|d| (d.0, d.1, d.0.emr_momentum.replace_all_multiple(&c)))),
+        |_, _, _, a| {
+            a.map(|l| {
+                l.map(|d| {
+                    (
+                        d.edge_data().clone(),
+                        d.flow(),
+                        d.edge_data().emr_momentum.replace_all_multiple(&c),
+                    )
+                })
+            })
+        },
     );
 
     if let Some(settings) = settings {
@@ -3507,7 +3587,7 @@ pub fn write_layout<'a>(
         String,
         Vec<(
             String,
-            PositionalHedgeGraph<(&'a DisEdge, Orientation, Atom), &'a DisVertex>,
+            PositionalHedgeGraph<(&'a DisEdge, Option<Flow>, Atom), &'a DisVertex>,
         )>,
     )],
     filename: &str,
@@ -3520,9 +3600,11 @@ pub fn write_layout<'a>(
                 &|(_, o, a)| {
                     format!(
                         "{}",
-                        (SignOrZero::from(*o) * a.expand())
-                            .expand()
-                            .printer(symbolica::printer::PrintOptions::mathematica())
+                        (SignOrZero::from(
+                            o.map_or_else(|| Orientation::Undirected, |a| Orientation::from(a))
+                        ) * a.expand())
+                        .expand()
+                        .printer(symbolica::printer::PrintOptions::mathematica())
                     )
                 },
                 &|(e, _, _)| e.decoration(),

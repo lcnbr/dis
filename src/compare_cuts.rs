@@ -1,15 +1,58 @@
 use std::fmt::format;
 
-use dis::{CutGraph, DisCompVertex};
+use dis::{DisCompVertex, DisCutGraph, Pdg};
 use libc::EDOM;
 use linnet::{
     dot,
-    dot_parser::{DotEdgeData, DotVertexData},
+    dot_parser::{DotEdgeData, DotGraph, DotVertexData},
     half_edge::{
         involution::{EdgeIndex, Orientation},
         HedgeGraph,
     },
 };
+
+#[test]
+pub fn round_trip() {
+    let cut = DisCutGraph {
+        graph: dot!(digraph {
+          node [shape=circle,height=0.1,label=""];  overlap="scale"; layout="neato";
+          2 [edge_id=2,node_type=right,label="right:2"];
+          9 [node_type=i,label="i:"];
+          1 [edge_id=1,node_type=right,label="right:1"];
+          10 [node_type=i,label="i:"];
+          0 [edge_id=0,node_type=right,label="right:0"];
+          11 [node_type=i,label="i:"];
+          6 [node_type=i,label="i:"];
+          5 [edge_id=2,node_type=left,label="left:2"];
+          7 [node_type=i,label="i:"];
+          4 [edge_id=1,node_type=left,label="left:1"];
+          8 [node_type=i,label="i:"];
+          3 [edge_id=0,node_type=left,label="left:0"];
+          2 -> 9[ dir=forward color="red:blue;0.5",pdg=11,label=11];
+          10 -> 1[ dir=forward color="red:blue;0.5",pdg=1,label=1];
+          0 -> 11[ dir=none color="red:blue;0.5",pdg=21,label=21];
+          6 -> 5[ dir=forward color="red:blue;0.5",pdg=11,label=11];
+          4 -> 7[ dir=forward color="red:blue;0.5",pdg=1,label=1];
+          8 -> 3[ dir=none color="red:blue;0.5",pdg=21,label=21];
+          6 -> 7[ dir=none color="red:blue;0.5",pdg=22,label=22];
+          9 -> 6[ dir=forward color="red:blue;0.5",pdg=11,label=11];
+          7 -> 11[ dir=forward color="red:blue;0.5",pdg=1,label=1];
+          8 -> 10[ dir=forward color="red:blue;0.5",pdg=1,label=1];
+          11 -> 8[ dir=forward color="red:blue;0.5",pdg=1,label=1];
+          9 -> 10[ dir=none color="red:blue;0.5",pdg=22,label=22];
+        })
+        .unwrap(),
+    };
+
+    println!("{cut}");
+    let can = cut.canonize();
+
+    println!("{can}");
+
+    let can = can.canonize();
+
+    println!("{can}");
+}
 
 #[test]
 pub fn validate() {
@@ -94,12 +137,12 @@ pub fn validate() {
     // );
 
     // println!("STSRITENRNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
-    let hairy_false = CutGraph::from_hairy(cut.clone(), false);
+    let hairy_false = DisCutGraph::from_hairy(cut.clone(), false);
     // println!("//From_hairy false: \n{}", hairy_false);
     // println!("//canonized:\n{}", hairy_false.canonize());
 
     // println!("STSRITENRNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
-    let hairy_true = CutGraph::from_hairy(cut.clone(), true);
+    let hairy_true = DisCutGraph::from_hairy(cut.clone(), true);
     // println!("//From_hairy true: \n{}", hairy_true);
     // println!("//canonized:\n{}", hairy_true.canonize());
 
@@ -219,7 +262,7 @@ pub fn works() {
     .unwrap();
 
     // println!("{}", fs.dot_display(&fs.full_filter()));
-    let fs = CutGraph {
+    let fs = DisCutGraph {
         graph: fs.map(
             |_, _, _, a| match a.statements["nodetype"].as_str() {
                 "\"i\"" => DisCompVertex::Internal,
@@ -237,13 +280,13 @@ pub fn works() {
                 e.map(|d| {
                     let pdg: isize = d.statements["pdg"].parse().unwrap();
 
-                    pdg
+                    Pdg { pdg }
                 })
             },
         ),
     };
     println!("//OriginalFS: \n{}", fs);
-    let cancut = CutGraph::from_hairy(cut.clone(), false).canonize();
+    let cancut = DisCutGraph::from_hairy(cut.clone(), false).canonize();
     let canfs = fs.canonize();
 
     if cancut == canfs {
@@ -370,7 +413,7 @@ pub fn main() {
     .unwrap();
 
     // println!("{}", fs.dot_display(&fs.full_filter()));
-    let fs = CutGraph {
+    let fs = DisCutGraph {
         graph: fs.map(
             |_, _, _, a| match a.statements["nodetype"].as_str() {
                 "\"i\"" => DisCompVertex::Internal,
@@ -388,13 +431,13 @@ pub fn main() {
                 e.map(|d| {
                     let pdg: isize = d.statements["pdg"].parse().unwrap();
 
-                    pdg
+                    Pdg { pdg }
                 })
             },
         ),
     };
 
-    let cutcut = CutGraph::from_hairy(cut.clone(), false);
+    let cutcut = DisCutGraph::from_hairy(cut.clone(), false);
     println!("//Processed cut\n{}", cutcut);
     let cancut = cutcut.canonize();
     println!("//OriginalFS: \n{}", fs);

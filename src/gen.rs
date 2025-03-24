@@ -82,8 +82,8 @@ pub fn dis_options(
                 })
                 .collect(),
             loop_count_range: (loop_count, loop_count),
-            symmetrize_initial_states: false,
-            symmetrize_final_states: false,
+            symmetrize_initial_states: true,
+            symmetrize_final_states: true,
             symmetrize_left_right_states: false,
             allow_symmetrization_of_external_fermions_in_amplitudes: false,
             max_multiplicity_for_fast_cut_filter: 0,
