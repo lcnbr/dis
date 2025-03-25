@@ -11,7 +11,7 @@ use _gammaloop::{
 };
 use ahash::{AHashSet, HashMap, HashMapExt};
 use dis::{
-    gen::{chain_dis_generate, dis_options, photon_self_energy_gen},
+    gen::{chain_dis_generate, dis_cart_prod, dis_options, photon_self_energy_gen},
     load_generic_model, DisCompVertex, DisCutGraph, DisGraph, IFCuts,
 };
 use indexmap::{IndexMap, IndexSet};
@@ -53,95 +53,14 @@ fn main() {
     setup_logger().unwrap();
 
     let model = load_generic_model("sm_dis");
-    let d = model.get_particle("d");
-    let a = model.get_particle("a");
-    let em = model.get_particle("e-");
-    let g = model.get_particle("g");
+    let options = dis_cart_prod(&["d", "d~", "g", "ghG", "ghG~"], 1, &model);
 
-    let d = dis_options(
-        &["e-", "d"],
-        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-        2,
-        2,
-        1,
-        &model,
-    );
+    info!("Number of options: {}", options.len());
 
-    let dx = dis_options(
-        &["e-", "d~"],
-        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-        2,
-        2,
-        1,
-        &model,
-    );
+    // let options = dis_cart_prod(&["d", "d~", "g"], 1, &model);
 
-    let g = dis_options(
-        &["e-", "g"],
-        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-        2,
-        2,
-        1,
-        &model,
-    );
-
-    let dg = dis_options(
-        &["e-", "d", "g"],
-        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-        2,
-        1,
-        1,
-        &model,
-    );
-
-    let dxg = dis_options(
-        &["e-", "d~", "g"],
-        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-        2,
-        1,
-        1,
-        &model,
-    );
-
-    let dd = dis_options(
-        &["e-", "d", "d"],
-        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-        2,
-        1,
-        1,
-        &model,
-    );
-
-    let dxdx = dis_options(
-        &["e-", "d~", "d~"],
-        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-        2,
-        1,
-        1,
-        &model,
-    );
-
-    let ddx = dis_options(
-        &["e-", "d", "d~"],
-        &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-        2,
-        1,
-        1,
-        &model,
-    );
-
-    // let ddxg = dis_options(
-    //     &["e-", "d", "d~"],
-    //     &[vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]],
-    //     2,
-    //     1,
-    //     1,
-    //     &model,
-    // );
-
-    // let diagram_gen = FeynGen::new(options);
-
-    let fs_diagrams: Vec<_> = chain_dis_generate(&[d, dx, g, dd, dxdx, ddx, dg, dxg], &model);
+    // info!("Number of options: {}", options.len());
+    let fs_diagrams: Vec<_> = chain_dis_generate(&options, &model);
 
     info!("Number of fs diagrams: {}", fs_diagrams.len());
     let mut fs_can: IndexMap<DisCutGraph, (usize, Option<DisCutGraph>)> = IndexMap::new();

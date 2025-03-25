@@ -37,8 +37,8 @@ use cgmath::{Angle, Rad};
 use indexmap::{IndexMap, IndexSet};
 use indicatif::ProgressBar;
 use itertools::Itertools;
+use linnet::permutation::{HedgeGraphExt, Permutation, PermutationError};
 use log::debug;
-use permutation::{HedgeGraphExt, Permutation, PermutationError};
 use smartstring::SmartString;
 use spenso::{
     arithmetic::ScalarMul,
@@ -68,10 +68,9 @@ use symbolica::{
     tensors::matrix::Matrix,
 };
 
-use crate::permutation::PermutationExt;
+use linnet::permutation::PermutationExt;
 
 pub mod gamma;
-pub mod permutation;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MySignedCycle {
@@ -550,28 +549,28 @@ impl DisCutGraph {
             },
         );
 
-        println!(
-            "//from_map\n{}",
-            newh.dot_impl(
-                &newh.full_filter(),
-                "",
-                &|d| {
-                    let serialized_data = DotEdgeData::from(d.clone());
-                    let label = match d.flow() {
-                        None => d.edge_data().pdg.to_string(),
-                        Some(Flow::Source) => format!("\"Left{}\"", d.edge_data().pdg),
-                        Some(Flow::Sink) => format!("\"Right{}\"", d.edge_data().pdg),
-                    };
+        // println!(
+        //     "//from_map\n{}",
+        //     newh.dot_impl(
+        //         &newh.full_filter(),
+        //         "",
+        //         &|d| {
+        //             let serialized_data = DotEdgeData::from(d.clone());
+        //             let label = match d.flow() {
+        //                 None => d.edge_data().pdg.to_string(),
+        //                 Some(Flow::Source) => format!("\"Left{}\"", d.edge_data().pdg),
+        //                 Some(Flow::Sink) => format!("\"Right{}\"", d.edge_data().pdg),
+        //             };
 
-                    Some(format!("{serialized_data}label={label}"))
-                },
-                &|d| {
-                    let sd = DotVertexData::from(d.clone());
+        //             Some(format!("{serialized_data}label={label}"))
+        //         },
+        //         &|d| {
+        //             let sd = DotVertexData::from(d.clone());
 
-                    Some(format!("{sd}label={}", d))
-                },
-            )
-        );
+        //             Some(format!("{sd}label={}", d))
+        //         },
+        //     )
+        // );
 
         newh.align_underlying_to_superficial();
 
@@ -1882,7 +1881,7 @@ impl DisGraph {
         let orbit_generators = canonized_graph
             .orbit_generators
             .iter()
-            .map(|a| permutation::Permutation::from_cycles(a))
+            .map(|a| Permutation::from_cycles(a))
             .collect::<Vec<_>>();
 
         println!(
@@ -3637,3 +3636,6 @@ pub fn write_layout<'a>(
     )
 }
 pub mod gen;
+
+#[cfg(test)]
+pub mod tests;
