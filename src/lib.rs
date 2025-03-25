@@ -435,6 +435,17 @@ impl VacuumGraph {
 }
 
 impl DisCutGraph {
+    pub fn electron_disconnects(&self) -> bool {
+        let cut = self.graph.cut();
+        let mut complement = cut.left.complement(&self.graph);
+
+        for i in self.graph.full_filter().included_iter() {
+            if self.graph.get_edge_data(i).edge_data().pdg.abs() == 11 {
+                complement.set(i.0, false);
+            }
+        }
+        !self.graph.is_connected(&complement)
+    }
     /// Only on cut graphs
     pub fn only_default_orientations(&mut self) {
         let cut = self.graph.cut();
@@ -1347,7 +1358,17 @@ impl DisGraph {
                     .iter_edges(c)
                     .filter(|(_, _, d)| d.data.bare_edge.particle.pdg_code.abs() == 11)
                     .count();
+
+                let mut qcd_mult = 0;
+
                 let alligned_electron = c.iter_edges(&self.graph).all(|(o, d)| {
+                    let pdg = d.data.bare_edge.particle.pdg_code.abs();
+
+                    match pdg {
+                        21 | 1 => qcd_mult += 1,
+                        _ => {}
+                    }
+
                     if d.data.bare_edge.particle.pdg_code.abs() == 11 {
                         match (o, d.orientation) {
                             (Orientation::Default, Orientation::Default) => true,
@@ -1386,7 +1407,9 @@ impl DisGraph {
                 contains_electron == 1
                     && !contains_photon
                     && alligned_electron
-                    && !electron_disconnects
+                    && 0 < qcd_mult
+                    && qcd_mult < 3
+                // && !electron_disconnects
             },
             true,
         )

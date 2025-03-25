@@ -149,23 +149,26 @@ fn main() {
     for p in &fs_diagrams {
         let cuto = DisCutGraph::from_bare(p);
 
-        // println!("//original\n{}", cuto);
-        let cutc = cuto.clone().canonize();
+        let electron_disconnects = cuto.electron_disconnects();
+        if !electron_disconnects {
+            // println!("//original\n{}", cuto);
+            let cutc = cuto.clone().canonize();
 
-        let entry = fs_can.entry(cutc.clone());
-        let id = entry.index();
+            let entry = fs_can.entry(cutc.clone());
+            let id = entry.index();
 
-        entry
-            .and_modify(|a| {
-                a.0 += 1;
-                info!("//Seen {} {} times", id, a.0);
-            })
-            .or_insert_with(|| {
-                info!("//Not seen {}", id);
-                info!("//original\n{}", cuto);
-                info!("//canonical\n{}", cutc);
-                (1, Some(cuto))
-            });
+            entry
+                .and_modify(|a| {
+                    a.0 += 1;
+                    info!("//Seen {} {} times", id, a.0);
+                })
+                .or_insert_with(|| {
+                    info!("//Not seen {}", id);
+                    info!("//original\n{}", cuto);
+                    info!("//canonical\n{}", cutc);
+                    (1, Some(cuto))
+                });
+        }
     }
 
     for (i, (k, v)) in fs_can.iter().enumerate() {
