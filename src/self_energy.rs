@@ -6,6 +6,7 @@ use _gammaloop::{
 };
 use dis::{load_generic_model, DisGraph};
 use linnet::half_edge::layout::{FancySettings, LayoutIters, LayoutParams};
+use symbolica::atom::Atom;
 
 fn main() {
     let model = load_generic_model("sm");
@@ -50,7 +51,7 @@ fn main() {
         &model,
         "disselfenergy".into(),
         &symbolica_graph,
-        "1".into(),
+        Atom::new_num(1),
         vec![],
         None,
     )

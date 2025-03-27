@@ -171,6 +171,9 @@
           rust-analyzer
           nixd
           form
+          gmp.dev
+          mpfr.dev
+gnum4
           # wolfram-engine
           typst
           nil

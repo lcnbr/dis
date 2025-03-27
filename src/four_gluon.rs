@@ -6,7 +6,7 @@ use _gammaloop::{
 };
 use dis::{load_generic_model, DisGraph};
 use linnet::half_edge::layout::{FancySettings, LayoutParams};
-use symbolica::atom::AtomCore;
+use symbolica::atom::{Atom, AtomCore};
 
 fn main() {
     let model = load_generic_model("sm");
@@ -66,7 +66,7 @@ fn main() {
         &model,
         "four_gluon".into(),
         &symbolica_graph,
-        "1".into(),
+        Atom::new_num(1),
         vec![],
         None,
     )

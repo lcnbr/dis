@@ -3,16 +3,6 @@ use std::{
     io::{self, Write},
 };
 
-use _gammaloop::{
-    feyngen::{
-        diagram_generator::FeynGen, FeynGenFilter, FeynGenFilters, FeynGenOptions, GenerationType,
-        SelfEnergyFilterOptions, SewedFilterOptions, SnailFilterOptions, TadpolesFilterOptions,
-    },
-    graph::BareGraph,
-    model::Model,
-    numerator::GlobalPrefactor,
-};
-use ahash::{HashMap, HashMapExt};
 use dis::{gen::photon_self_energy_gen, load_generic_model, DisGraph};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressIterator};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};

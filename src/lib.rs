@@ -873,40 +873,17 @@ impl IFCuts {
 
         for (e, cuts) in self.cuts.iter() {
             let mut map = AHashMap::new();
-            let first_initial = &cuts.1[0].first().unwrap_or_else(|| {
-                cuts.1[1].first().expect(&format!(
-                    "No initial or final for {:?}: {:?}",
-                    e.windings, cuts
-                ))
-            });
+            let first_initial = &cuts.1[0].first();
+            let first_final = &cuts.1[1].first();
             map.insert("embedding".to_string(), e.windings.to_math_with_indent(4));
-            let denom = graph.denominator(&first_initial);
 
-            let numers: AHashMap<_, _> = graph.numerator(&first_initial);
-            // for n in &numers {
-            //     println!(":{n}");
-            // }
+            if let Some(cut) = first_initial {
+                map.insert("initial".to_string(), graph.cut_map(*cut).to_math());
+            }
 
-            map.insert(
-                "Cut content".to_string(),
-                graph.cut_content(&first_initial).to_string(),
-            );
-            map.insert(
-                "Denominator".to_string(),
-                denom.to_atom().to_math_with_indent(4),
-            );
-
-            let denoms = denom
-                .partial_fraction()
-                .into_iter()
-                .map(|a| a.to_atom())
-                .collect_vec();
-
-            map.insert(
-                "Partial_fraction".to_string(),
-                denoms.to_math_with_indent(4),
-            );
-            map.insert("Numerator".to_string(), numers.to_math_with_indent(4));
+            if let Some(cut) = first_final {
+                map.insert("final".to_string(), graph.cut_map(*cut).to_math());
+            }
 
             embeddings.push(map);
         }
@@ -1931,7 +1908,7 @@ impl DisGraph {
             bases,
             orbit_generators,
             symmetry_group: sym_group,
-            overall_prefactor: Atom::parse(&bare.overall_factor).unwrap(),
+            overall_prefactor: bare.overall_factor.clone(),
         }
     }
 
@@ -2229,6 +2206,37 @@ impl DisGraph {
         let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
         self.denominator
             .map_all(&|a| a.replace_all_multiple(&emr_to_lmb_cut).expand())
+    }
+
+    pub fn cut_map(&self, cut: &OrientedCut) -> AHashMap<String, String> {
+        let mut cut_map = AHashMap::new();
+
+        let denom = self.denominator(&cut);
+
+        let numers: AHashMap<_, _> = self.numerator(&cut);
+
+        cut_map.insert(
+            "Cut content".to_string(),
+            self.cut_content(&cut).to_string(),
+        );
+        cut_map.insert(
+            "Denominator".to_string(),
+            denom.to_atom().to_math_with_indent(4),
+        );
+
+        let denoms = denom
+            .partial_fraction()
+            .into_iter()
+            .map(|a| a.to_atom())
+            .collect_vec();
+
+        cut_map.insert(
+            "Partial_fraction".to_string(),
+            denoms.to_math_with_indent(4),
+        );
+        cut_map.insert("Numerator".to_string(), numers.to_math_with_indent(4));
+
+        cut_map
     }
 
     pub fn emr_to_lmb_and_cut(&self, cut: &OrientedCut) -> Vec<Replacement> {
