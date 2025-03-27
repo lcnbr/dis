@@ -61,7 +61,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # These will be patched
 symbolica = { version = "0.14.0" }
 spenso = { version = "0.4.0", features = ["shadowing"] }
-gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "1f5c28324b11c9e95f7a3cec63302a4985ef3835", default-features = false }
+gammalooprs = { git = "https://github.com/alphal00p/gammaloop", rev = "19ca9b8c6d0af5884f1424ad45a68aab5a6a41e5", default-features = false }
 # gammalooprs = { path = "../gammaloop", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "*"
@@ -128,7 +128,7 @@ indicatif = "0.17.9"
 linnet = { git = "https://github.com/alphal00p/linnet", features = [
     # "symbolica",
     "drawing",
-] , rev="79d1568568b0b5d86875d254f2d18e18a9c5e24c"}
+] , rev="4313c557f0a0d793a44a693002ec8089479c5407"}
 fern = "0.7.1"
 humantime = "2.2.0"
 similar-asserts = "1.7.0"
@@ -137,9 +137,9 @@ similar-asserts = "1.7.0"
 spenso = { git = "https://github.com/alphal00p/spenso", rev = "47a35775325a4d061af05e2fc00904b221d8bf83" }
 symbolica = { git = "https://github.com/alphal00p/symbolica", rev = "3f1a5d17abde15df49ca092f311fcd685c1d56fc" }
 [patch."https://github.com/alphal00p/gammaloop"]
-# gammalooprs={path="../main_gammaloop/gammaloop"}
+gammalooprs={path="../main_gammaloop/gammaloop"}
 
 [patch."https://github.com/alphal00p/linnet"]
 
-# linnet = { path = "../linnet" }
+linnet = { path = "../linnet" }
 # spenso = { path = "../alphal00p/spenso" }

@@ -2144,6 +2144,24 @@ impl DisGraph {
         )
     }
 
+    pub fn cut_content_list(&self, cut: &OrientedCut) -> Vec<String> {
+        let mut cut_content = Vec::new();
+
+        for (o, d) in cut.iter_edges(&self.graph) {
+            match o {
+                Orientation::Default => {
+                    cut_content.push(d.data.bare_edge.particle.name.to_string());
+                }
+                Orientation::Reversed => {
+                    cut_content.push(d.data.bare_edge.particle.antiname.to_string());
+                }
+                Orientation::Undirected => panic!("undirected cut edge"),
+            }
+        }
+
+        cut_content
+    }
+
     pub fn cut_content(&self, cut: &OrientedCut) -> isize {
         let mut cut_content = 0;
         // println!("looking at cut {}", cut);

@@ -1238,7 +1238,6 @@ checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
 [[package]]
 name = "gammalooprs"
 version = "0.3.2"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1f5c28324b11c9e95f7a3cec63302a4985ef3835#1f5c28324b11c9e95f7a3cec63302a4985ef3835"
 dependencies = [
  "ahash",
  "argmin",
@@ -1715,7 +1714,6 @@ checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 [[package]]
 name = "linnet"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/linnet?rev=79d1568568b0b5d86875d254f2d18e18a9c5e24c#79d1568568b0b5d86875d254f2d18e18a9c5e24c"
 dependencies = [
  "ahash",
  "argmin",
