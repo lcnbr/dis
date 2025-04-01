@@ -295,6 +295,16 @@ impl Pdg {
         Pdg { pdg }
     }
 
+    pub fn decoration(&self) -> Decoration {
+        match self.pdg.abs() {
+            1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 => {
+                Decoration::Arrow
+            }
+            9 | 21 => Decoration::Coil,
+            22 | 23 | 24 => Decoration::Wave,
+            _ => Decoration::None,
+        }
+    }
     pub fn from_name(name: impl AsRef<str>, model: &Model) -> Self {
         let pdg = model.get_particle(name);
         Pdg { pdg: pdg.pdg_code }
@@ -330,6 +340,7 @@ impl TryFrom<DotEdgeData> for Pdg {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DisCutGraph {
     pub graph: HedgeGraph<PossiblyCutEdge<Pdg>, DisCompVertex>,
+    symmetry_factor: Option<Atom>,
     // signature: BTreeSet<(isize, Orientation, EdgeIndex)>,
 }
 
@@ -393,7 +404,10 @@ impl VacuumGraph {
     pub fn cut(mut self) -> DisCutGraph {
         // -> HedgeGraph<isize, DisCompVertex> {
         self.graph.split_copy();
-        DisCutGraph { graph: self.graph }
+        DisCutGraph {
+            graph: self.graph,
+            symmetry_factor: None,
+        }
     }
 
     pub fn canonize(mut self) -> Self {
@@ -457,6 +471,13 @@ impl DisCutGraph {
     pub fn serialize_multiple(set: &[Self], p: impl AsRef<Path>) -> Result<(), std::io::Error> {
         let mut file = File::create(p).unwrap();
         for graph in set {
+            if let Some(sym) = &graph.symmetry_factor {
+                writeln!(&mut file, "//{}", sym)?;
+            }
+
+            let cut_cont = graph.cut_content();
+            let ferm_cont = Self::quark_content(&cut_cont);
+            writeln!(&mut file, "//{}:{:?}", ferm_cont, cut_cont)?;
             graph.graph.dot_serialize_io(
                 &mut file,
                 &|a| DotEdgeData::from(a.clone()).to_string(),
@@ -466,6 +487,88 @@ impl DisCutGraph {
         Ok(())
     }
 
+    pub fn typst_multiple(set: &[Self], p: impl AsRef<Path>) -> Result<(), std::io::Error> {
+        let file = std::fs::File::open("fancy_settings.json").unwrap();
+        let fancy_settings = serde_json::from_reader::<_, FancySettings>(file).unwrap();
+
+        let file = std::fs::File::open("layout_params.json").unwrap();
+        let params = serde_json::from_reader::<_, LayoutParams>(file).unwrap();
+
+        let file = std::fs::File::open("layout_iters.json").unwrap();
+        let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
+        let mut layouts: Vec<_> = Vec::new();
+
+        for (i, e) in set.iter().enumerate() {
+            let dangling = e.graph.external_filter();
+            let mut left = vec![];
+            let mut right = vec![];
+            for (p, e, d) in e.graph.iter_edges(&dangling) {
+                if let HedgePair::Unpaired { hedge, flow } = p {
+                    match flow {
+                        Flow::Sink => {
+                            left.push((e, d.data.index));
+                        }
+                        Flow::Source => {
+                            right.push((e, d.data.index));
+                        }
+                    }
+                }
+            }
+
+            let left = left
+                .into_iter()
+                .sorted_by_key(|a| a.1)
+                .map(|a| a.0)
+                .collect::<Vec<_>>();
+
+            let right = right
+                .into_iter()
+                .sorted_by_key(|a| a.1)
+                .map(|a| a.0)
+                .collect::<Vec<_>>();
+
+            let settings =
+                LayoutSettings::left_right_square(&e.graph, params, layout_iters, 20., left, right);
+
+            // println!("{:?}", settings);
+            let mut layout = e
+                .graph
+                .map_data_ref(&|_, n, _| n, &|_, _, _, n| n)
+                .layout(settings);
+
+            layout.to_fancy(&fancy_settings);
+
+            let cut_cont = e.cut_content();
+            let ferm_cont = DisCutGraph::quark_content(&cut_cont);
+            let sym = if let Some(sym) = &e.symmetry_factor {
+                sym.to_string()
+            } else {
+                "Not found".to_string()
+            };
+
+            layouts.push((
+                format!("graph{}i", i + 1),
+                format!("= graph {} ", i + 1),
+                vec![(
+                    format!("{}\n`{:?}`\n`{}`", ferm_cont, cut_cont, sym),
+                    layout,
+                )],
+            ));
+        }
+
+        std::fs::write(
+            p,
+            String::from_str("#set page(width: 35cm, height: auto)\n").unwrap()
+                + PositionalHedgeGraph::cetz_impl_collection(
+                    &layouts,
+                    &|&a| format!("",),
+                    &|&a| a.edge_data().decoration(),
+                    true,
+                )
+                .as_str(),
+        )
+    }
+
     #[allow(clippy::result_large_err)]
     pub fn from_file<'a, P>(p: P) -> Result<Self, HedgeParseError<'a, String, String>>
     where
@@ -473,6 +576,7 @@ impl DisCutGraph {
     {
         Ok(Self {
             graph: HedgeGraph::from_file(p)?,
+            symmetry_factor: None,
         })
     }
 
@@ -483,7 +587,10 @@ impl DisCutGraph {
         Ok(HedgeGraphSet::from_file(p)?
             .set
             .into_iter()
-            .map(|set| Self { graph: set })
+            .map(|set| Self {
+                graph: set,
+                symmetry_factor: None,
+            })
             .collect())
     }
 
@@ -494,7 +601,10 @@ impl DisCutGraph {
         Ok(HedgeGraphSet::from_string(s)?
             .set
             .into_iter()
-            .map(|set| Self { graph: set })
+            .map(|set| Self {
+                graph: set,
+                symmetry_factor: None,
+            })
             .collect())
     }
 
@@ -504,6 +614,7 @@ impl DisCutGraph {
     ) -> Result<Self, HedgeParseError<'a, String, String>> {
         Ok(Self {
             graph: HedgeGraph::from_string(s)?,
+            symmetry_factor: None,
         })
     }
     pub fn electron_disconnects(&self) -> bool {
@@ -563,6 +674,7 @@ impl DisCutGraph {
     }
 
     pub fn from_bare(graph: &BareGraph) -> Self {
+        let symmetry_factor = Some(graph.overall_factor.clone());
         let mut pointer_graph = graph.hedge_representation.clone();
         pointer_graph.align_underlying_to_superficial();
 
@@ -709,7 +821,10 @@ impl DisCutGraph {
 
         excised.align_underlying_to_superficial();
 
-        Self { graph: excised }
+        Self {
+            graph: excised,
+            symmetry_factor,
+        }
     }
 
     pub fn canonize(self) -> Self {
@@ -796,6 +911,18 @@ impl DisCutGraph {
         result
     }
 
+    pub fn quark_content(pdgs: &[Pdg]) -> isize {
+        let mut res = 0;
+        for pdg in pdgs {
+            if pdg.pdg > 0 && pdg.pdg < 9 {
+                res += 1;
+            } else if pdg.pdg < 0 && pdg.pdg > -9 {
+                res -= 1;
+            }
+        }
+        res
+    }
+
     pub fn loop_count(&self) -> usize {
         self.graph.cyclotomatic_number(&self.graph.full_filter())
     }
@@ -826,7 +953,10 @@ impl IFCuts {
 
                         graph.align_underlying_to_superficial();
 
-                        DisCutGraph { graph }
+                        DisCutGraph {
+                            graph,
+                            symmetry_factor: None,
+                        }
                     })
                     .chain(c.1[1].iter().map(|c| {
                         let mut graph = c.clone().to_owned_graph_ref(&dis_graph.graph).map(
@@ -844,7 +974,10 @@ impl IFCuts {
 
                         graph.align_underlying_to_superficial();
 
-                        DisCutGraph { graph }
+                        DisCutGraph {
+                            graph,
+                            symmetry_factor: None,
+                        }
                     }))
                     .collect_vec()
             })

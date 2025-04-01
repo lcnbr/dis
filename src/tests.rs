@@ -332,9 +332,26 @@ fn cut_generate(loop_count: usize) -> Vec<DisCutGraph> {
 fn save_nlo_fs() {
     setup_logger().unwrap();
 
-    let fs_diagrams = fs_generate(1);
+    let mut cut_content = vec![
+        Pdg { pdg: 11 },
+        Pdg { pdg: 11 },
+        Pdg { pdg: 21 },
+        Pdg { pdg: 21 },
+    ];
+    cut_content.sort();
 
-    DisCutGraph::serialize_multiple(&fs_diagrams, "nlo_fs.dot").unwrap();
+    let fs_diagrams: Vec<_> = fs_generate(1)
+        .into_iter()
+        .filter(|g| {
+            let ferm_cont = DisCutGraph::quark_content(&g.cut_content());
+            ferm_cont == 2
+        })
+        .collect(); //.into_iter().filter(|a|
+                    //  a.cut_content());
+
+    DisCutGraph::serialize_multiple(&fs_diagrams, "nlo_fs_qq.dot").unwrap();
+
+    DisCutGraph::typst_multiple(&fs_diagrams, "nlo_fs_qq.typ").unwrap();
 
     println!("Number of fs: {}", fs_diagrams.len());
 }
