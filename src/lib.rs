@@ -1485,7 +1485,7 @@ impl DisGraph {
 
                 contains_electron == 1 && !contains_photon && alligned_electron && 0 < qcd_mult
                 // && qcd_mult < 3
-                // && !electron_disconnects
+                && !electron_disconnects
             },
             true,
         )
@@ -2335,10 +2335,10 @@ impl DisGraph {
     pub fn cut_map(&self, cut: &OrientedCut) -> AHashMap<String, String> {
         let mut cut_map = AHashMap::new();
 
-        println!("denom");
+        // println!("denom");
         let denom = self.denominator(&cut);
 
-        println!("numers");
+        // println!("numers");
         let numers: AHashMap<_, _> = self.numerator(&cut);
 
         cut_map.insert(
