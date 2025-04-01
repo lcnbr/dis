@@ -2315,10 +2315,8 @@ impl DisGraph {
             .map(|(k, v)| {
                 (
                     k.clone(),
-                    (
-                        v.replace_all_multiple_repeat(&emr_to_lmb_cut)
-                        // * self.color_and_spin_average(cut)
-                    )
+                    (v.replace_all_multiple_repeat(&emr_to_lmb_cut)
+                        * self.color_and_spin_average(cut))
                     .expand()
                     .factor(),
                 )
