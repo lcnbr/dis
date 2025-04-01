@@ -12,7 +12,7 @@ use std::{
 use gamma::Gamma;
 // use libc::GS;
 use linnet::{
-    dot_parser::{DotEdgeData, DotVertexData},
+    dot_parser::{DotEdgeData, DotVertexData, HedgeGraphSet, HedgeParseError},
     half_edge::{
         builder::HedgeGraphBuilder,
         drawing::Decoration,
@@ -290,6 +290,17 @@ pub struct Pdg {
     pub pdg: isize,
 }
 
+impl Pdg {
+    pub fn new(pdg: isize) -> Self {
+        Pdg { pdg }
+    }
+
+    pub fn from_name(name: impl AsRef<str>, model: &Model) -> Self {
+        let pdg = model.get_particle(name);
+        Pdg { pdg: pdg.pdg_code }
+    }
+}
+
 impl Display for Pdg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "pdgid:{}", self.pdg)
@@ -434,6 +445,67 @@ impl VacuumGraph {
 }
 
 impl DisCutGraph {
+    pub fn serialize(&self, p: impl AsRef<Path>) -> Result<(), std::io::Error> {
+        let mut file = File::create(p).unwrap();
+        self.graph.dot_serialize_io(
+            &mut file,
+            &|a| DotEdgeData::from(a.clone()).to_string(),
+            &|a| DotVertexData::from(a.clone()).to_string(),
+        )
+    }
+
+    pub fn serialize_multiple(set: &[Self], p: impl AsRef<Path>) -> Result<(), std::io::Error> {
+        let mut file = File::create(p).unwrap();
+        for graph in set {
+            graph.graph.dot_serialize_io(
+                &mut file,
+                &|a| DotEdgeData::from(a.clone()).to_string(),
+                &|a| DotVertexData::from(a.clone()).to_string(),
+            )?;
+        }
+        Ok(())
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn from_file<'a, P>(p: P) -> Result<Self, HedgeParseError<'a, String, String>>
+    where
+        P: AsRef<Path>,
+    {
+        Ok(Self {
+            graph: HedgeGraph::from_file(p)?,
+        })
+    }
+
+    pub fn from_file_multiple<'a, P>(p: P) -> Result<Vec<Self>, HedgeParseError<'a, String, String>>
+    where
+        P: AsRef<Path>,
+    {
+        Ok(HedgeGraphSet::from_file(p)?
+            .set
+            .into_iter()
+            .map(|set| Self { graph: set })
+            .collect())
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn from_string_multiple<'a, Str: AsRef<str>>(
+        s: Str,
+    ) -> Result<Vec<Self>, HedgeParseError<'a, String, String>> {
+        Ok(HedgeGraphSet::from_string(s)?
+            .set
+            .into_iter()
+            .map(|set| Self { graph: set })
+            .collect())
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn from_string<'a, Str: AsRef<str>>(
+        s: Str,
+    ) -> Result<Self, HedgeParseError<'a, String, String>> {
+        Ok(Self {
+            graph: HedgeGraph::from_string(s)?,
+        })
+    }
     pub fn electron_disconnects(&self) -> bool {
         let cut = self.graph.cut();
         let mut complement = cut.left.complement(&self.graph);
@@ -700,8 +772,32 @@ impl DisCutGraph {
     }
 
     pub fn to_marked_vacuum(mut self) -> VacuumGraph {
-        self.graph.glue_back();
+        self.graph.glue_back_strict();
         VacuumGraph { graph: self.graph }
+    }
+
+    pub fn cut_content(&self) -> Vec<Pdg> {
+        let cut = self.graph.cut();
+        let mut result = Vec::new();
+
+        for i in cut.left.included_iter() {
+            let f = self.graph.flow(i);
+            let o = self.graph.orientation(i);
+
+            let mut pdg = *self.graph[[&i]].edge_data();
+
+            if let Orientation::Reversed = o.relative_to(f) {
+                pdg.pdg = -pdg.pdg;
+            }
+
+            result.push(pdg);
+        }
+        result.sort();
+        result
+    }
+
+    pub fn loop_count(&self) -> usize {
+        self.graph.cyclotomatic_number(&self.graph.full_filter())
     }
 }
 
@@ -807,7 +903,14 @@ impl IFCuts {
             let layout_emb_f = cuts.1[1]
                 .iter()
                 .map(|c| {
-                    let l = dis_cut_layout(c.clone(), &dis_graph, params, layout_iters, None, 20.);
+                    let l = dis_cut_layout(
+                        c.clone(),
+                        &dis_graph,
+                        params,
+                        layout_iters,
+                        Some(&fancy_settings),
+                        20.,
+                    );
                     bar.inc(1);
                     (format!("{}", c.to_string()), l)
                 })
@@ -1380,11 +1483,8 @@ impl DisGraph {
 
                 let electron_disconnects = !self.graph.is_connected(&complement);
 
-                contains_electron == 1
-                    && !contains_photon
-                    && alligned_electron
-                    && 0 < qcd_mult
-                    && qcd_mult < 3
+                contains_electron == 1 && !contains_photon && alligned_electron && 0 < qcd_mult
+                // && qcd_mult < 3
                 // && !electron_disconnects
             },
             true,
@@ -1785,6 +1885,8 @@ impl DisGraph {
             .color_simplify();
         // println!("color simplified: {}", w1.get_single_atom().unwrap().0);
         // assert!(w1.validate_against_branches(1112));
+        //
+        // println!("before_emr_to_lmb_f2:{}", f2.get_single_atom().unwrap());
         let mut f2 = f2.gamma_simplify_ddim().get_single_atom().unwrap().0;
         // println!("gamma simplified {}", w1);
         let fl = _gammaloop::numerator::Numerator::default()
@@ -1794,6 +1896,7 @@ impl DisGraph {
         // assert!(w2.validate_against_branches(1313));
         // println!("color simplified:{}", w2.state.colorless);
 
+        // println!("before_emr_to_lmb_fl:{}", fl.get_single_atom().unwrap());
         let fl = fl.gamma_simplify_ddim();
 
         // println!("gamma simplified: {}", w2.state.colorless);
@@ -1804,6 +1907,7 @@ impl DisGraph {
             .from_dis_graph(bare, &graph, &inner_graph, Some(&zero_proj))
             .color_simplify();
 
+        // println!("before_emr_to_lmb_zero:{}", zero.get_single_atom().unwrap())
         // assert!(zero.validate_against_branches(3234));
 
         let mut zero = zero.gamma_simplify_ddim().get_single_atom().unwrap().0;
@@ -1812,8 +1916,8 @@ impl DisGraph {
         numerator_dis_apply(&mut f2);
         numerator_dis_apply(&mut zero);
 
-        // for a in [&w1, &w2, &zero] {
-        //     println!("before_emr_to_lmb:{}", a);
+        // for a in [&fl, &f2, &zero] {
+        //     println!("before_emr_to_lmb_gamma:{}", a);
         // }
 
         let mut props = vec![];
@@ -2211,8 +2315,10 @@ impl DisGraph {
             .map(|(k, v)| {
                 (
                     k.clone(),
-                    (v.replace_all_multiple_repeat(&emr_to_lmb_cut)
-                        * self.color_and_spin_average(cut))
+                    (
+                        v.replace_all_multiple_repeat(&emr_to_lmb_cut)
+                        // * self.color_and_spin_average(cut)
+                    )
                     .expand()
                     .factor(),
                 )
@@ -2229,8 +2335,10 @@ impl DisGraph {
     pub fn cut_map(&self, cut: &OrientedCut) -> AHashMap<String, String> {
         let mut cut_map = AHashMap::new();
 
+        println!("denom");
         let denom = self.denominator(&cut);
 
+        println!("numers");
         let numers: AHashMap<_, _> = self.numerator(&cut);
 
         cut_map.insert(
@@ -2257,11 +2365,31 @@ impl DisGraph {
         cut_map
     }
 
+    pub fn contains_tagged_electron(&self, cut: &OrientedCut) -> bool {
+        let mut contains = false;
+        for c in cut.iter_edges(&self.graph) {
+            if c.1.data.marked {
+                // println!("Edge: {}", c.1.data.bare_edge.particle.name);
+                contains = true;
+            }
+        }
+        // cut.contains(&self.tagged_electron)?
+        contains
+    }
+
+    /// Convert EMR to LMB and then impose that the cut momenta sum up to p + the electron momenta.
+    /// Additionally, ensure that the first photon momentum is incoming to the hadronic tensor.
+    /// To do this we look at whether the cut includes the tagged electron, if not, we further map q -> -q, only when replacing the emr, not on the projectors themselves.
     pub fn emr_to_lmb_and_cut(&self, cut: &OrientedCut) -> Vec<Replacement> {
         let photon_momenta = function!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
+
+        let mut photon_rep = Atom::new_var(DIS_SYMBOLS.photon_mom);
+        if !self.contains_tagged_electron(cut) {
+            photon_rep = -photon_rep;
+        }
         let mut reps = vec![Replacement::new(
             photon_momenta.to_pattern(),
-            Atom::new_var(DIS_SYMBOLS.photon_mom).to_pattern(),
+            photon_rep.to_pattern(),
         )];
         if let Some((all_rest, solved_for)) = self.cut_constraint(cut) {
             reps.push(Replacement::new(
@@ -2298,6 +2426,15 @@ impl DisGraph {
         // let electron_momenta = function!(DIS_SYMBOLS.loop_mom, self.marked_electron_edge.1 as i32);
         let photon_momenta = function!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
 
+        let mut photon_rep = Atom::new_var(DIS_SYMBOLS.photon_mom);
+        if !self.contains_tagged_electron(cut) {
+            photon_rep = -photon_rep;
+        }
+        let mut reps = vec![Replacement::new(
+            photon_momenta.to_pattern(),
+            photon_rep.to_pattern(),
+        )];
+
         for cut_edge in cut.iter_left_hedges() {
             if self.graph[[&cut_edge]].bare_edge.particle.pdg_code.abs() != 11 {
                 sum = sum
@@ -2306,12 +2443,7 @@ impl DisGraph {
             }
         }
         sum = sum - Atom::new_var(DIS_SYMBOLS.cut_mom);
-        sum = sum
-            .replace_all_multiple(&[Replacement::new(
-                photon_momenta.to_pattern(),
-                Atom::new_var(DIS_SYMBOLS.photon_mom).to_pattern(),
-            )])
-            .expand();
+        sum = sum.replace_all_multiple(&reps).expand();
 
         let loop_mom_pat = function!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
 
@@ -3606,6 +3738,54 @@ pub fn dis_cut_layout<'a>(
     // let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
     let pos = cut.layout(&graph.graph, params, iter_params, edge_len);
 
+    // let out = pos.dot_impl(
+    //     &pos.full_filter(),
+    //     "",
+    //     &|d| {
+    //         // let serialized_data = DotEdgeData::from(d.clone());
+    //         let label = match d.data.flow() {
+    //             None => format!(
+    //                 "\"{}:{}\"",
+    //                 d.data
+    //                     .edge_data()
+    //                     .emr_momentum
+    //                     .replace_all_multiple(&c)
+    //                     .to_string(),
+    //                 d.data.edge_data().bare_edge.particle.name
+    //             ),
+    //             Some(Flow::Source) => format!(
+    //                 "\"Left:{}:{}|{}\"",
+    //                 d.data
+    //                     .edge_data()
+    //                     .emr_momentum
+    //                     .replace_all_multiple(&c)
+    //                     .to_string(),
+    //                 d.data.edge_data().bare_edge.particle.name,
+    //                 d.data.index
+    //             ),
+    //             Some(Flow::Sink) => format!(
+    //                 "\"Right:{}:{}|{}\"",
+    //                 d.data
+    //                     .edge_data()
+    //                     .emr_momentum
+    //                     .replace_all_multiple(&c)
+    //                     .to_string(),
+    //                 d.data.edge_data().bare_edge.particle.name,
+    //                 d.data.index
+    //             ),
+    //         };
+
+    //         Some(format!("label={label}"))
+    //     },
+    //     &|d| {
+    //         // let sd = DotVertexData::from(d.clone());
+
+    //         Some(format!(""))
+    //     },
+    // );
+
+    // println!("{}", out);
+
     let mut pos = pos.map(
         |_, _, _, a| a,
         |_, _, _, a| {
@@ -3648,11 +3828,8 @@ pub fn write_layout<'a>(
                 &|(_, o, a)| {
                     format!(
                         "{}",
-                        (SignOrZero::from(
-                            o.map_or_else(|| Orientation::Undirected, |a| Orientation::from(a))
-                        ) * a.expand())
-                        .expand()
-                        .printer(symbolica::printer::PrintOptions::mathematica())
+                        a.expand()
+                            .printer(symbolica::printer::PrintOptions::mathematica())
                     )
                 },
                 &|(e, _, _)| e.decoration(),

@@ -3,6 +3,7 @@ use std::{
     io::{self, Write},
 };
 
+use _gammaloop::numerator::Numerator;
 use dis::{gen::photon_self_energy_gen, load_generic_model, DisGraph};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressIterator};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -34,6 +35,11 @@ fn main() {
     let diagrams = photon_self_energy_gen(nloops, &model);
     println!("Generated {} supergraphs", diagrams.len());
 
+    // for d in &diagrams {
+    //     let num =
+    //         Numerator::default().from_graph(d, gammaloop::numerator::GlobalPrefactor::default());
+    //     Numerator::from_graph(self, graph, prefactor)
+    // }
     let bar = ProgressBar::new(diagrams.len() as u64);
     let diagrams: Vec<_> = diagrams
         .into_iter()
@@ -49,7 +55,7 @@ fn main() {
 
     fs::create_dir_all(&format!("./outputs/{nloops}lo")).unwrap();
 
-    diagrams.par_iter().progress().for_each(|(i, d)| {
+    diagrams.iter().for_each(|(i, d)| {
         let ifsplit = d.full_dis_filter_split();
         println!("{} embeddings for graph: {}", ifsplit.cuts.len(), i);
 

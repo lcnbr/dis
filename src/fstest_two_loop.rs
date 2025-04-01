@@ -11,7 +11,7 @@ use _gammaloop::{
 };
 use ahash::{AHashSet, HashMap, HashMapExt, HashSet};
 use dis::{
-    gen::{chain_dis_generate, dis_options, photon_self_energy_gen},
+    gen::{chain_dis_generate, dis_cart_prod, dis_options, photon_self_energy_gen},
     load_generic_model, DisCompVertex, DisCutGraph, DisGraph, IFCuts,
 };
 use indexmap::{IndexMap, IndexSet};
@@ -102,51 +102,51 @@ fn setup_logger() -> Result<(), fern::InitError> {
     Ok(())
 }
 
-pub fn dis_cart_prod(
-    initial_states: &[&'static str],
-    loop_count: usize,
-    model: &Model,
-) -> Vec<FeynGen> {
-    let mut options = vec![];
+// pub fn dis_cart_prod(
+//     initial_states: &[&'static str],
+//     loop_count: usize,
+//     model: &Model,
+// ) -> Vec<FeynGen> {
+//     let mut options = vec![];
 
-    let initial_states: HashSet<&str> = initial_states.into_iter().cloned().collect();
+//     let initial_states: HashSet<&str> = initial_states.into_iter().cloned().collect();
 
-    // let final_states = vec![vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]];
+//     // let final_states = vec![vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]];
 
-    let initial_state_template = vec![&"e-"];
-    let final_states = initial_states
-        .iter()
-        .map(|a| {
-            let mut temp = initial_state_template.iter().map(|b| **b).collect_vec();
+//     let initial_state_template = vec![&"e-"];
+//     let final_states = initial_states
+//         .iter()
+//         .map(|a| {
+//             let mut temp = initial_state_template.iter().map(|b| **b).collect_vec();
 
-            temp.extend([*a]);
-            temp
-        })
-        .collect_vec();
+//             temp.extend([*a]);
+//             temp
+//         })
+//         .collect_vec();
 
-    for initial_state_mult in 1..(loop_count + 2) {
-        for mut init_states in
-            CombinationsWithRepetition::new(initial_states.clone(), initial_state_mult)
-        {
-            init_states.extend(initial_state_template.clone());
+//     for initial_state_mult in 1..(loop_count + 2) {
+//         for mut init_states in
+//             CombinationsWithRepetition::new(initial_states.clone(), initial_state_mult)
+//         {
+//             init_states.extend(initial_state_template.clone());
 
-            let init_states = init_states.into_iter().map(|a| a).collect_vec();
+//             let init_states = init_states.into_iter().map(|a| a).collect_vec();
 
-            info!("initial states: {:?}\nfinal states: {:?}\ncross_section_orders:{}\nloop_count:{}\nn_unresolved:{}", init_states, final_states,2*loop_count ,loop_count+ 2 - initial_state_mult,loop_count);
+//             info!("initial states: {:?}\nfinal states: {:?}\ncross_section_orders:{}\nloop_count:{}\nn_unresolved:{}", init_states, final_states,2*loop_count ,loop_count+ 2 - initial_state_mult,loop_count);
 
-            options.push(dis_options(
-                &init_states,
-                &final_states,
-                2 * loop_count,
-                loop_count + 2 - initial_state_mult,
-                loop_count,
-                &model,
-            ));
-        }
-    }
+//             options.push(dis_options(
+//                 &init_states,
+//                 &final_states,
+//                 2 * loop_count,
+//                 loop_count + 2 - initial_state_mult,
+//                 loop_count,
+//                 &model,
+//             ));
+//         }
+//     }
 
-    options
-}
+//     options
+// }
 
 fn main() {
     setup_logger().unwrap();

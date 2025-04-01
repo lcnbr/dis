@@ -11,6 +11,8 @@ use ahash::{HashMap, HashMapExt, HashSet};
 use itertools::Itertools;
 use log::info;
 
+use crate::Pdg;
+
 pub fn photon_self_energy_gen(nloops: usize, model: &Model) -> Vec<BareGraph> {
     let mut coupling = HashMap::new();
     coupling.insert("QED".into(), (2, Some(2)));
@@ -27,8 +29,8 @@ pub fn photon_self_energy_gen(nloops: usize, model: &Model) -> Vec<BareGraph> {
         symmetrize_left_right_states: true,
         amplitude_filters: _gammaloop::feyngen::FeynGenFilters(vec![
             FeynGenFilter::ParticleVeto(vec![
-                23, 24, 9000001, 9000002, 9000003, 9000004, 12, 14, 16, 2, 4, 6, 3, 5, 25, 250,
-                251, 11, 13, 15,
+                23, 24, 9000001, 9000002, 9000003, 9000004, 9000005, -9000005, 12, 14, 16, 2, 4, 6,
+                3, 5, 25, 250, 251, 11, 13, 15,
             ]),
             FeynGenFilter::SelfEnergyFilter(SelfEnergyFilterOptions::default()),
             FeynGenFilter::ZeroSnailsFilter(SnailFilterOptions::default()),
@@ -52,13 +54,13 @@ pub fn photon_self_energy_gen(nloops: usize, model: &Model) -> Vec<BareGraph> {
         )
         .unwrap()
 }
-pub fn dis_options(
-    init: &[&'static str],
-    final_states: &[Vec<&'static str>],
-    coupling: usize,
-    loop_count: usize,
+
+pub fn dis_options_impl(
+    init: &[Pdg],
+    final_states: &[Vec<Pdg>],
     pert: usize,
-    model: &Model,
+    loop_count: usize,
+    coupling: usize,
 ) -> FeynGen {
     let mut amp_coupling = HashMap::new();
     amp_coupling.insert("QED".into(), (2, Some(2)));
@@ -71,17 +73,10 @@ pub fn dis_options(
     FeynGen {
         options: FeynGenOptions {
             generation_type: GenerationType::CrossSection,
-            initial_pdgs: init
-                .iter()
-                .map(|a| model.get_particle(a).pdg_code as i64)
-                .collect(),
+            initial_pdgs: init.iter().map(|a| a.pdg as i64).collect(),
             final_pdgs_lists: final_states
                 .iter()
-                .map(|f| {
-                    f.iter()
-                        .map(|a| model.get_particle(a).pdg_code as i64)
-                        .collect()
-                })
+                .map(|f| f.iter().map(|a| a.pdg as i64).collect())
                 .collect(),
             loop_count_range: (loop_count, loop_count),
             symmetrize_initial_states: true,
@@ -91,8 +86,8 @@ pub fn dis_options(
             max_multiplicity_for_fast_cut_filter: 0,
             amplitude_filters: FeynGenFilters(vec![
                 FeynGenFilter::ParticleVeto(vec![
-                    23, 24, 9000001, 9000002, 9000003, 9000004, 12, 14, 16, 2, 4, 6, 3, 5, 25, 250,
-                    251, 13, 15,
+                    23, 24, 9000001, 9000002, 9000003, 9000004, 9000005, -9000005, 12, 14, 16, 2,
+                    4, 6, 3, 5, 25, 250, 251, 13, 15,
                 ]),
                 FeynGenFilter::TadpolesFilter(TadpolesFilterOptions {
                     veto_tadpoles_attached_to_massive_lines: true,
@@ -111,8 +106,8 @@ pub fn dis_options(
                     filter_tadpoles: true,
                 }),
                 FeynGenFilter::ParticleVeto(vec![
-                    23, 24, 9000001, 9000002, 9000003, 9000004, 12, 14, 16, 2, 4, 6, 3, 5, 25, 250,
-                    251, 13, 15,
+                    23, 24, 9000001, 9000002, 9000003, 9000004, 9000005, -9000005, 12, 14, 16, 2,
+                    4, 6, 3, 5, 25, 250, 251, 13, 15,
                 ]),
                 FeynGenFilter::TadpolesFilter(TadpolesFilterOptions {
                     veto_tadpoles_attached_to_massive_lines: true,
@@ -132,6 +127,36 @@ pub fn dis_options(
             ]),
         },
     }
+}
+
+pub fn dis_options(
+    init: &[&'static str],
+    final_states: &[Vec<&'static str>],
+    pert: usize,
+    model: &Model,
+) -> FeynGen {
+    let initial_pdgs: Vec<_> = init
+        .iter()
+        .map(|a| Pdg {
+            pdg: model.get_particle(a).pdg_code,
+        })
+        .collect();
+
+    let final_pdgs_lists: Vec<_> = final_states
+        .iter()
+        .map(|f| {
+            f.iter()
+                .map(|a| Pdg {
+                    pdg: model.get_particle(a).pdg_code,
+                })
+                .collect()
+        })
+        .collect();
+
+    let initial_state_mult = init.len();
+    let loop_count = pert + 3 - initial_state_mult;
+    let coupling = 2 * pert;
+    dis_options_impl(&initial_pdgs, &final_pdgs_lists, pert, loop_count, coupling)
 }
 struct CombinationsWithRepetition<T> {
     elements: Vec<T>,
@@ -185,22 +210,16 @@ impl<T: Clone> Iterator for CombinationsWithRepetition<T> {
     }
 }
 
-pub fn dis_cart_prod(
-    initial_states: &[&'static str],
-    loop_count: usize,
-    model: &Model,
-) -> Vec<FeynGen> {
+pub fn dis_cart_prod_impl(initial_states: &[Pdg], loop_count: usize) -> Vec<FeynGen> {
     let mut options = vec![];
 
-    let initial_states: HashSet<&str> = initial_states.into_iter().cloned().collect();
+    let initial_states: HashSet<Pdg> = initial_states.into_iter().cloned().collect();
 
-    // let final_states = vec![vec!["e-", "d"], vec!["e-", "g"], vec!["e-", "d~"]];
-
-    let initial_state_template = vec![&"e-"];
+    let initial_state_template = vec![Pdg { pdg: 11 }];
     let final_states = initial_states
         .iter()
         .map(|a| {
-            let mut temp = initial_state_template.iter().map(|b| **b).collect_vec();
+            let mut temp = initial_state_template.iter().map(|b| *b).collect_vec();
 
             temp.extend([*a]);
             temp
@@ -217,18 +236,33 @@ pub fn dis_cart_prod(
 
             info!("initial states: {:?}\nfinal states: {:?}\ncross_section_orders:{}\nloop_count:{}\nn_unresolved:{}", init_states, final_states,2*loop_count ,loop_count+ 2 - initial_state_mult,loop_count);
 
-            options.push(dis_options(
+            let pert = loop_count;
+            let loop_count = pert + 2 - initial_state_mult;
+            let coupling = 2 * pert;
+
+            options.push(dis_options_impl(
                 &init_states,
                 &final_states,
-                2 * loop_count,
-                loop_count + 2 - initial_state_mult,
+                pert,
                 loop_count,
-                &model,
+                coupling,
             ));
         }
     }
 
     options
+}
+
+pub fn dis_cart_prod(
+    initial_states: &[&'static str],
+    loop_count: usize,
+    model: &Model,
+) -> Vec<FeynGen> {
+    let initial_states: Vec<_> = initial_states
+        .iter()
+        .map(|a| Pdg::from_name(a, model))
+        .collect_vec();
+    dis_cart_prod_impl(&initial_states, loop_count)
 }
 
 pub fn chain_dis_generate(options: &[FeynGen], model: &Model) -> Vec<BareGraph> {
@@ -244,7 +278,7 @@ pub fn chain_dis_generate(options: &[FeynGen], model: &Model) -> Vec<BareGraph> 
                 None,
                 None,
                 GlobalPrefactor::default(),
-                None,
+                Some(10),
             )
             .unwrap()
         })

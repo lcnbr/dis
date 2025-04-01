@@ -1,5 +1,5 @@
 use _gammaloop::{
-    numerator::{ufo::UFO, ColorSimplified, GammaSimplified, Numerator},
+    numerator::{ufo::UFO, AppliedFeynmanRule, ColorSimplified, GammaSimplified, Local, Numerator},
     utils::GS,
 };
 use spenso::{
