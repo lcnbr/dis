@@ -2,6 +2,7 @@ use std::{
     collections::BTreeMap,
     fmt::{format, Display},
     fs::File,
+    hash::Hash,
     io::Write,
     ops::Neg,
     path::Path,
@@ -133,10 +134,27 @@ pub struct Embeddings {
     pub bases: Vec<Vec<MySignedCycle>>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Eq, PartialOrd, Ord)]
 pub struct Embedding {
     // pub basid: usize,
+    pub cut_content: isize,
     pub windings: Vec<i32>,
+}
+
+impl PartialEq for Embedding {
+    fn eq(&self, other: &Self) -> bool {
+        let a = self.windings.eq(&other.windings);
+        if a {
+            assert_eq!(self.cut_content, other.cut_content);
+        }
+        a
+    }
+}
+
+impl Hash for Embedding {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.windings.hash(state);
+    }
 }
 
 pub struct IFCuts {
@@ -1061,9 +1079,10 @@ impl IFCuts {
             layouts.push((
                 format!("embedding{}i", i + 1),
                 format!(
-                    "= embedding {} {:?} with multiplicity {}\n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
+                    "= embedding {} {:?} content: {} with multiplicity {}\n == initial\nDenominator:\n```mathematica\n{}\n```Partial Fractioned Denominator:\n```mathematica\n{}\n```",
                     i + 1,
                     e.windings,
+                    e.cut_content,
                     cuts.0,
                     denom_init.as_ref().map(DenominatorDis::to_atom).unwrap_or(Atom::new_num(0))
                         .printer(symbolica::printer::PrintOptions::mathematica()),
@@ -1292,9 +1311,14 @@ impl Embeddings {
                         basid = i;
                     }
                 }
-                cuts.entry(Embedding { windings })
-                    .or_insert_with(Vec::new)
-                    .push((cut, basid));
+
+                let cut_content = graph.cut_content(&cut);
+                cuts.entry(Embedding {
+                    windings,
+                    cut_content,
+                })
+                .or_insert_with(Vec::new)
+                .push((cut, basid));
             }
         }
 
@@ -2438,11 +2462,11 @@ impl DisGraph {
                 match a.relative_to(p.orientation.try_into().unwrap()) {
                     Orientation::Default => {
                         // println!("looking at particle: {}", particle.name);
-                        cut_content += 1
+                        cut_content += i as isize
                     }
                     Orientation::Reversed => {
                         // println!("looking at anti particle: {}", particle.name);
-                        cut_content -= 1
+                        cut_content -= i as isize
                     }
                     Orientation::Undirected => panic!("undirected fermion!"),
                 }
