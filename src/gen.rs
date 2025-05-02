@@ -69,7 +69,7 @@ pub fn dis_options_impl(
     xs_coupling.insert("QCD".into(), (coupling, Some(coupling)));
 
     let mut xs_pert = HashMap::new();
-    xs_pert.insert("QCD".into(), pert);
+    xs_pert.insert("QCD".into(), 100);
     FeynGen {
         options: FeynGenOptions {
             generation_type: GenerationType::CrossSection,
@@ -81,7 +81,7 @@ pub fn dis_options_impl(
             loop_count_range: (loop_count, loop_count),
             symmetrize_initial_states: true,
             symmetrize_final_states: true,
-            symmetrize_left_right_states: false,
+            symmetrize_left_right_states: true,
             allow_symmetrization_of_external_fermions_in_amplitudes: false,
             max_multiplicity_for_fast_cut_filter: 0,
             amplitude_filters: FeynGenFilters(vec![
@@ -123,7 +123,7 @@ pub fn dis_options_impl(
                 FeynGenFilter::CouplingOrders(xs_coupling),
                 FeynGenFilter::LoopCountRange((loop_count, loop_count)),
                 FeynGenFilter::BlobRange(1..=1),
-                FeynGenFilter::SpectatorRange(0..=1),
+                FeynGenFilter::SpectatorRange(0..=200),
             ]),
         },
     }
@@ -210,16 +210,20 @@ impl<T: Clone> Iterator for CombinationsWithRepetition<T> {
     }
 }
 
-pub fn dis_cart_prod_impl(initial_states: &[Pdg], loop_count: usize) -> Vec<FeynGen> {
+pub fn dis_cart_prod_impl(
+    initial_states: &[Pdg],
+    loop_count: usize,
+    initial_state_template: Vec<Pdg>,
+    final_state_template: Vec<Pdg>,
+) -> Vec<FeynGen> {
     let mut options = vec![];
 
     let initial_states: HashSet<Pdg> = initial_states.into_iter().cloned().collect();
 
-    let initial_state_template = vec![Pdg { pdg: 11 }];
     let final_states = initial_states
         .iter()
         .map(|a| {
-            let mut temp = initial_state_template.iter().map(|b| *b).collect_vec();
+            let mut temp = final_state_template.clone();
 
             temp.extend([*a]);
             temp
@@ -262,7 +266,12 @@ pub fn dis_cart_prod(
         .iter()
         .map(|a| Pdg::from_name(a, model))
         .collect_vec();
-    dis_cart_prod_impl(&initial_states, loop_count)
+    dis_cart_prod_impl(
+        &initial_states,
+        loop_count,
+        vec![Pdg::from_name("e-", model)],
+        vec![Pdg::from_name("e-", model)],
+    )
 }
 
 pub fn chain_dis_generate(options: &[FeynGen], model: &Model) -> Vec<BareGraph> {

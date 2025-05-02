@@ -140,7 +140,7 @@ spenso = { git = "https://github.com/alphal00p/spenso", rev = "47a35775325a4d061
 # dot-parser={path="../dot-parser"}
 symbolica = { git = "https://github.com/alphal00p/symbolica", rev = "3f1a5d17abde15df49ca092f311fcd685c1d56fc" }
 [patch."https://github.com/alphal00p/gammaloop"]
-# gammalooprs={path="../main_gammaloop/gammaloop"}
+# gammalooprs={path="../gammaloop"}
 
 [patch."https://github.com/alphal00p/linnet"]
 

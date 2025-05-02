@@ -1,0 +1,3096 @@
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 5[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 2[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  4 -> 5[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=reversed,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=aligned,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=sink];
+  ext8 -> 2[dir=back cut_flow=aligned,edge_id=6,pdg=1,];
+  ext9 [shape=none, label="" flow=source];
+  ext9 -> 3[dir=forward cut_flow=reversed,edge_id=6,pdg=1,];
+  2 -> 3[ dir=none cut_flow=uncut,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  2 -> 3[ dir=forward cut_flow=uncut,edge_id=6,pdg=1,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 2[dir=none cut_flow=reversed,edge_id=7,pdg=21,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 3[dir=none cut_flow=aligned,edge_id=7,pdg=21,];
+  5 -> 2[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 4[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 5[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-2:[Pdg { pdg: -1 }, Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//-1:[Pdg { pdg: -1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=reversed,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=aligned,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=aligned,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=reversed,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=reversed,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=aligned,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=reversed,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=aligned,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//0:[Pdg { pdg: -1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=reversed,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=aligned,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=aligned,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=reversed,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }, Pdg { pdg: 21 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  ext8 [shape=none, label="" flow=source];
+  ext8 -> 2[dir=none cut_flow=aligned,edge_id=6,pdg=21,];
+  ext9 [shape=none, label="" flow=sink];
+  ext9 -> 3[dir=none cut_flow=reversed,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//1:[Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=aligned,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=reversed,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  0 -> 1[ dir=forward cut_flow=uncut,edge_id=0,pdg=11,];
+  ext2 [shape=none, label="" flow=sink];
+  ext2 -> 1[dir=back cut_flow=aligned,edge_id=1,pdg=11,];
+  ext3 [shape=none, label="" flow=source];
+  ext3 -> 0[dir=forward cut_flow=reversed,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  ext10 [shape=none, label="" flow=sink];
+  ext10 -> 4[dir=back cut_flow=aligned,edge_id=7,pdg=1,];
+  ext11 [shape=none, label="" flow=source];
+  ext11 -> 2[dir=forward cut_flow=reversed,edge_id=7,pdg=1,];
+  2 -> 5[ dir=forward cut_flow=uncut,edge_id=5,pdg=1,];
+  3 -> 4[ dir=forward cut_flow=uncut,edge_id=4,pdg=1,];
+  ext16 [shape=none, label="" flow=sink];
+  ext16 -> 5[dir=back cut_flow=aligned,edge_id=3,pdg=1,];
+  ext17 [shape=none, label="" flow=source];
+  ext17 -> 3[dir=forward cut_flow=reversed,edge_id=3,pdg=1,];
+}
+//2:[Pdg { pdg: 1 }, Pdg { pdg: 1 }, Pdg { pdg: 11 }]
+digraph {
+  0 [node_type=i,];
+  1 [node_type=i,];
+  2 [node_type=i,];
+  3 [node_type=i,];
+  4 [node_type=i,];
+  5 [node_type=i,];
+  ext0 [shape=none, label="" flow=sink];
+  ext0 -> 0[dir=back cut_flow=aligned,edge_id=0,pdg=11,];
+  ext1 [shape=none, label="" flow=source];
+  ext1 -> 1[dir=forward cut_flow=reversed,edge_id=0,pdg=11,];
+  1 -> 0[ dir=forward cut_flow=uncut,edge_id=1,pdg=11,];
+  0 -> 4[ dir=none cut_flow=uncut,edge_id=8,pdg=22,];
+  5 -> 1[ dir=none cut_flow=uncut,edge_id=2,pdg=22,];
+  3 -> 2[ dir=none cut_flow=uncut,edge_id=6,pdg=21,];
+  4 -> 2[ dir=forward cut_flow=uncut,edge_id=7,pdg=1,];
+  ext12 [shape=none, label="" flow=sink];
+  ext12 -> 2[dir=back cut_flow=aligned,edge_id=5,pdg=1,];
+  ext13 [shape=none, label="" flow=source];
+  ext13 -> 5[dir=forward cut_flow=reversed,edge_id=5,pdg=1,];
+  ext14 [shape=none, label="" flow=sink];
+  ext14 -> 3[dir=back cut_flow=aligned,edge_id=4,pdg=1,];
+  ext15 [shape=none, label="" flow=source];
+  ext15 -> 4[dir=forward cut_flow=reversed,edge_id=4,pdg=1,];
+  5 -> 3[ dir=forward cut_flow=uncut,edge_id=3,pdg=1,];
+}

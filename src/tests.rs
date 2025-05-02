@@ -4,7 +4,9 @@ use indexmap::IndexMap;
 use log::{info, LevelFilter};
 
 use crate::{
-    gen::{chain_dis_generate, dis_cart_prod, dis_options, photon_self_energy_gen},
+    gen::{
+        chain_dis_generate, dis_cart_prod, dis_options, dis_options_impl, photon_self_energy_gen,
+    },
     load_generic_model, DisCutGraph, DisGraph, Pdg,
 };
 
@@ -329,6 +331,43 @@ fn cut_generate(loop_count: usize) -> Vec<DisCutGraph> {
 }
 
 #[test]
+fn ward_qq() {
+    setup_logger().unwrap();
+    let model = load_generic_model("sm_dis");
+
+    let options = vec![dis_options_impl(
+        &[
+            Pdg::from_name("d", &model),
+            Pdg::from_name("d", &model),
+            Pdg::from_name("a", &model),
+        ],
+        &[
+            vec![Pdg::from_name("d", &model)],
+            vec![Pdg::from_name("d~", &model)],
+            vec![Pdg::from_name("g", &model)],
+        ],
+        100,
+        0,
+        2,
+    )];
+
+    let fs_diagrams: Vec<_> = chain_dis_generate(&options, &model);
+
+    info!("Number of fs diagrams: {}", fs_diagrams.len());
+
+    let mut ogfs = Vec::new();
+
+    for p in &fs_diagrams {
+        let cuto = DisCutGraph::from_bare(p);
+        ogfs.push(cuto);
+    }
+
+    DisCutGraph::serialize_multiple(&ogfs, "hadronic_nlo_qq_fs.dot").unwrap();
+
+    DisCutGraph::typst_multiple(&ogfs, "hadronic_nlo_qq_fs.typ").unwrap();
+}
+
+#[test]
 fn save_nlo_fs() {
     setup_logger().unwrap();
 
@@ -342,16 +381,22 @@ fn save_nlo_fs() {
 
     let fs_diagrams: Vec<_> = fs_generate(1)
         .into_iter()
-        .filter(|g| {
-            let ferm_cont = DisCutGraph::quark_content(&g.cut_content());
-            ferm_cont == 2
+        .filter(|a| {
+            let ferm_cont = DisCutGraph::quark_content(&a.cut_content());
+            ferm_cont == 2 && !a.electron_disconnects()
         })
-        .collect(); //.into_iter().filter(|a|
-                    //  a.cut_content());
+        .collect();
+    // .into_iter()
+    // .filter(|g| {
+    // let ferm_cont = DisCutGraph::quark_content(&g.cut_content());
+    // ferm_cont == 2
+    // })
+    // .collect(); //.into_iter().filter(|a|
+    //  a.cut_content());
 
-    DisCutGraph::serialize_multiple(&fs_diagrams, "nlo_fs_qq.dot").unwrap();
+    DisCutGraph::serialize_multiple(&fs_diagrams, "hadronic_nlo_qq_fs_e.dot").unwrap();
 
-    DisCutGraph::typst_multiple(&fs_diagrams, "nlo_fs_qq.typ").unwrap();
+    DisCutGraph::typst_multiple(&fs_diagrams, "hadronic_nlo_qq_fs_e.typ").unwrap();
 
     println!("Number of fs: {}", fs_diagrams.len());
 }
@@ -360,9 +405,12 @@ fn save_nlo_fs() {
 fn save_nlo_cut() {
     setup_logger().unwrap();
 
-    let cut_diagrams = cut_generate(1);
+    let cut_diagrams: Vec<_> = cut_generate(1)
+        .into_iter()
+        .filter(|a| !a.electron_disconnects())
+        .collect();
 
-    DisCutGraph::serialize_multiple(&cut_diagrams, "nlo_cut.dot").unwrap();
+    DisCutGraph::serialize_multiple(&cut_diagrams, "nlo_cut_no_empty_filter.dot").unwrap();
 
     println!("Number of cuts: {}", cut_diagrams.len());
 }
@@ -393,7 +441,10 @@ fn save_nnlo_cut() {
 fn onenlo_filtered_match() {
     // setup_logger().unwrap();
 
-    let (fs_can, [ogfs, ogcuts]) = filter_match("nlo_fs.dot", "nlo_cut.dot");
+    let (fs_can, [ogfs, ogcuts]) = filter_match(
+        "nlo_fs_no_blobs_any_nresolved.dot",
+        "nlo_cut_no_empty_filter.dot",
+    );
 
     assert_fs_can(fs_can);
 }

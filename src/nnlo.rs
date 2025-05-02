@@ -31,6 +31,27 @@ fn main() {
             }
         }
     }
+    let n_windings;
+    loop {
+        print!("Please enter the number of additional windings: ");
+        // Flush the prompt to ensure it's displayed immediately
+        io::stdout().flush().expect("Failed to flush stdout");
+
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+
+        match input.trim().parse::<u8>() {
+            Ok(num) => {
+                n_windings = num; // Store the valid input in the variable
+                break; // Exit the loop once a valid non-zero number is obtained
+            }
+            Err(_) => {
+                println!("Invalid input. Please enter a non-negative integer.");
+            }
+        }
+    }
     let model = load_generic_model("sm");
     let diagrams = photon_self_energy_gen(nloops, &model);
     println!("Generated {} supergraphs", diagrams.len());
@@ -56,7 +77,7 @@ fn main() {
     fs::create_dir_all(&format!("./outputs/{nloops}lo")).unwrap();
 
     diagrams.iter().for_each(|(i, d)| {
-        let ifsplit = d.full_dis_filter_split();
+        let ifsplit = d.full_dis_filter_split(n_windings);
         println!("{} embeddings for graph: {}", ifsplit.cuts.len(), i);
 
         let n_cuts = ifsplit

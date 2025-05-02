@@ -7,6 +7,7 @@ use std::{
     path::Path,
     str::FromStr,
     sync::{Arc, LazyLock},
+    u8,
 };
 
 use gamma::Gamma;
@@ -119,8 +120,16 @@ impl MySignedCycle {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+pub struct NumberedCut {
+    pub cut: OrientedCut,
+    pub numbering: AHashMap<Hedge, u8>,
+}
+
+pub mod windingcut;
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Embeddings {
-    pub cuts: BTreeMap<Embedding, Vec<(OrientedCut, usize)>>,
+    pub cuts: BTreeMap<Embedding, Vec<(NumberedCut, usize)>>,
     pub bases: Vec<Vec<MySignedCycle>>,
 }
 
@@ -131,7 +140,7 @@ pub struct Embedding {
 }
 
 pub struct IFCuts {
-    pub cuts: BTreeMap<Embedding, (usize, [Vec<OrientedCut>; 2])>,
+    pub cuts: BTreeMap<Embedding, (usize, [Vec<NumberedCut>; 2])>,
     pub basis: Vec<Vec<MySignedCycle>>,
 }
 
@@ -938,7 +947,7 @@ impl IFCuts {
                 c.1[0]
                     .iter()
                     .map(|c| {
-                        let mut graph = c.clone().to_owned_graph_ref(&dis_graph.graph).map(
+                        let mut graph = c.cut.clone().to_owned_graph_ref(&dis_graph.graph).map(
                             |_, _, _, _| DisCompVertex::Internal,
                             |_, _, _, e| {
                                 e.map(|(e)| {
@@ -959,7 +968,7 @@ impl IFCuts {
                         }
                     })
                     .chain(c.1[1].iter().map(|c| {
-                        let mut graph = c.clone().to_owned_graph_ref(&dis_graph.graph).map(
+                        let mut graph = c.cut.clone().to_owned_graph_ref(&dis_graph.graph).map(
                             |_, _, _, _| DisCompVertex::Internal,
                             |_, _, _, e| {
                                 e.map(|(e)| {
@@ -1029,7 +1038,7 @@ impl IFCuts {
                         20.,
                     );
                     bar.inc(1);
-                    (format!("{}", c.to_string()), l)
+                    (c.print_embedding(&dis_graph, &self.basis[0]), l)
                 })
                 .collect();
 
@@ -1045,7 +1054,7 @@ impl IFCuts {
                         20.,
                     );
                     bar.inc(1);
-                    (format!("{}", c.to_string()), l)
+                    (c.print_embedding(&dis_graph, &self.basis[0]), l)
                 })
                 .collect();
 
@@ -1098,6 +1107,12 @@ impl IFCuts {
     pub fn remove_empty(&mut self) {
         self.cuts
             .retain(|_, v| !v.1[0].is_empty() & !v.1[1].is_empty());
+    }
+
+    pub fn retain_simple_winding(&mut self) {
+        self.cuts.retain(|_, v| {
+            v.1[0].iter().any(|n| n.single_winding()) | v.1[1].iter().any(|n| n.single_winding())
+        });
     }
 
     pub fn to_other_mathematica_file(
@@ -1195,7 +1210,7 @@ impl Embeddings {
                     ids.insert(i);
                     if i == 0 {
                         let mut is_in = false;
-                        for (_, e) in cut.iter_edges(graph) {
+                        for (_, e) in cut.cut.iter_edges(graph) {
                             if filter(e.as_ref().data) {
                                 is_in = true;
                             }
@@ -1238,44 +1253,49 @@ impl Embeddings {
         bases: Vec<Vec<MySignedCycle>>,
         filter: impl Fn(&OrientedCut) -> bool,
         flip_sym: bool,
+        n_windings: u8,
     ) -> Embeddings {
         let mut cuts = BTreeMap::new();
         let mut len = 0;
 
         for cut in iter {
-            let mut windings = Vec::new();
-            let mut basid = 0;
             if !filter(&cut) {
                 continue;
             }
-            len += 1;
-            for (i, bs) in bases.iter().enumerate() {
-                let mut first_non_zero = None;
-                let mut new_windings = Vec::with_capacity(windings.len());
+            let numbered = NumberedCut::from_cut(cut, n_windings);
 
-                for b in bs {
-                    let mut winding_number = Self::winding(&cut, b, graph);
-                    if flip_sym {
-                        if let Some(sign) = first_non_zero {
-                            winding_number *= sign as i32;
-                        } else if winding_number > 0 {
-                            first_non_zero = Some(Sign::Positive);
-                        } else if winding_number < 0 {
-                            first_non_zero = Some(Sign::Negative);
-                            winding_number *= -1;
-                        };
+            for cut in numbered {
+                let mut windings = Vec::new();
+                let mut basid = 0;
+                len += 1;
+                for (i, bs) in bases.iter().enumerate() {
+                    let mut first_non_zero = None;
+                    let mut new_windings = Vec::with_capacity(windings.len());
+
+                    for b in bs {
+                        let mut winding_number = cut.winding(b, graph);
+                        if flip_sym {
+                            if let Some(sign) = first_non_zero {
+                                winding_number *= sign as i32;
+                            } else if winding_number > 0 {
+                                first_non_zero = Some(Sign::Positive);
+                            } else if winding_number < 0 {
+                                first_non_zero = Some(Sign::Negative);
+                                winding_number *= -1;
+                            };
+                        }
+                        new_windings.push(winding_number);
                     }
-                    new_windings.push(winding_number);
-                }
 
-                if new_windings <= windings || windings.is_empty() {
-                    windings = new_windings;
-                    basid = i;
+                    if new_windings <= windings || windings.is_empty() {
+                        windings = new_windings;
+                        basid = i;
+                    }
                 }
+                cuts.entry(Embedding { windings })
+                    .or_insert_with(Vec::new)
+                    .push((cut, basid));
             }
-            cuts.entry(Embedding { windings })
-                .or_insert_with(Vec::new)
-                .push((cut, basid));
         }
 
         println!("{} embeddings from {} cuts", cuts.keys().len(), len);
@@ -1559,7 +1579,7 @@ impl DisGraph {
         a
     }
 
-    pub fn full_dis_filter_split(&self) -> IFCuts {
+    pub fn full_dis_filter_split(&self, n_windings: u8) -> IFCuts {
         let mut i = Embeddings::classify(
             self,
             OrientedCut::all_initial_state_cuts(&self.graph),
@@ -1621,9 +1641,10 @@ impl DisGraph {
                 && !electron_disconnects
             },
             true,
+            n_windings,
         )
         .if_split(&self.graph, &|e| e.marked);
-        i.remove_empty();
+        i.retain_simple_winding();
         i
     }
 
@@ -2130,6 +2151,15 @@ impl DisGraph {
             canonized_graph.automorphism_group_size.to_i64().unwrap() as usize
         );
 
+        for (b, cs) in bases.iter().enumerate() {
+            println!("//Basis: {b}");
+
+            for (i, c) in cs.iter().enumerate() {
+                println!("//Cycle {i}");
+                println!("{}", graph.dot(&c.filter))
+            }
+        }
+
         let sym_group = canonized_graph.automorphism_group_size;
         let mut numerator = AHashMap::new();
         numerator.insert("F2".into(), f2);
@@ -2399,10 +2429,10 @@ impl DisGraph {
         cut_content
     }
 
-    pub fn cut_content(&self, cut: &OrientedCut) -> isize {
+    pub fn cut_content(&self, cut: &NumberedCut) -> isize {
         let mut cut_content = 0;
         // println!("looking at cut {}", cut);
-        cut.iter_edges(&self.graph).for_each(|(a, p)| {
+        cut.iter_edges(&self.graph).for_each(|(i, a, p)| {
             let particle = &p.data.bare_edge.particle;
             if particle.color.abs() == 3 && particle.spin == 2 {
                 match a.relative_to(p.orientation.try_into().unwrap()) {
@@ -2422,7 +2452,7 @@ impl DisGraph {
         cut_content
     }
 
-    fn color_and_spin_average(&self, cut: &OrientedCut) -> Atom {
+    fn color_and_spin_average(&self, cut: &NumberedCut) -> Atom {
         let nc = Atom::new_var(symb!("Nc"));
         let cut_content = self.cut_content(cut);
 
@@ -2436,8 +2466,8 @@ impl DisGraph {
             // }
         }
     }
-    pub fn numerator(&self, cut: &OrientedCut) -> AHashMap<String, Atom> {
-        let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
+    pub fn numerator(&self, cut: &NumberedCut) -> AHashMap<String, Atom> {
+        let (coef, emr_to_lmb_cut) = self.emr_to_lmb_and_cut(cut);
 
         // for a in &emr_to_lmb_cut {
         //     println!("{}", a);
@@ -2457,13 +2487,17 @@ impl DisGraph {
             .collect()
     }
 
-    pub fn denominator(&self, cut: &OrientedCut) -> DenominatorDis {
-        let emr_to_lmb_cut = self.emr_to_lmb_and_cut(cut);
-        self.denominator
-            .map_all(&|a| a.replace_all_multiple(&emr_to_lmb_cut).expand())
+    pub fn denominator(&self, cut: &NumberedCut) -> DenominatorDis {
+        let (coef, emr_to_lmb_cut) = self.emr_to_lmb_and_cut(cut);
+
+        let mut den = self
+            .denominator
+            .map_all(&|a| a.replace_all_multiple(&emr_to_lmb_cut).expand());
+        den.prefactor = &den.prefactor * coef.npow(-4);
+        den
     }
 
-    pub fn cut_map(&self, cut: &OrientedCut) -> AHashMap<String, String> {
+    pub fn cut_map(&self, cut: &NumberedCut) -> AHashMap<String, String> {
         let mut cut_map = AHashMap::new();
 
         // println!("denom");
@@ -2511,23 +2545,27 @@ impl DisGraph {
     /// Convert EMR to LMB and then impose that the cut momenta sum up to p + the electron momenta.
     /// Additionally, ensure that the first photon momentum is incoming to the hadronic tensor.
     /// To do this we look at whether the cut includes the tagged electron, if not, we further map q -> -q, only when replacing the emr, not on the projectors themselves.
-    pub fn emr_to_lmb_and_cut(&self, cut: &OrientedCut) -> Vec<Replacement> {
+    /// And get the coefficient in front of the replaced cut loop momentum
+    pub fn emr_to_lmb_and_cut(&self, cut: &NumberedCut) -> (Atom, Vec<Replacement>) {
         let photon_momenta = function!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
 
         let mut photon_rep = Atom::new_var(DIS_SYMBOLS.photon_mom);
-        if !self.contains_tagged_electron(cut) {
+        if !self.contains_tagged_electron(&cut.cut) {
             photon_rep = -photon_rep;
         }
         let mut reps = vec![Replacement::new(
             photon_momenta.to_pattern(),
             photon_rep.to_pattern(),
         )];
-        if let Some((all_rest, solved_for)) = self.cut_constraint(cut) {
+        let coef = if let Some((coef, all_rest, solved_for)) = self.cut_constraint(cut) {
             reps.push(Replacement::new(
                 solved_for.to_pattern(),
                 all_rest.to_pattern(),
             ));
-        }
+            coef
+        } else {
+            Atom::new_num(1)
+        };
 
         let mut emr_to_lmb_cut = AHashMap::new();
         for (_, _, d) in self.graph.iter_edges(&self.graph.full_graph()) {
@@ -2544,13 +2582,16 @@ impl DisGraph {
             );
         }
 
-        emr_to_lmb_cut
-            .into_iter()
-            .map(|(k, v)| Replacement::new(k.to_pattern(), v))
-            .collect()
+        (
+            coef,
+            emr_to_lmb_cut
+                .into_iter()
+                .map(|(k, v)| Replacement::new(k.to_pattern(), v))
+                .collect(),
+        )
     }
 
-    pub fn cut_constraint(&self, cut: &OrientedCut) -> Option<(Atom, Atom)> {
+    pub fn cut_constraint(&self, cut: &NumberedCut) -> Option<(Atom, Atom, Atom)> {
         let mut sum = Atom::new_num(0);
 
         // let mut total = Atom::new_var(DIS_SYMBOLS.cut_mom);
@@ -2558,7 +2599,7 @@ impl DisGraph {
         let photon_momenta = function!(DIS_SYMBOLS.loop_mom, self.lmb_photon.1 as i32);
 
         let mut photon_rep = Atom::new_var(DIS_SYMBOLS.photon_mom);
-        if !self.contains_tagged_electron(cut) {
+        if !self.contains_tagged_electron(&cut.cut) {
             photon_rep = -photon_rep;
         }
         let mut reps = vec![Replacement::new(
@@ -2566,11 +2607,12 @@ impl DisGraph {
             photon_rep.to_pattern(),
         )];
 
-        for cut_edge in cut.iter_left_hedges() {
+        for (i, cut_edge) in cut.iter_left() {
             if self.graph[[&cut_edge]].bare_edge.particle.pdg_code.abs() != 11 {
                 sum = sum
                     + SignOrZero::from(self.graph.flow(cut_edge))
-                        * self.graph[[&cut_edge]].lmb_momentum.clone();
+                        * self.graph[[&cut_edge]].lmb_momentum.clone()
+                        * (i as i32);
             }
         }
         sum = sum - Atom::new_var(DIS_SYMBOLS.cut_mom);
@@ -2578,13 +2620,15 @@ impl DisGraph {
 
         let loop_mom_pat = function!(DIS_SYMBOLS.loop_mom, symb!("x_")).to_pattern();
 
+        let expanded_sum = sum.expand();
         // println!("{sum}");
-        let solving_var = sum
-            .expand()
+        let solving_var = expanded_sum
             .pattern_match(&loop_mom_pat, None, None)
             .next_detailed()?
             .target
             .to_owned();
+
+        let coef = expanded_sum.coefficient(solving_var.as_view());
 
         let solution = <Atom as AtomCore>::solve_linear_system::<u8, Atom, Atom>(
             &[sum],
@@ -2596,7 +2640,7 @@ impl DisGraph {
         // println!("solution: {}", solution);
         // println!("solving_var: {}", solving_var);
 
-        Some((solution, solving_var))
+        Some((coef, solution, solving_var))
     }
 }
 
@@ -3855,7 +3899,7 @@ impl Prop {
 }
 
 pub fn dis_cut_layout<'a>(
-    cut: OrientedCut,
+    cut: NumberedCut,
     graph: &'a DisGraph,
     params: LayoutParams,
     iter_params: LayoutIters,
@@ -3867,7 +3911,7 @@ pub fn dis_cut_layout<'a>(
 
     // let file = std::fs::File::open("layout_params.json").unwrap();
     // let layout_iters = serde_yaml::from_reader::<_, LayoutIters>(file).unwrap();
-    let pos = cut.layout(&graph.graph, params, iter_params, edge_len);
+    let pos = cut.cut.layout(&graph.graph, params, iter_params, edge_len);
 
     // let out = pos.dot_impl(
     //     &pos.full_filter(),
@@ -3925,7 +3969,7 @@ pub fn dis_cut_layout<'a>(
                     (
                         d.edge_data().clone(),
                         d.flow(),
-                        d.edge_data().emr_momentum.replace_all_multiple(&c),
+                        d.edge_data().emr_momentum.replace_all_multiple(&c.1),
                     )
                 })
             })
